@@ -1,0 +1,111 @@
+a {
+    color: #01b2a8;
+    text-decoration: none;
+}
+.search_cbox_store input[type="checkbox"] {
+    vertical-align:middle;
+}
+.flex_box {
+    display:flex;
+    flex-wrap: wrap;
+    justify-content:flex-start;
+}
+.headertitle {
+    max-width:1000px;
+    margin:0 auto;
+    margin-bottom:20px;
+}
+.headertitle .title{
+    font-size:200%;
+    margin-left:12%;
+}
+@media screen and (max-width:800px){
+    .headertitle .title{ margin-left:0; }
+}
+.search_inputbox {
+    margin-top:13px;
+    margin-left:20px;
+}
+.search_inputbox select {
+    height:26px;
+}
+.search_inputbox input[type="submit"] {
+    height:26px;
+}
+.search_inputbox input[type="text"] {
+    height:20px;
+}
+.search_cbox_store {
+    font-size: 100%;
+    margin-top:10px;
+}
+.search_add_option {
+}
+#open_search_checkbox {
+    display:none;
+}
+.search_add_option label {
+    font-size:70%;
+    padding:1px 2px;
+    margin:1px;
+    font-weight: bold;
+    border: solid 1px black;
+    cursor :pointer;
+    background:#ffffff;
+    height:14px;
+}
+.search_add_option .search_opt_show {
+    visibility:collapse;
+    height:0;
+}
+#open_search_checkbox:checked ~ .search_opt_show {
+    visibility:visible;
+    height:auto;
+}
+.search_opt_show input[type="checkbox"] {
+    margin-top:3px;
+    margin-right:0px;
+    vertical-align:middle;
+}
+.search_opt_show label {
+    font-size:80%;
+    padding:0;
+    margin:auto;
+    margin-right: 6px;
+    font-weight:normal;
+    border:none;
+    cursor:auto;
+}
+
+.nav ul{
+    font-family: Arial, Helvetica, sans-serif;
+    letter-spacing: 2px;
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+    text-align: right;
+}
+.nav ul li {
+    display: inline-block;
+    padding: 0 5px;
+    border-left: 1px solid #037d77;
+}
+.nav ul li:first-child {
+    border-left: none;
+}
+
+.nav ul li#menu_now a {
+    color: #037d77;
+    font-weight: bold;
+}
+.main {
+    font-size: 100%;
+    min-width: 500px;
+}
+.searchret {
+    min-width:260px;
+    /*flex-direction:row;*/
+}
+.footer {
+    text-align:center;
+}

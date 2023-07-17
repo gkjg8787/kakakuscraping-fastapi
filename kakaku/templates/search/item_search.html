@@ -1,0 +1,90 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/searchcmn.css') }}" type="text/css">
+    {%- if listview_checked %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/retlist.css') }}" type="text/css" id="cssSearchResult">
+    {%- else %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/retsearch.css') }}" type="text/css" id="cssSearchResult">
+    {%- endif %}
+    <script type="text/javascript" src="{{ url_for('static', path='/js/csschg.js') }}"></script>
+    <title>外部サイト検索</title>
+{% endblock %}
+
+{% block body %}
+    <div class="pagebody">
+        <div class="headertitle flex_box">
+            <div><a href="{{ url_for('read_users') }}">戻る</a></div>
+            <div class="title"><a href="{{ url_for('read_search') }}">サイト検索</a></div>
+            <div class="search_inputbox">
+                <form id="search_inputform" action="" method="get" accept-charset="utf-8">
+                    <select name="{{ CATEGORY_NAME }}">
+                        {%- for cate in categorylist %}
+                        <option value="{{ cate.id }}" {{ cate.selected }}>{{ cate.jname }}</option>
+                        {%- endfor %}
+                    </select>
+                    <input type="text" name="{{ SEARCH_WORD_NAME }}" value="{{ sword }}">
+                    <input type="hidden" name="{{ PAGE_NAME }}" value="1">
+                    <input type="submit" value="検索">
+                    <div class="search_cbox_sname">
+                        {%- for store in stores %}
+                        <input type="checkbox" name="{{ STORE_ID_NAME }}" value="{{ store.store_id }}" {{ store.checked }}>{{ store.jname }}
+                        {%- endfor %}
+                    </div>
+                </form>
+                <div class="search_add_option flex_box">
+                    <label for="open_search_checkbox">＋</label>
+                    <input type="checkbox" id="open_search_checkbox">
+                    <div class="search_opt_show flex_box">
+                        <div class="option_box">
+                            <input type="checkbox" name="{{ SAFE_SEARCH_NAME }}" form="search_inputform" id="safe_search_checkbox" value="0" {{ safes_off_checked }}>
+                            <label for="safe_search_checkbox">SafeSearch OFF</label>
+                        </div>
+                        <div class="option_box">
+                            <input type="checkbox" name="{{ STOCK_NAME }}" form="search_inputform" id="zaiko_checkbox" value="1" {{ zaiko_checked }}>
+                            <label for="zaiko_checkbox">在庫ありのみ表示</label>
+                        </div>
+                        <div class="option_box">
+                            <input type="checkbox" name="{{ LIST_VIEW_NAME }}" form="search_inputform" id="listview_checkbox" value="1" {{ listview_checked }}>
+                            <label for="listview_checkbox">リストで表示</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!--
+        <div class="nav">
+            <ul>
+                <li><a href="#">Add</a></li>
+                <li id="menu_now"><a href="#">Search</a></li>
+                <li><a href="#">Group</a></li>
+            </ul>
+        </div>
+        -->
+        <hr>
+        <div class="main">
+            <div class="searchret flex_box">
+                {%- if search_results %}
+                    {%- for row in search_results.items %}
+                        {% with item = row, POST_ITEM_NAME = POST_ITEM_NAME, POST_URL_PATH = POST_URL_PATH, POST_SEARCH_QUERY = POST_SEARCH_QUERY, search_query = search_query %}
+                        {% include "search/item_result.html" %}
+                        {% endwith %}
+                    {%- endfor %}
+                    {% with page = search_results.page %}
+                    {% include "search/search_page.html" %}
+                    {% endwith%}
+                {%- endif%}
+            </div>
+            <!--
+            <div class="aside">
+                <p>未定のコンテンツ</p>
+            </div>
+            -->
+        </div>
+        <!--
+        <div class="footer">
+            <p>footer</p>
+        </div>
+        -->
+    </div>
+{% endblock %}

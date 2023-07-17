@@ -1,0 +1,34 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    <title>検索アイテム追加</title>
+{% endblock %}
+
+{% block body %}
+    <h1>検索アイテム追加</h1>
+    <form action="" method="post">
+        <select name="{{ POST_ITEM_ID }}" onchange="submit(this.form)">
+            <option value="-1">新規追加</option>
+            {%- for item in itemlist %}
+                <option value="{{ item.item_id }}" {{ item.selected }}>{{ item.name }}({{ item.item_id }})</option>
+            {%- endfor %}
+            <input type="hidden" name="{{ POST_ITEM_NAME }}" value="{{ add_item_name }}">
+            <input type="hidden" name="{{ POST_URL_PATH }}" value="{{ add_url_path }}">
+            <input type="hidden" name="{{ POST_SEARCH_QUERY }}" value="{{ search_query }}">
+        </select>
+    </form>
+    {%- if add_item_id | int == -1 %}
+    <form action="{{ url_for('read_users_items_add_post') }}" method="post">
+        <p>商品名： <input type="text" name="{{ POST_ITEM_NAME }}" value="{{ add_item_name }}"></p>
+    {%- else %}
+    <form action="{{ url_for('read_users_items_add_url_result') }}" method="post">
+        <p>商品名：{{ add_item_name }}</p>
+    {%- endif %}
+        <p>URL： <input type="text" name="{{ POST_URL_PATH }}" class="url_input" value="{{ add_url_path }}"></p>
+        <p style="color:red;">{{ errmsg }}</p>
+        <input type="hidden" name="{{ POST_ITEM_ID }}" value="{{ add_item_id }}">
+        <input type="hidden" name="{{ POST_SEARCH_QUERY }}" value="{{ search_query }}">
+        <p><input type="submit" value="送信"></p>
+        <p><a href="{{ url_for('read_search') }}{{ search_query }}">戻る</a></p>
+    </form>
+{% endblock %}

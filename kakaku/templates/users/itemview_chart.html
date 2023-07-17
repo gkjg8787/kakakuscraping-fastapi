@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    <title>価格グラフ</title> 
+{% endblock %}
+
+{% block body %}
+    <h1>価格グラフ</h1>
+    <canvas id="myLineChart"></canvas>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>
+
+    <script>
+    var ctx = document.getElementById("myLineChart");
+    var myLineChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        datasets: [
+          {
+            label: '中古価格',
+            data:[ 
+              {% for row in upjp %}
+                { x:"{{ row['x'] }}", y:"{{ row['y'] }}" },
+              {% endfor %}  
+              ],
+                borderColor: "rgba(255,0,0,1)",
+                backgroundColor: "rgba(0,0,0,0)",
+                lineTension: 0,
+              },
+              {
+            label: '新品価格',
+            data: [ 
+              {% for row in npjp %}
+                { x:"{{ row['x'] }}", y:"{{ row['y'] }}" },
+              {% endfor %}  
+              ],
+                borderColor: "rgba(0,255,0,1)",
+                backgroundColor: "rgba(0,0,0,0)",
+                lineTension: 0,
+          }
+        ],
+      },
+      options: {
+        title: {
+          display: true,
+        },
+        scales: {
+          xAxes: [{
+          type : 'time',
+          time : {
+              unit: 'month'
+              }
+          }
+          ]
+        },
+        animation: false,
+        tooltips: {
+          mode: 'nearest',
+          intersect: false,
+        },
+      }
+    });
+    </script>
+    <p><a href="{{ url_for('read_users_items_view',) }}?{{ ITEMID_Q_NAME }}={{ item_id }}">戻る</a></p>
+{% endblock %}

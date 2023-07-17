@@ -1,0 +1,25 @@
+
+{% extends "layout.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
+    <title>グループ名変更</title>
+{% endblock %}
+
+{% block body %}
+    <h1>グループ名変更</h1>
+    {% if not updateSuccess %}
+    <form action="{{ url_for('read_users_groups_rename_result') }}" method="post">
+        <input type="hidden" name="{{ POST_GROUP_ID }}" value="{{ gid }}">
+        <p>変更前グループ名： {{ before_groupname }}</p>
+        <p>変更後グループ名： <input type="text" name="{{ POST_GROUP_NAME }}"></p>
+        <p style="color:red;">{{ errmsg }}</p>
+        <p><input type="submit" value="送信"></p>
+    </form>
+    {% else %}
+    <p>
+        {{ groupname }}に変更しました。<br>
+    </p>
+    {% endif %}
+    <p><a href="{{ url_for('read_users_groups_edit') }}?{{ GROUPID_NAME }}={{ gid }}">戻る</a></p>
+{% endblock %}

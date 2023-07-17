@@ -1,0 +1,53 @@
+.flex_box {
+    display:flex;
+    flex-wrap: wrap;
+    justify-content:flex-start;
+}
+.stores {
+    display:flex;
+    flex-flow:column;
+    margin:0 0 1em;
+    width:1200px;
+}
+.store {
+    border-top:1px solid #037d77;
+    margin: 3px;
+}
+input[type="number"]{
+    width:55px;
+}
+.storename {
+    width: 100px;
+    word-break:break-word;
+    border-right: 1px solid #037d77;
+}
+.storeterms_table_header {
+    width:1200px;
+}
+.storename_title {
+    margin-left:10px;
+    margin-right:41px;
+}
+.terms_title {
+    margin-left:120px;
+}
+.postage_title {
+    margin-left:470px;
+}
+.created_at_title {
+    margin-left:55px;
+}
+.button_title {
+    margin-left:120px;
+}
+.shippingterms {
+    margin : 3px;
+}
+.terms_name {
+    margin-left:5px;
+}
+.shippingterms_boundary {
+    display:inline-block;
+    width:520px;
+    
+}

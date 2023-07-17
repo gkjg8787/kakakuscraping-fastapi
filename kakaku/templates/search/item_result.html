@@ -1,0 +1,56 @@
+<div class="itembox">
+    <div class="img_box">
+        <div class="storename">{{ item.storename }}</div>
+        <div class="item_img">
+            {%- if item.img_on_err %}
+            <img onerror="this.src='{{ item.img_on_err }}'" src="{{ item.img }}" border="0" vspace="4">
+            {%- else %}
+            <img src="{{ item.img }}" border="0" vspace="4">
+            {%- endif %}
+        </div>
+    </div>
+    <div class="item_detail">
+        <a href="{{ item.item_url }}" class="item_url"><div class="item_title">{{ item.title }}</div></a>
+        <div class="item_subinfo">    
+            <div class="item_lbox">
+                <div class="item_category">{{ item.category }}</div>
+                {%- if item.state %}
+                <div class="item_state">{{ item.state }}</div>
+                {%- endif %}
+                {%- if item.sinagire %}
+                <div class="sinagire">品切れ</div>
+                {%- endif%}
+                {%- if item.main.used %}
+                <div class="used_price">{{ item.main.used.price_pre_text }}<strong>{{ item.main.used.price }}</strong>{{ item.main.used.price_tail_text }}</div>
+                {%- endif %}
+                {%- if item.main.new %}
+                <div class="new_price">{{ item.main.new.price_pre_text }}<strong>{{ item.main.new.price }}</strong>{{ item.main.new.price_tail_text }}</div>
+                {%- endif %}
+                {%- if item.makepure %}
+                <a href="{{ item.makepure.url }}" class="makepure_url">
+                    <div class="makepure">マケプレ<strong>{{ item.makepure.price }}</strong></div>
+                    <div class="makepurebiko">{{ item.makepure.biko }}</div>
+                </a>
+                {%- endif %}
+            </div>
+            <div class="item_btnbox">
+                {%- if item.main %}
+                <form action="{{ url_for('read_search_add') }}" method="post" class="add_item">
+                    <input type="hidden" name="{{ POST_ITEM_NAME }}" value="{{ item.main.title }}">
+                    <input type="hidden" name="{{ POST_URL_PATH }}" value="{{ item.main.url }}">
+                    <input type="hidden" name="{{ POST_SEARCH_QUERY }}" value="{{ search_query }}">
+                    <input type="submit" value="{{ item.storename }}を追加">
+                </form>
+                {%- endif %}
+                {%- if item.makepure %}
+                <form action="{{ url_for('read_search_add') }}" method="post" class="add_make">
+                    <input type="hidden" name="{{ POST_ITEM_NAME }}" value="{{ item.makepure.title }}">
+                    <input type="hidden" name="{{ POST_URL_PATH }}" value="{{ item.makepure.url }}">
+                    <input type="hidden" name="{{ POST_SEARCH_QUERY }}" value="{{ search_query }}">
+                    <input type="submit" value="マケプレを追加">
+                </form>
+                {%- endif %}
+            </div>
+        </div>
+    </div>
+</div>

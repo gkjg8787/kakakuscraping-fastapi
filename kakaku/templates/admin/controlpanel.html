@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    <title>管理画面</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
+{% endblock %}
+
+{% block body %}
+    <h1>管理画面</h1>
+    <div class="system_status">ステータス：{{ syssts }}</div>
+    <h2>操作</h2>
+    {% if updatemsg %}
+        <p>{{ updatemsg }}</p>
+    {% endif %}
+    <p><a href="{{ url_for('read_admin_dashboard') }}">更新</a></p>
+    <form method="post" action="{{ url_for('read_admin_dashboard_post') }}">
+        {% if sysstop %}
+        <button type="submit" name="{{ system_ctrl_btn_name }}" value="{{ STARTUP }}">起動</button>
+        {% endif %}
+        {% if not sysstop %}
+        <button type="submit" name="{{ system_ctrl_btn_name }}" value="{{ STOP }}">停止</button>
+        <button type="submit" name="{{ system_ctrl_btn_name }}" value="{{ RESTART }}">再起動</button>
+        {% endif %}
+    </form>
+    <p><a href="{{ url_for('read_users') }}">戻る</a></p>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
+    <title>URL追加</title>
+    {% if not search_query and addSuccess %}
+    <meta http-equiv="refresh" content=" 3; url={{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ item_id }}">
+    {% endif %}
+{% endblock %}
+
+{% block body %}
+  <h1>URL追加</h1>
+  {%- if not addSuccess %}
+    <form action="{{ url_for('read_users_items_add_url_result') }}" method="post">
+      <p>追加URL： <input type="text" name="{{ POST_URL_PATH }}" class="url_input" value="{{ urlPath }}"></p>
+      <p style="color:red;">{{ errmsg }}</p>
+      <input type="hidden" name="{{ POST_ITEM_ID }}" value="{{ item_id }}">
+      <p><input type="submit" value="送信"></p>
+    </form>
+  {%- else %}
+    <p>
+      登録しました。
+      {%- if not search_query %}
+      <br>3秒後、戻ります。
+      {%- endif %}
+    </p>
+  {%- endif %}
+  {%- if search_query %}
+  <p><a href="{{ url_for('read_search') }}{{ search_query }}">検索へ戻る</a></p>
+  <p><a href="{{ url_for('read_users') }}">アイテム一覧へ戻る</a></p>
+  {%- endif %}
+  <p><a href="{{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ item_id }}">アイテム詳細へ戻る</a></p>
+{% endblock %}

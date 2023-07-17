@@ -1,0 +1,70 @@
+
+a {
+    color: #01b2a8;
+    text-decoration: none;
+}
+.main {
+    font-size: 100%;
+    min-width: 500px;
+}
+.searchret {
+    min-width:260px;
+    /*flex-direction:row;*/
+}
+.itembox {
+    min-width:100px;
+    width: 21%;
+    margin: 0 10px;
+    margin-bottom:15px;
+}
+.itembox img {
+    max-width: 100%;
+    max-height: 140px;
+    height: auto;
+}
+.item_img {
+    text-align:center;
+}
+.add_item, .add_make, .add_both {
+    margin: 3px 0;
+}
+.itembox input[type="submit"] {
+    font-size: 80%;
+}
+.storename {
+    font-size:80%;
+}
+.item_title {
+    font-size:95%;
+}
+.item_category {
+    font-size:80%;
+}
+.used_price, .new_price {
+    font-size:95%;
+}
+.makepure, .makepurebiko {
+    font-size:95%;
+}
+.sinagire {
+    font-size:95%;
+}
+.retpage {
+    background-color: #ececec;
+    width:100%;
+}
+.retpage ul {
+    margin:auto;
+    padding:0;
+    text-align:center;
+}
+.retpage ul li, .retpage .morepage {
+    display: inline-block;
+    vertical-align: top;
+    font-size:140%;
+    margin:5px;
+    padding:3px;
+}
+.retpage .curpage {
+    color: #050505;
+}

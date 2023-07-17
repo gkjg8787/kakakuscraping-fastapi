@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+
+{% block head %}
+  <title>商品名変更</title>
+  {% if updateSuccess %}
+    <meta http-equiv="refresh" content=" 3; url={{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ item_id }}">
+  {% endif %}
+{% endblock %}
+
+{% block body %}
+  <h1>商品名変更</h1>
+  {% if not updateSuccess %}
+    <form action="{{ url_for('read_users_items_update_item_name_result') }}" method="post">
+      <p>変更前商品名： {{ pre_item_name }}</p>
+      <p>変更後商品名： <input type="text" name="{{ POST_ITEM_NAME }}"></p>
+      <p style="color:red;">{{ errmsg }}</p>
+      <input type="hidden" name="{{ POST_ITEM_ID }}" value="{{ item_id }}">
+      <p><input type="submit" value="送信"></p>
+      <p><a href="{{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ item_id }}">戻る</a></p>
+    </form>
+  {% else %}
+    <p>
+      変更しました。<br>
+    </p>
+    <p><a href="{{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ item_id }}">戻る</a></p>
+  {% endif %}
+{% endblock %}

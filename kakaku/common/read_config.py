@@ -1,0 +1,40 @@
+import settings
+
+def get_databases():
+    return settings.DATABASES
+
+def get_support_url():
+    return settings.SUPPORT_DOMAIN
+
+def get_log_dir():
+    return settings.LOGTEMP
+
+def get_dl_temp_dir():
+    return settings.HTMLTEMP
+
+def get_cache_max_num():
+    return settings.CACHE_MAX_NUM
+
+def get_cache_time():
+    return settings.CACHE_TIME
+
+def is_search_cache():
+    return settings.SEARCH_CACHE
+
+def get_no_verify_domain():
+    return settings.NO_VERIFY_DOMAIN
+
+def is_auto_del_dl_file():
+    return settings.AUTO_DEL_DLFILE
+
+def get_back_server_config():
+    return settings.SCRAPING_BACK_SERVER
+
+def get_back_server_queue_timeout():
+    return settings.PROC_QUEUE_TIMEOUT
+
+def get_search_option_path():
+    return settings.SEARCHOPTION
+
+def get_itemcomb_select_limit():
+    return settings.ITEMCOMB_SELECT_LIMIT

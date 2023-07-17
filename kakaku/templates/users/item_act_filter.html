@@ -1,0 +1,12 @@
+<form method="get" action="">
+    状態 : <select name="{{ ITEMACT_NAME }}" onchange="submit(this.form)">
+        {% for actsts in actstslist %}
+        <option value="{{ actsts.id }}" {{ actsts.selected }}>{{ actsts.text }}</option>
+        {% endfor %}
+    </select>
+    {% for k, v in fquery.items() %}
+        {% if k != ITEMACT_NAME and v != "" %}
+        <input type="hidden" name="{{ k }}" value="{{ v }}">
+        {% endif %}
+    {% endfor %}
+</form>

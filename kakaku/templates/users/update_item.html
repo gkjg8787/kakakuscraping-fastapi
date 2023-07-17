@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    <title>アイテム更新</title>
+    {%- if updateSuccess %}
+    {%- if return_user %}
+    <meta http-equiv="refresh" content=" 3; url={{ url_for('read_users') }}">
+    {%- else %}
+    <meta http-equiv="refresh" content=" 3; url={{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ item_id }}">
+    {%- endif %}
+    {%- endif %}
+{% endblock %}
+
+{% block body %}
+    <h1>アイテム更新</h1>
+    {%- if not updateSuccess %}
+      <p>{{ errmsg }}</p>
+    {%- else %}
+      <p>
+        更新中です。
+        <br>3秒後に戻ります。
+      </p>
+    {%- endif %}
+    {%- if return_user %}
+    <p><a href="{{ url_for('read_users') }}">アイテム一覧へ戻る</a></p>
+    {%- else %}
+    <p><a href="{{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ item_id }}">アイテム詳細へ戻る</a></p>
+    {%- endif %}
+{% endblock %}

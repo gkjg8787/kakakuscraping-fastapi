@@ -1,0 +1,27 @@
+
+{% extends "layout.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
+    <title>グループ削除</title>
+    {% if delSuccess %}
+    <meta http-equiv="refresh" content=" 3; url={{ url_for('read_users') }}">
+    {% endif %}
+{% endblock %}
+
+{% block body %}
+    <h1>グループ削除</h1>
+    {% if not delSuccess %}
+    <form action="{{ url_for('read_users_groups_delete_result') }}" method="post">
+        <input type="hidden" name="{{ POST_GROUP_ID }}" value="{{ gid }}">
+        <p style="color:red;">{{ errmsg }}</p>
+        <p>本当に{{ groupname }}を削除しますか？
+        <p><input type="submit" value="削除"></p>
+    </form>
+    <p><a href="{{ url_for('read_users_groups_edit') }}?{{ GROUPID_NAME }}={{ gid }}">戻る</a></p>
+    {% else %}
+    <p>グループ名 : {{ groupname }}</p>
+    <p>削除しました。<br>3秒後、戻ります。</p>
+    <p><a href="{{ url_for('read_users') }}">戻る</a>
+    {% endif %}
+{% endblock %}

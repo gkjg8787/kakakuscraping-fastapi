@@ -1,0 +1,38 @@
+.all_item_desc {
+    margin-bottom:5px;
+}
+.all_item_postage {
+    margin-bottom:5px;
+}
+
+table.all_item_table {
+    margin-bottom:10px;
+}
+
+table.all_item_table th {
+    border:none;
+    border-bottom: 1px solid #000;
+}
+
+.detail_store_title {
+    font-size:20px;
+    text-decoration:underline solid #000;
+    margin-bottom:10px;
+}
+.detail_store_name {
+    font-weight:bold;
+    margin-bottom:10px;
+}
+table.store_item_table {
+    border:none;
+    border-bottom: 1px solid #000;
+}
+table.store_item_table tr>*:first-child {
+    min-width:90px;
+}
+.store_sum_pos_out {
+    padding-top:7px;
+}
+.store_sum_pos_in {
+    margin-top:10px;
+}

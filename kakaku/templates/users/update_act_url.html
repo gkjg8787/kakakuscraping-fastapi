@@ -1,0 +1,18 @@
+{% extends "layout.html" %}
+
+{% block head %}
+  <title>URL活性状態の変更</title>
+  <meta http-equiv="refresh" content=" 3; url={{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ item_id }}">
+{% endblock %}
+
+{% block body %}
+  <h1>URL活性状態の変更</h1>
+  {% if not updateSuccess %}
+    <p>{{ errmsg }}</p>
+  {% else %}
+    <p>
+      更新しました。3秒後に戻ります。<br>
+    </p>
+  {% endif %}
+  <p><a href="{{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ item_id }}">戻る</a></p>
+{% endblock %}

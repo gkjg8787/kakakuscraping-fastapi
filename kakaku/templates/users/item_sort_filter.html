@@ -1,0 +1,14 @@
+<form method="get" action="">
+    並び替え : <select name="{{ ITEMSORT_NAME }}" onchange="submit(this.form)">
+        {% for isn in itemSortList %}
+        <option value="{{ isn.id }}" {{ isn.selected }}>
+            {{ isn.text }}順
+        </option>
+        {% endfor %}
+    </select>
+    {% for k, v in fquery.items() %}
+        {% if k != ITEMSORT_NAME and v != "" %}
+        <input type="hidden" name="{{ k }}" value="{{ v}}">
+        {% endif %}
+    {% endfor %}
+</form>

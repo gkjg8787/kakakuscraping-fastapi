@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/sumitemcomb.css') }}" type="text/css">
+    <title>価格計算の結果</title>
+{% endblock %}
+
+{% block body %}
+    <h1>価格計算の結果</h1>
+    <div class="all_item_desc">{{ item_count }}個の対象アイテム：{{ itemnames }}</div>
+    <div class="all_item_sum">合計価格（送料込み）：￥{{ sum_pos_in }}</div>
+    <div class="all_item_postage">合計送料：￥{{ sum_postage }}</div>
+    <div>
+        <table class="all_item_table">
+            <tr>
+                <th>通番</th><th>アイテム名</th><th>店名</th><th>価格</th>
+            </tr>
+            {%- for item in item_list %}
+            <tr>
+                <td>{{ item.item_number }}</td>
+                <td>{{ item.item_name }}</td>
+                <td>{{ item.store_name }}</td>
+                <td>{{ item.item_price }}</td>
+            </tr>
+            {%- endfor %}
+        </table>
+    </div>
+    <hr class="detail_store_item">
+    <div class="detail_store_title">詳細</div>
+    <ul>
+        {%- for store in store_list %}
+        <li>
+            <div class="detail_store_name">{{ store.name }}</div>
+            <table class="store_item_table">
+            {%- for item in store.items %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.price }}</td>
+            </tr>
+            {% endfor %}
+            </table>
+            <div class="store_num_pos_out">合計価格：{{ store.sum_pos_out }}</div>
+            <div class="store_postage">送料：{{ store.postage }}</div>
+            <div class="store_sum_pos_in">合計価格（送料込み）：{{ store.sum_pos_in }}</div>
+            <hr class="store_divline">
+        </li>
+        {%- endfor %}
+    </ul>
+    <div><a href="{{ url_for('read_users') }}">戻る</a></div>
+{% endblock %}

@@ -1,0 +1,98 @@
+a {
+    color: #01b2a8;
+    text-decoration: none;
+}
+.main {
+    font-size: 100%;
+    width:800px;
+    margin:auto;
+}
+.searchret {
+    width:800px;
+    /*flex-direction:row;*/
+}
+.itembox {
+    display:flex;
+    flex-wrap:normal;
+    margin: 0 10px;
+    margin-bottom:15px;
+    min-width:680px;
+}
+.itembox:nth-child(n + 2) {
+    border-top: 1px solid #037d77;
+}
+.itembox img {
+    /*max-width: 100%;*/
+    max-height: 170px;
+    width:120px;
+}
+.img_box {
+    display:flex;
+    flex-flow:column;
+    justify-content:flex-start;
+}
+.item_detail {
+    margin:20px;
+    overflow-wrap:normal;
+}
+.item_subinfo {
+    display:flex;
+}
+.item_lbox {
+    width:250px;
+}
+.item_btnbox {
+    margin:auto;
+    margin-left:20px;
+}
+.item_img {
+    text-align:left;
+    margin:auto;
+}
+.add_item, .add_make, .add_both {
+    margin: 3px 0;
+}
+.add_make {
+    margin-top:15px;
+}
+.itembox input[type="submit"] {
+    font-size: 110%;
+}
+.storename {
+    font-size:100%;
+}
+.item_title {
+    font-size:130%;
+    height:66px;
+}
+.item_category {
+    font-size:100%;
+}
+.used_price, .new_price {
+    font-size:110%;
+}
+.makepure, .makepurebiko {
+    font-size:110%;
+}
+.sinagire {
+    font-size:110%;
+}
+.retpage {
+    background-color: #ececec;
+    width:100%;
+}
+.retpage ul {
+    margin:auto;
+    padding:0;
+    text-align:center;
+}
+.retpage ul li, .retpage .morepage {
+    display: inline-block;
+    vertical-align: top;
+    font-size:140%;
+    margin:5px;
+    padding:3px;
+}
+.retpage .curpage {
+    color: #050505;
+}

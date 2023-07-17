@@ -1,0 +1,15 @@
+<form method="get" action="">
+    グループ : <select name="{{ GROUPID_NAME }}" onchange="submit(this.form)">
+        <option value="-1">全て</option>
+        {% for group in groups %}
+        <option value="{{ group.group_id }}" {{ group.selected }}>
+            {{ group.groupname }}
+        </option>
+        {% endfor %}
+    </select>
+    {% for k, v in fquery.items() %}
+        {% if k != GROUPID_NAME and v != "" %}
+        <input type="hidden" name="{{ k }}" value="{{ v}}">
+        {% endif %}
+    {% endfor %}
+</form>
