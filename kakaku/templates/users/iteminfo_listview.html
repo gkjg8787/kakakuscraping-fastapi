@@ -144,7 +144,7 @@
             </td>
             <td>{{ row['salename'] }}</td>
             <td>{{ row['storename'] }}</td>
-            {% if not row['created_at'] | isToday %}
+            {% if not row['created_at'] | isLocalToday %}
                 <td class="gray_background">
             {% else %}
                 <td>

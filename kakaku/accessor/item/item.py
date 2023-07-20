@@ -251,6 +251,8 @@ class NewestQuery:
                 if not pi.oldPrice:
                     pi.oldPrice = const_value.INIT_PRICE
                 nidict["trendrate"] = pi.getTrendRate()
+                nidict["lowestprice"] = cls.__get_lowest_price_ever(item_id=itemid,
+                                                                    newestprice=nidict['newestprice'])
                 stmt = (
                     update(NewestItem)
                     .where(NewestItem.item_id == itemid)
@@ -258,6 +260,17 @@ class NewestQuery:
                 )
                 ses.execute(stmt)
         ses.commit()
+    
+    @classmethod
+    def __get_lowest_price_ever(cls, item_id :int, newestprice :int):
+        price = NewestQuery.get_lowest_price_ever(item_id)
+        if price == const_value.INIT_PRICE:
+            return newestprice
+        if newestprice == const_value.INIT_PRICE:
+            return price
+        if price > newestprice:
+            return newestprice
+        return price
     
     @staticmethod
     def __is_update_item(ni :NewestItem, nidict :Dict) -> bool:
@@ -458,7 +471,7 @@ class ItemQuery:
                    PriceLog_2days.usedprice,)
             .where(PriceLog_2days.url_id.in_(target_url))
             .where(PriceLog_2days.issuccess==True)
-            .where(func.date(PriceLog_2days.created_at) < func.date('now', '-1 days'))
+            .where(func.date(PriceLog_2days.created_at) <= func.date('now', '-1 days'))
             .subquery("pricelist")
         )
         return cls.__get_old_min_pricelog(pricelist)
@@ -516,7 +529,7 @@ class ItemQuery:
                    PriceLog.usedprice,)
             .where(PriceLog.url_id.in_(target_url))
             .where(PriceLog.issuccess==True)
-            .where(func.date(PriceLog.created_at) < func.date('now', '-1 days'))
+            .where(func.date(PriceLog.created_at) <= func.date('now', '-1 days'))
             .subquery("pricelist")
         )
         return cls.__get_old_min_pricelog(pricelist)
@@ -574,28 +587,7 @@ class ItemQuery:
             return True
         return False
 
-    @classmethod
-    def is_today_pricelog_available(cls,  url_id :int,
-                                          storename :str = "",
-                                          usedprice :int = -1 ,
-                                          newprice :int = -1) -> bool:
-        stmt = (
-            select(PriceLog)
-            .where(PriceLog.url_id == url_id)
-            .where(PriceLog.storename == storename)
-            .order_by(PriceLog.created_at.desc())
-        )
-        ses = getSession()
-        pl = ses.scalar(stmt)
-        if pl:
-            if isToday(pl.created_at)\
-                and cls.__is_update_price(insert_used=usedprice,
-                                          insert_new=newprice,
-                                          db_new=pl.newprice,
-                                          db_used=pl.usedprice
-                                          ):
-                return True
-        return False
+ 
     @classmethod
     def update_pricelog_2days_by_dict_and_log_id(cls, pldict :Dict, log_id :int):
         stmt = ( update(PriceLog_2days)

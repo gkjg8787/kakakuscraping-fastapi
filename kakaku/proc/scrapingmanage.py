@@ -4,6 +4,8 @@ import sys
 import queue
 from multiprocessing.managers import BaseManager
 
+from typing import Optional
+
 from proc import sendcmd
 from proc import updateAllItems
 
@@ -22,8 +24,8 @@ server_port = int(server_conf['port']) #5000
 
 QUEUE_TIMEOUT = int(get_back_server_queue_timeout()) #5
 
-dlproc = None
-parseproc = None
+dlproc :Optional[DlProc] = None
+parseproc :Optional[ParseProc] = None
 
 class QueueManager(BaseManager):
     pass

@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 from urllib.parse import urlparse
 
 from common.read_config import get_support_url
-from common.util import isToday, utcTolocaltime
+from common.util import isLocalToday
 
 templates = Jinja2Templates(directory="templates")
 
@@ -32,7 +32,7 @@ def isLowestPrice(price, lowestprice) -> bool:
 
 
 
-templates.env.filters["localtime"] = utcTolocaltime
+
 templates.env.filters["isSupportDomain"] = isSupportDomain
 templates.env.filters["isLowestPrice"] = isLowestPrice
-templates.env.filters["isToday"] = isToday
+templates.env.filters["isLocalToday"] = isLocalToday
