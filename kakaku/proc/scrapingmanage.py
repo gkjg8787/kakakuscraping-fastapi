@@ -124,7 +124,7 @@ def check_db_organize():
     from proc import db_organizer
     ret = OrganizeLogQuery.get_log(db_organizer.DBOrganizerCmd.PRICELOG_CLEANER.name)
     if not ret \
-        or (ret and not util.isToday(ret.created_at)):
+        or (ret and not util.isLocalToday(util.utcTolocaltime(ret.created_at))):
         start_db_organize(sendcmd.ScrOrder.DB_ORGANIZE_DAYS)
     return
 

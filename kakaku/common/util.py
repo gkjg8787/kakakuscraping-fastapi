@@ -1,15 +1,16 @@
+from typing import Union
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 
 JST = ZoneInfo('Asia/Tokyo')
 
-def utcTolocaltime(input_date):
+def utcTolocaltime(input_date :datetime):
     """Custom filter"""
     utc_date = input_date.replace(tzinfo=timezone.utc)
     return utc_date.astimezone(JST)
 
-def dbtimeTodatetime(dbtime):
+def dbtimeTodatetime(dbtime :Union[str,datetime]) -> datetime:
     if type(dbtime) is str:
         return datetime.strptime(dbtime,'%Y-%m-%d %H:%M:%S')
     return dbtime

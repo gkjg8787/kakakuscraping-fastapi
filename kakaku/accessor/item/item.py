@@ -471,7 +471,7 @@ class ItemQuery:
                    PriceLog_2days.usedprice,)
             .where(PriceLog_2days.url_id.in_(target_url))
             .where(PriceLog_2days.issuccess==True)
-            .where(func.date(PriceLog_2days.created_at) <= func.date('now', '-1 days'))
+            .where(func.date(PriceLog_2days.created_at,'localtime') <= func.date(func.date('now', 'localtime'), '-1 days'))
             .subquery("pricelist")
         )
         return cls.__get_old_min_pricelog(pricelist)
@@ -529,7 +529,7 @@ class ItemQuery:
                    PriceLog.usedprice,)
             .where(PriceLog.url_id.in_(target_url))
             .where(PriceLog.issuccess==True)
-            .where(func.date(PriceLog.created_at) <= func.date('now', '-1 days'))
+            .where(func.date(PriceLog.created_at, 'localtime') <= func.date(func.date('now','localtime'), '-1 days'))
             .subquery("pricelist")
         )
         return cls.__get_old_min_pricelog(pricelist)
@@ -717,7 +717,7 @@ class ItemQuery:
             .join(Url, UrlInItem.url_id == Url.url_id)
             .join(PriceLog, PriceLog.url_id == Url.url_id)
             .where(Item.item_id == item_id)
-            .where(PriceLog.created_at >= func.datetime(func.datetime("now"),"-1 year"))
+            .where(func.datetime(PriceLog.created_at,"localtime") >= func.datetime(func.datetime("now","localtime"),"-1 year"))
             .order_by(PriceLog.created_at.desc())
         )
         if result_limit and result_limit > 0:
@@ -733,9 +733,9 @@ class ItemQuery:
                 .select_from(PriceLog)
                 .join(UrlInItem, UrlInItem.url_id == PriceLog.url_id)
                 .where(UrlInItem.item_id == item_id)
-                .where(PriceLog.created_at >= func.datetime(func.datetime("now"), f"-{year} year"))
+                .where(func.datetime(PriceLog.created_at,"localtime") >= func.datetime(func.datetime("now","localtime"), f"-{year} year"))
                 .where(PriceLog.usedprice > 0)
-                .group_by(func.date(PriceLog.created_at))
+                .group_by(func.date(PriceLog.created_at,"localtime"))
         )
         ses = getSession()
         return ses.execute(stmt).all()
@@ -748,9 +748,9 @@ class ItemQuery:
                 .select_from(PriceLog)
                 .join(UrlInItem, UrlInItem.url_id == PriceLog.url_id)
                 .where(UrlInItem.item_id == item_id)
-                .where(PriceLog.created_at >= func.datetime(func.datetime("now"), f"-{year} year"))
+                .where(func.datetime(PriceLog.created_at,"localtime") >= func.datetime(func.datetime("now","localtime"), f"-{year} year"))
                 .where(PriceLog.newprice > 0)
-                .group_by(func.date(PriceLog.created_at))
+                .group_by(func.date(PriceLog.created_at,"localtime"))
         )
         ses = getSession()
         return ses.execute(stmt).all()
@@ -842,7 +842,7 @@ class OrganizerQuery:
     @classmethod
     def get_old_pricelog_before_days(cls, days :int):
         get_old = ( select(PriceLog)
-                   .where(PriceLog.created_at <= func.datetime('now', f'-{days} days'))
+                   .where(func.datetime(PriceLog.created_at,'localtime') <= func.datetime(func.datetime('now','localtime'), f'-{days} days'))
                    )
         ses = getSession()
         results = ses.scalars(get_old).all()
@@ -852,7 +852,7 @@ class OrganizerQuery:
     @classmethod
     def get_old_pricelog_by_days(cls, days :int):
         get_old = ( select(PriceLog)
-                   .where(func.date(PriceLog.created_at) == func.date('now', f'-{days} days'))
+                   .where(func.date(PriceLog.created_at,'localtime') == func.date(func.date('now','localtime'), f'-{days} days'))
                    )
         ses = getSession()
         results = ses.scalars(get_old).all()
@@ -862,7 +862,7 @@ class OrganizerQuery:
     @classmethod
     def get_old_pricelog_2days_by_days(cls, days :int):
         get_old = ( select(PriceLog_2days)
-                   .where(func.date(PriceLog_2days.created_at) == func.date('now', f'-{days} days'))
+                   .where(func.date(PriceLog_2days.created_at,'localtime') == func.date(func.date('now','localtime'), f'-{days} days'))
                    )
         ses = getSession()
         results = ses.scalars(get_old).all()
@@ -879,7 +879,7 @@ class OrganizerQuery:
     @classmethod
     def get_pricelog_2days_today(cls):
         stmt = ( select(PriceLog_2days)
-                .where(func.date(PriceLog_2days.created_at) == func.date('now'))
+                .where(func.date(PriceLog_2days.created_at,'localtime') == func.date('now','localtime'))
                 )
         ses = getSession()
         res = ses.scalars(stmt).all()
@@ -889,7 +889,7 @@ class OrganizerQuery:
     @classmethod
     def get_pricelog_today(cls):
         stmt = ( select(PriceLog)
-                .where(func.date(PriceLog.created_at) == func.date('now'))
+                .where(func.date(PriceLog.created_at,'localtime') == func.date('now','localtime'))
                 )
         ses = getSession()
         res = ses.scalars(stmt).all()
@@ -899,7 +899,7 @@ class OrganizerQuery:
     @classmethod
     def delete_old_pricelog_before_days(cls, days :int):
         delete_old = ( delete(PriceLog)
-                      .where(PriceLog.created_at <= func.datetime('now', f'-{days} days'))
+                      .where(func.datetime(PriceLog.created_at,'localtime') <= func.datetime(func.datetime('now','localtime'), f'-{days} days'))
                       )
         ses = getSession()
         ses.execute(delete_old)
@@ -909,7 +909,7 @@ class OrganizerQuery:
     @classmethod
     def delete_old_pricelog_2days_before_days(cls, days :int):
         delete_old = ( delete(PriceLog_2days)
-                      .where(PriceLog_2days.created_at <= func.datetime('now', f'-{days} days'))
+                      .where(func.datetime(PriceLog_2days.created_at,'localtime') <= func.datetime(func.datetime('now','localtime'), f'-{days} days'))
                       )
         ses = getSession()
         ses.execute(delete_old)

@@ -17,7 +17,7 @@ from html_parser import (
     htmlparse,
 )
 from common import read_config, const_value
-from common.util import isToday
+from common.util import isLocalToday, utcTolocaltime
 #from common.stop_watch import stop_watch
 
 
@@ -177,7 +177,7 @@ def get_add_storename(storename_list :List[str]):
 #@stop_watch
 def upsert_pricelog(pldict :Dict, newest_pricelog):
     if newest_pricelog\
-        and isToday(newest_pricelog.created_at):
+        and isLocalToday(utcTolocaltime(newest_pricelog.created_at)):
         if __is_update_price(insert_new=pldict['newprice'],
                               insert_used=pldict['usedprice'],
                               db_new=newest_pricelog.newprice,
