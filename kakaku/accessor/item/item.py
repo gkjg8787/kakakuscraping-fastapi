@@ -14,8 +14,7 @@ from sqlalchemy import (
 
 from sqlalchemy.sql import expression as exp
 
-from common import const_value
-from common.util import isToday
+from common import const_value, util
 from common.filter_name import (
     FilterQueryName as fqn,
     ActFilterName,
@@ -274,7 +273,7 @@ class NewestQuery:
     
     @staticmethod
     def __is_update_item(ni :NewestItem, nidict :Dict) -> bool:
-        if not isToday(ni.created_at) \
+        if not util.isLocalToday(util.utcTolocaltime(ni.created_at)) \
             or ( ni.newestprice == const_value.INIT_PRICE 
                 and int(nidict["newestprice"] != const_value.INIT_PRICE)
                 )\
@@ -571,7 +570,7 @@ class ItemQuery:
         ses = getSession()
         pl = ses.scalar(stmt)
         if pl:
-            if isToday(pl.created_at)\
+            if util.isLocalToday(util.utcTolocaltime(pl.created_at))\
                 and cls.__is_update_price(insert_used=usedprice,
                                           insert_new=newprice,
                                           db_new=pl.newprice,
