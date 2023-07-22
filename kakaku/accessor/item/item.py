@@ -192,6 +192,11 @@ class NewestQuery:
                     .order_by(-NewestItem.trendrate.asc())
                     )
             return stmt
+        if fnum == ItemSortName.NEW_UPDATE_TIME.id:
+            stmt = (stmt
+                    .order_by(NewestItem.created_at.desc())
+                    )
+            return stmt
         return stmt
     
     @classmethod
