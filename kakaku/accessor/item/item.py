@@ -487,7 +487,7 @@ class ItemQuery:
         max_date = (
             select(
                 func.max(
-                    func.date(pricelist.c.created_at)
+                    func.date(pricelist.c.created_at, 'localtime')
                     )
                 )
                 .scalar_subquery()
@@ -495,7 +495,7 @@ class ItemQuery:
         lasttime = (
             select(pricelist.c.newprice,
                    pricelist.c.usedprice)
-            .where(func.date(pricelist.c.created_at) == max_date)
+            .where(func.date(pricelist.c.created_at, 'localtime') == max_date)
             .subquery("lasttime")
         )
         newlowest = (
