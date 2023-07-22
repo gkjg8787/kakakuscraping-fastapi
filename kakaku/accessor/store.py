@@ -59,7 +59,7 @@ class StoreQuery:
                     .join(UrlInItem, UrlInItem.url_id == PriceLog.url_id)
                     .where(UrlInItem.active == 'True')
                     .where(UrlInItem.item_id.in_(item_id_list))
-                    .where(PriceLog.created_at >= func.date('now'))
+                    .where(func.date(PriceLog.created_at,'localtime') >= func.date('now','localtime'))
                     .where(PriceLog.issuccess == 1)
                     .where(PriceLog.storename != '')
                     .group_by(PriceLog.storename)
