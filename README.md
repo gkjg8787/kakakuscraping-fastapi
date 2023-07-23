@@ -7,7 +7,7 @@
 
 ### dockerで動かす
 0. 前提：dockerをインストール済み
-1. ダウンロードしたディレクトリ内のDockerFileがある場所で以下のコマンドを実行しイメージを作成します。<br>
+1. ダウンロードしたディレクトリ内のDockerfileがある場所で以下のコマンドを実行しイメージを作成します。<br>
    `docker build -t kakaku-build:test .`
 2. 次のコマンドでイメージを実行<br>
    `docker run --init -p 8000:8000 --name kakaku -it kakaku-build:test`
