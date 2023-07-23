@@ -28,4 +28,4 @@ WORKDIR /app/kakaku
 
 RUN python3 db_util.py create
 
-CMD ["uvicorn", "main:app"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0"]
