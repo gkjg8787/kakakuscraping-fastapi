@@ -10,7 +10,7 @@
 1. ダウンロードしたディレクトリ内のDockerFileがある場所で以下のコマンドを実行しイメージを作成します。<br>
    `docker build -t kakaku-build:test .`
 2. 次のコマンドでイメージを実行<br>
-   `docker start docker run --init -p 8000:8000 --name kakaku -it kakaku-build:test`
+   `docker run --init -p 8000:8000 --name kakaku -it kakaku-build:test`
 3. 実行できたらURLにアクセスしてください。<br>
    `http://127.0.0.1:8000`
 
