@@ -81,7 +81,7 @@ def getAndRegistShippingTerms(storenames):
 def getAndRegistShippingTermsByItemId(itemids :List[int]):
     res = ItemQuery.get_current_storename_list_by_item_id(itemids)
     if res is None or len(res) == 0:
-        return {StorePostageResultName.ERROR:itemcomb_error.NO_STORE_DATA}
+        return {StorePostageResultName.ERROR:itemcomb_error.ItemCombError.NO_STORE_DATA}
     storenames = [t for r in res for t in r]
     return getAndRegistShippingTerms(storenames)
 

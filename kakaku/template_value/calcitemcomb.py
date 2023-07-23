@@ -187,7 +187,7 @@ class ShippingConditionContext(BaseTemplateValue):
         self.item_id_list = scq.item_id_list
         results = getAndRegistShippingTermsByItemId(self.item_id_list)
         if StorePostageResultName.ERROR in results:
-            self.errmsg = results[StorePostageResultName.ERROR]
+            self.errmsg = results[StorePostageResultName.ERROR].value
             return
         if StorePostageResultName.RESULT in results:
             self.store_list = self.convert_to_store_list(results[StorePostageResultName.RESULT])

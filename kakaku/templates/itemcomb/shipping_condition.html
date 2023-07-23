@@ -79,7 +79,9 @@
             {%- endfor %}
         </div>
         <div class="footer">
+            {%- if store_list %}
             <input type="submit" value="結果">
+            {%- endif %}
         </div>
     </form>
     <p><a href="{{ url_for('read_select_item_price_combination') }}">選択へ戻る</a></p>

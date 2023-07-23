@@ -16,7 +16,7 @@ class ShippingConditionQuery():
     errmsg :str = ""
 
     def __init__(self,
-                 itemid :List[str] = Query(),
+                 itemid :List[str] = Query(None),
                  ):
         if itemid:
             results :List[int] = []

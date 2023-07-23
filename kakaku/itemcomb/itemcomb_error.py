@@ -1,2 +1,3 @@
-
-NO_STORE_DATA = 1
+from enum import Enum
+class ItemCombError(Enum):
+    NO_STORE_DATA = "店舗がありません"
