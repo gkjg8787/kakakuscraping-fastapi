@@ -3,21 +3,29 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATABASES = {
-    "default":{
+    "sqlite_default":{
         "drivername":"sqlite",
         "database":f"{BASE_DIR}/db/iteminfo.sqlite",
     },
-    "old_db":{
+    "sqlite_old_db":{
         "drivername":"sqlite",
         "database":f"{BASE_DIR}/db/iteminfo_old.sqlite",
     },
-    "postgresql":{
-        "drivername":"postgresql+pg8000",
+    "default":{
+        "drivername":"postgresql+psycopg2",
         "username":"dbuser",
-        "password":"kx@jj5/g",
-        "host":"pghost10",
+        "password":"posgre134",
+        "host":"postgres",
         "database":"appdb",
-        "port":"6400",
+        "port":"5432",
+    },
+    "old_db":{
+        "drivername":"postgresql+psycopg2",
+        "username":"dbuser",
+        "password":"posgre134",
+        "host":"postgres",
+        "database":"olddb",
+        "port":"5432",
     },
     "is_echo":False
 }

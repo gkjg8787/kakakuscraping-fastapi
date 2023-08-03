@@ -12,8 +12,12 @@ from model.store import (
 from sqlalchemy import (
     select,
     delete,
-    func,
 )
+from accessor.util import (
+    utc_to_jst_date_for_query,
+    get_jst_date_for_query,
+)
+
 class StoreQuery:
 
     SEL_ALL = select(Store)
@@ -59,7 +63,7 @@ class StoreQuery:
                     .join(UrlInItem, UrlInItem.url_id == PriceLog.url_id)
                     .where(UrlInItem.active == 'True')
                     .where(UrlInItem.item_id.in_(item_id_list))
-                    .where(func.date(PriceLog.created_at,'localtime') >= func.date('now','localtime'))
+                    .where(utc_to_jst_date_for_query(PriceLog.created_at) >= get_jst_date_for_query())
                     .where(PriceLog.issuccess == 1)
                     .where(PriceLog.storename != '')
                     .group_by(PriceLog.storename)

@@ -6,13 +6,13 @@ from sqlalchemy import (
     insert,
     delete,
     update,
-    tuple_,
     union,
     func,
 )
 #from sqlalchemy.dialects.sqlite import insert as lite_insert
 
 from sqlalchemy.sql import expression as exp
+from sqlalchemy.orm import Session
 
 from common import const_value, util
 from common.filter_name import (
@@ -36,6 +36,14 @@ from model.store import (
 from accessor.read_sqlalchemy import (
     getSession,
     get_old_db_session,
+)
+from accessor.util import (
+    utc_to_jst_datetime_for_query,
+    utc_to_jst_date_for_query,
+    get_jst_datetime_for_query,
+    get_jst_date_for_query,
+    INTERVAL_ONE_YEARS_AGO,
+    INTERVAL_YESTERDAY,
 )
 
 from html_parser.htmlparse import ParseItemInfo
@@ -75,7 +83,7 @@ class NewestQuery:
             Item.name,
             Url.url_id,
             Url.urlpath,
-            func.datetime(NewestItem.created_at, 'localtime').label("created_at"),
+            utc_to_jst_datetime_for_query(NewestItem.created_at).label("created_at"),
             NewestItem.newestprice.label("price"),
             NewestItem.salename,
             NewestItem.trendrate,
@@ -84,15 +92,19 @@ class NewestQuery:
             actcheck.c.act,
         )
         .join(NewestItem,
-              Item.item_id == NewestItem.item_id,
-              isouter=True)
+            Item.item_id == NewestItem.item_id,
+            isouter=True)
         .join(Url,
-              NewestItem.url_id == Url.url_id,
-              isouter=True)
+            NewestItem.url_id == Url.url_id,
+            isouter=True)
         .join(actcheck,
-              actcheck.c.item_id == Item.item_id,
-              isouter=True)
+            actcheck.c.item_id == Item.item_id,
+            isouter=True)
     )
+    @classmethod
+    def get_base_select(cls):
+        return cls.base_select
+    
     @classmethod
     def get_newest_data(cls, filter:Dict):
         ses = getSession()
@@ -102,7 +114,7 @@ class NewestQuery:
     @classmethod
     def get_newest_data_for_edit_group(cls, filter:Dict):
         ses = getSession()
-        stmt = cls.base_select
+        stmt = cls.get_base_select()
         stmt = cls.__set_act_filter(filter, stmt)
         stmt = cls.__set_eq_storename(filter, stmt)
         stmt = cls.__set_itemsort_filter(filter, stmt)
@@ -111,13 +123,13 @@ class NewestQuery:
     @classmethod
     def get_newest_data_by_item_id(cls, item_id:int):
         ses = getSession()
-        stmt = cls.base_select.where(Item.item_id == item_id)
+        stmt = cls.get_base_select().where(Item.item_id == item_id)
         return ses.execute(stmt).one_or_none()
 
 
     @classmethod
     def get_newest_filter_statement(cls, filter:Dict):
-        stmt = cls.base_select
+        stmt = cls.get_base_select()
         stmt = cls.__set_group_filter(filter, stmt)
         stmt = cls.__set_act_filter(filter, stmt)
         stmt = cls.__set_eq_storename(filter, stmt)
@@ -467,6 +479,10 @@ class ItemQuery:
     def get_most_recent_old_price_of_2days_by_url_id(cls, url_id :int):
         return cls.__get_most_recent_old_price_of_2days([url_id])
     
+
+
+
+
     @classmethod
     def __get_most_recent_old_price_of_2days(cls, target_url):
         pricelist = (
@@ -475,7 +491,7 @@ class ItemQuery:
                    PriceLog_2days.usedprice,)
             .where(PriceLog_2days.url_id.in_(target_url))
             .where(PriceLog_2days.issuccess==True)
-            .where(func.date(PriceLog_2days.created_at,'localtime') <= func.date(func.date('now', 'localtime'), '-1 days'))
+            .where(utc_to_jst_date_for_query(PriceLog_2days.created_at) <= get_jst_date_for_query(interval_days=INTERVAL_YESTERDAY) )
             .subquery("pricelist")
         )
         return cls.__get_old_min_pricelog(pricelist)
@@ -487,7 +503,7 @@ class ItemQuery:
         max_date = (
             select(
                 func.max(
-                    func.date(pricelist.c.created_at, 'localtime')
+                    utc_to_jst_date_for_query(pricelist.c.created_at)
                     )
                 )
                 .scalar_subquery()
@@ -495,7 +511,7 @@ class ItemQuery:
         lasttime = (
             select(pricelist.c.newprice,
                    pricelist.c.usedprice)
-            .where(func.date(pricelist.c.created_at, 'localtime') == max_date)
+            .where(utc_to_jst_date_for_query(pricelist.c.created_at) == max_date)
             .subquery("lasttime")
         )
         newlowest = (
@@ -533,7 +549,7 @@ class ItemQuery:
                    PriceLog.usedprice,)
             .where(PriceLog.url_id.in_(target_url))
             .where(PriceLog.issuccess==True)
-            .where(func.date(PriceLog.created_at, 'localtime') <= func.date(func.date('now','localtime'), '-1 days'))
+            .where(utc_to_jst_date_for_query(PriceLog.created_at) <= get_jst_date_for_query(interval_days=INTERVAL_YESTERDAY))
             .subquery("pricelist")
         )
         return cls.__get_old_min_pricelog(pricelist)
@@ -707,7 +723,7 @@ class ItemQuery:
                    PriceLog.uniqname,
                    Url.url_id,
                    Url.urlpath,
-                   func.datetime(PriceLog.created_at,"localtime").label("created_at"),
+                   utc_to_jst_datetime_for_query(PriceLog.created_at).label("created_at"),
                    PriceLog.usedprice,
                    PriceLog.newprice,
                    PriceLog.salename,
@@ -721,7 +737,7 @@ class ItemQuery:
             .join(Url, UrlInItem.url_id == Url.url_id)
             .join(PriceLog, PriceLog.url_id == Url.url_id)
             .where(Item.item_id == item_id)
-            .where(func.datetime(PriceLog.created_at,"localtime") >= func.datetime(func.datetime("now","localtime"),"-1 year"))
+            .where(utc_to_jst_datetime_for_query(PriceLog.created_at) >= get_jst_datetime_for_query(interval_years=INTERVAL_ONE_YEARS_AGO))
             .order_by(PriceLog.created_at.desc())
         )
         if result_limit and result_limit > 0:
@@ -731,30 +747,30 @@ class ItemQuery:
 
     @classmethod
     def get_daily_min_used_pricelog_by_item_id_and_since_year_ago(cls, item_id :int, year :int):
-        stmt = ( select(func.datetime(PriceLog.created_at, "localtime").label("created_at"),
+        stmt = ( select(utc_to_jst_datetime_for_query(PriceLog.created_at).label("created_at"),
                         func.min(PriceLog.usedprice).label("price")
                         )
                 .select_from(PriceLog)
                 .join(UrlInItem, UrlInItem.url_id == PriceLog.url_id)
                 .where(UrlInItem.item_id == item_id)
-                .where(func.datetime(PriceLog.created_at,"localtime") >= func.datetime(func.datetime("now","localtime"), f"-{year} year"))
+                .where(utc_to_jst_datetime_for_query(PriceLog.created_at) >= get_jst_datetime_for_query(interval_years=year*INTERVAL_ONE_YEARS_AGO))
                 .where(PriceLog.usedprice > 0)
-                .group_by(func.date(PriceLog.created_at,"localtime"))
+                .group_by(utc_to_jst_date_for_query(PriceLog.created_at))
         )
         ses = getSession()
         return ses.execute(stmt).all()
     
     @classmethod
     def get_daily_min_new_pricelog_by_item_id_and_since_year_ago(cls, item_id :int, year :int):
-        stmt = ( select(func.datetime(PriceLog.created_at, "localtime").label("created_at"),
+        stmt = ( select(utc_to_jst_datetime_for_query(PriceLog.created_at).label("created_at"),
                         func.min(PriceLog.newprice).label("price")
                         )
                 .select_from(PriceLog)
                 .join(UrlInItem, UrlInItem.url_id == PriceLog.url_id)
                 .where(UrlInItem.item_id == item_id)
-                .where(func.datetime(PriceLog.created_at,"localtime") >= func.datetime(func.datetime("now","localtime"), f"-{year} year"))
+                .where(utc_to_jst_datetime_for_query(PriceLog.created_at,"localtime") >= get_jst_datetime_for_query(interval_years=year*INTERVAL_ONE_YEARS_AGO))
                 .where(PriceLog.newprice > 0)
-                .group_by(func.date(PriceLog.created_at,"localtime"))
+                .group_by(utc_to_jst_date_for_query(PriceLog.created_at,"localtime"))
         )
         ses = getSession()
         return ses.execute(stmt).all()
@@ -769,7 +785,7 @@ class ItemQuery:
                     .join(UrlInItem, UrlInItem.url_id == PriceLog_2days.url_id)
                     .where(UrlInItem.active == 'True')
                     .where(UrlInItem.item_id.in_(item_id_list))
-                    .where(func.date(PriceLog_2days.created_at,'localtime') >= func.date('now','localtime'))
+                    .where(utc_to_jst_date_for_query(PriceLog_2days.created_at) >= get_jst_date_for_query())
                     .where(PriceLog_2days.issuccess == 1)
                     .where(PriceLog_2days.storename != '')
                     .where(PriceLog_2days.newprice > 0)
@@ -782,7 +798,7 @@ class ItemQuery:
                     .join(UrlInItem, UrlInItem.url_id == PriceLog_2days.url_id)
                     .where(UrlInItem.active == 'True')
                     .where(UrlInItem.item_id.in_(item_id_list))
-                    .where(func.date(PriceLog_2days.created_at,'localtime') >= func.date('now','localtime'))
+                    .where(utc_to_jst_date_for_query(PriceLog_2days.created_at) >= get_jst_date_for_query())
                     .where(PriceLog_2days.issuccess == 1)
                     .where(PriceLog_2days.storename != '')
                     .where(PriceLog_2days.usedprice > 0)
@@ -798,7 +814,7 @@ class ItemQuery:
                     .join(UrlInItem, UrlInItem.url_id == PriceLog_2days.url_id)
                     .where(UrlInItem.active == 'True')
                     .where(UrlInItem.item_id.in_(item_id_list))
-                    .where(func.date(PriceLog_2days.created_at,'localtime') >= func.date('now','localtime'))
+                    .where(utc_to_jst_date_for_query(PriceLog_2days.created_at) >= get_jst_date_for_query())
                     .where(PriceLog_2days.issuccess == 1)
                     .where(PriceLog_2days.storename != '')
                     .group_by(PriceLog_2days.storename)
@@ -846,7 +862,7 @@ class OrganizerQuery:
     @classmethod
     def get_old_pricelog_before_days(cls, days :int):
         get_old = ( select(PriceLog)
-                   .where(func.datetime(PriceLog.created_at,'localtime') <= func.datetime(func.datetime('now','localtime'), f'-{days} days'))
+                   .where(utc_to_jst_datetime_for_query(PriceLog.created_at) <= get_jst_datetime_for_query(interval_days=days*INTERVAL_YESTERDAY))
                    )
         ses = getSession()
         results = ses.scalars(get_old).all()
@@ -856,7 +872,7 @@ class OrganizerQuery:
     @classmethod
     def get_old_pricelog_by_days(cls, days :int):
         get_old = ( select(PriceLog)
-                   .where(func.date(PriceLog.created_at,'localtime') == func.date(func.date('now','localtime'), f'-{days} days'))
+                   .where(utc_to_jst_date_for_query(PriceLog.created_at) == get_jst_date_for_query(interval_days=days*INTERVAL_YESTERDAY))
                    )
         ses = getSession()
         results = ses.scalars(get_old).all()
@@ -866,7 +882,7 @@ class OrganizerQuery:
     @classmethod
     def get_old_pricelog_2days_by_days(cls, days :int):
         get_old = ( select(PriceLog_2days)
-                   .where(func.date(PriceLog_2days.created_at,'localtime') == func.date(func.date('now','localtime'), f'-{days} days'))
+                   .where(utc_to_jst_date_for_query(PriceLog_2days.created_at) == get_jst_date_for_query(interval_days=days*INTERVAL_YESTERDAY))
                    )
         ses = getSession()
         results = ses.scalars(get_old).all()
@@ -883,7 +899,7 @@ class OrganizerQuery:
     @classmethod
     def get_pricelog_2days_today(cls):
         stmt = ( select(PriceLog_2days)
-                .where(func.date(PriceLog_2days.created_at,'localtime') == func.date('now','localtime'))
+                .where(utc_to_jst_date_for_query(PriceLog_2days.created_at) == get_jst_date_for_query())
                 )
         ses = getSession()
         res = ses.scalars(stmt).all()
@@ -893,7 +909,7 @@ class OrganizerQuery:
     @classmethod
     def get_pricelog_today(cls):
         stmt = ( select(PriceLog)
-                .where(func.date(PriceLog.created_at,'localtime') == func.date('now','localtime'))
+                .where(utc_to_jst_date_for_query(PriceLog.created_at) == get_jst_date_for_query())
                 )
         ses = getSession()
         res = ses.scalars(stmt).all()
@@ -903,7 +919,7 @@ class OrganizerQuery:
     @classmethod
     def delete_old_pricelog_before_days(cls, days :int):
         delete_old = ( delete(PriceLog)
-                      .where(func.datetime(PriceLog.created_at,'localtime') <= func.datetime(func.datetime('now','localtime'), f'-{days} days'))
+                      .where(utc_to_jst_datetime_for_query(PriceLog.created_at) <= get_jst_datetime_for_query(interval_days=days*INTERVAL_YESTERDAY))
                       )
         ses = getSession()
         ses.execute(delete_old)
@@ -913,7 +929,7 @@ class OrganizerQuery:
     @classmethod
     def delete_old_pricelog_2days_before_days(cls, days :int):
         delete_old = ( delete(PriceLog_2days)
-                      .where(func.datetime(PriceLog_2days.created_at,'localtime') <= func.datetime(func.datetime('now','localtime'), f'-{days} days'))
+                      .where(utc_to_jst_datetime_for_query(PriceLog_2days.created_at) <= get_jst_datetime_for_query(interval_days=days*INTERVAL_YESTERDAY))
                       )
         ses = getSession()
         ses.execute(delete_old)
