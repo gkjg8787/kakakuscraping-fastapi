@@ -10,7 +10,7 @@ RUN ln -sf /usr/share/zoneinfo/Japan /etc/localtime && \
 RUN apt-get install -y python3
 
 RUN apt-get install -y \
-    python3-pip libpq-dev procps
+    python3-pip sqlite3 procps
 
 WORKDIR /app
 
