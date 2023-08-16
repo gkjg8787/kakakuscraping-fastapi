@@ -1,5 +1,5 @@
 from typing import List
-from .read_sqlalchemy import getSession
+from sqlalchemy.orm import Session
 
 from model.item import (
     PriceLog,
@@ -23,42 +23,39 @@ class StoreQuery:
     SEL_ALL = select(Store)
 
     @classmethod
-    def get_all(cls):
-        ses = getSession()
-        return ses.scalars(cls.SEL_ALL).all()
+    def get_all(cls, db :Session):
+        return db.scalars(cls.SEL_ALL).all()
     
     @classmethod
-    def add_store(cls, storename :str) -> int:
+    def add_store(cls, db :Session, storename :str) -> int:
         ret = cls.get_store_by_storename(storename)
         if ret:
             return ret.store_id
         store = Store(storename=storename)
-        ses = getSession()
-        ses.add(store)
-        ses.commit()
+        db.add(store)
+        db.commit()
+        db.refresh(store)
         return store.store_id
 
     @classmethod
-    def add_storename_list(cls, storename_list :List[str]):
+    def add_storename_list(cls, db :Session, storename_list :List[str]):
         add_list :List[Store] = []
         for storename in storename_list:
             add_list.append(Store(storename=storename))
-        ses = getSession()
-        ses.add_all(add_list)
-        ses.commit()
-        ses.close()
+        db.add_all(add_list)
+        db.commit()
+        for store in add_list:
+            db.refresh(store)
     
     @classmethod
-    def get_store_by_storename(cls, storename :str) -> Store:
+    def get_store_by_storename(cls, db :Session, storename :str) -> Store:
         stmt = ( select(Store)
                 .where(Store.storename == storename)
                 )
-        ses = getSession()
-        return ses.scalar(stmt)
+        return db.scalar(stmt)
     
     @classmethod
-    def get_storename_for_calcitemcomb_by_item_id_list(cls, item_id_list :List[int]):
-        ses = getSession()
+    def get_storename_for_calcitemcomb_by_item_id_list(cls, db :Session, item_id_list :List[int]):
         stmt = ( select(PriceLog.storename)
                     .join(UrlInItem, UrlInItem.url_id == PriceLog.url_id)
                     .where(UrlInItem.active == 'True')
@@ -68,22 +65,22 @@ class StoreQuery:
                     .where(PriceLog.storename != '')
                     .group_by(PriceLog.storename)
                 )
-        return ses.execute(stmt).all()
+        return db.execute(stmt).all()
     
     @classmethod
-    def insert_storepostage_list(cls, storepostage_list :List):
-        ses = getSession()
-        ses.add_all(storepostage_list)
-        ses.commit()
+    def insert_storepostage_list(cls, db :Session, storepostage_list :List):
+        db.add_all(storepostage_list)
+        db.commit()
+        for storepos in storepostage_list:
+            db.refresh(storepos)
 
     @classmethod
-    def delete_storepostage_by_store_id_list(cls, store_id_list :List[int]) -> None:
+    def delete_storepostage_by_store_id_list(cls, db :Session, store_id_list :List[int]) -> None:
         stmt = ( delete(StorePostage)
                 .where(StorePostage.store_id.in_(store_id_list))
                 )
-        ses = getSession()
-        ses.execute(stmt)
-        ses.commit()
+        db.execute(stmt)
+        db.commit()
 
     @classmethod
     def exist_storename(cls, a, ary) -> bool:
@@ -97,29 +94,29 @@ class StoreQuery:
         return False
 
     @classmethod
-    def get_unregistered_stores(cls, stores :List[Store]) -> List[Store]:
+    def get_unregistered_stores(cls, db :Session, stores :List[Store]) -> List[Store]:
         names = [s.storename for s in stores]
-        ses = getSession()
         stmt = select(Store).where(Store.storename.in_(names))
-        exist_stores = ses.scalars(stmt).all()
+        exist_stores = db.scalars(stmt).all()
         not_exist_stores = [s for s in stores if not cls.exist_storename(s, exist_stores)]
         return not_exist_stores
     
     @classmethod
-    def regist_stores(cls, storename_list :List[str]):
+    def regist_stores(cls, db :Session, storename_list :List[str]):
         stores = []
         for sname in storename_list:
             stores.append(Store(storename=sname))
-        not_exist_stores = cls.get_unregistered_stores(stores)
+        not_exist_stores = cls.get_unregistered_stores(db, stores=stores)
         if len(not_exist_stores) == 0:
             return ()
-        with getSession() as ses:
-            ses.add_all(not_exist_stores)
-            ses.commit()
+
+        db.add_all(not_exist_stores)
+        db.commit()
+        for store in not_exist_stores:
+            db.refresh(store)
     
     @classmethod
-    def get_storepostage_by_storename(cls, storenames :List[str]):
-        ses = getSession()
+    def get_storepostage_by_storename(cls, db :Session, storenames :List[str]):
         j = ( select(Store.store_id,
                    Store.storename,
                    StorePostage.terms_id,
@@ -130,4 +127,4 @@ class StoreQuery:
                 .subquery()
             )
         stmt = select(j).where(j.c.storename.in_(storenames))
-        return ses.execute(stmt).all()
+        return db.execute(stmt).all()

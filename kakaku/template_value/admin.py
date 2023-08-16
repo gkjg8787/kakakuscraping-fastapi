@@ -1,6 +1,8 @@
 
 from template_value.item import BaseTemplateValue
 
+from sqlalchemy.orm import Session
+
 from proc.system_status import SystemStatus, SystemStatusToJName
 from proc import get_sys_status
 from common.filter_name import (
@@ -15,9 +17,9 @@ class DashBoardTemplate(BaseTemplateValue):
     syssts :str = SystemStatus.NONE.name
     sysstop :bool = True
 
-    def __init__(self, request):
+    def __init__(self, request, db :Session):
         super().__init__(request=request)
-        syssts = get_sys_status.getSystemStatus()
+        syssts = get_sys_status.getSystemStatus(db)
         self.syssts = SystemStatusToJName.get_jname(syssts)
         if syssts == SystemStatus.STOP.name:
             self.sysstop = True

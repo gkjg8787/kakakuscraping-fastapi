@@ -1,6 +1,7 @@
 
 from typing import List
 
+from sqlalchemy.orm import Session
 from proc.proc_status import ProcStatusAccess
 
 from enum import Enum
@@ -36,8 +37,8 @@ class SystemStatusAccess:
     def getStatus(self) -> SystemStatus:
         return self.system_status
     
-    def update(self) -> None:
-        self.proclist = ProcStatusAccess.get_all()
+    def update(self, db :Session) -> None:
+        self.proclist = ProcStatusAccess.get_all(db)
 
         for procsts in self.proclist:
             self.proc_ids.append(procsts.proc_id)

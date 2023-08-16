@@ -5,9 +5,12 @@ from typing import List, Dict
 from functools import wraps
 from datetime import datetime, timedelta
 
+from sqlalchemy.orm import Session
+
 from common import cmnlog, const_value
 from accessor.item.item import OldItemQuery, OrganizerQuery
 from accessor.server import OrganizeLogQuery
+from accessor.read_sqlalchemy import get_session, get_old_db_session
 from model.item import PriceLog_2days, PriceLog
 
 
@@ -34,29 +37,31 @@ def get_filename():
 def getLogger():
     return cmnlog.getLogger(cmnlog.LogName.DB_ORGANIZE)
 
-def output_func_db_log(name :DBOrganizerCmd, status :FuncStatus):
-    OrganizeLogQuery.add_log(name=name.name, status=status.name)
+def output_func_db_log(db :Session, name :DBOrganizerCmd, status :FuncStatus):
+    OrganizeLogQuery.add_log(db, name=name.name, status=status.name)
 
 def start_end_db_log(name):
     def _start_end_db_log(func) :
         @wraps(func)
         def wrapper(*args, **kargs) :
-            output_func_db_log(name, FuncStatus.START)
+            if 'db' in kargs:
+                output_func_db_log(kargs['db'], name, FuncStatus.START)
             result = func(*args,**kargs)
-            output_func_db_log(name, FuncStatus.END)
+            if 'db' in kargs:
+                output_func_db_log(kargs['db'], name, FuncStatus.END)
             return result
         return wrapper
     return _start_end_db_log
 
 @start_end_db_log(DBOrganizerCmd.SYNC_PRICELOG)
-def sync_2days_to_pricelog_today():
-    today_2days_update_list = OrganizerQuery.get_pricelog_2days_today()
+def sync_2days_to_pricelog_today(db :Session):
+    today_2days_update_list = OrganizerQuery.get_pricelog_2days_today(db)
     log = getLogger()
     if len(today_2days_update_list) == 0:
         log.info(get_filename() + f" sync_2days_to_pricelog_today no update")
         return
 
-    today_pricelog_list = OrganizerQuery.get_pricelog_today()
+    today_pricelog_list = OrganizerQuery.get_pricelog_today(db)
     if len(today_pricelog_list) == 0:
         add_dict_list :List[Dict] = []
         for p in today_2days_update_list:
@@ -66,7 +71,7 @@ def sync_2days_to_pricelog_today():
         log.info(get_filename() + f" sync_2days_to_pricelog_today add length={len(add_dict_list)}")
         #log.info(get_filename() + f"{add_dict_list}")
         log.info(get_filename() + f" sync_2days_to_pricelog_today add start")
-        OrganizerQuery.add_price_log_by_dict_list(add_dict_list)
+        OrganizerQuery.add_price_log_by_dict_list(db, pricelog_dict_list=add_dict_list)
         log.info(get_filename() + f" sync_2days_to_pricelog_today add end")
         return
     
@@ -77,13 +82,13 @@ def sync_2days_to_pricelog_today():
         log.info(get_filename() + f" sync_2days_to_pricelog_today update length={len(results['update'])}")
         #log.info(get_filename() + f"{results['update']}")
         log.info(get_filename() + f" sync_2days_to_pricelog_today update start")
-        OrganizerQuery.update_pricelog_by_dict_list(results['update'])
+        OrganizerQuery.update_pricelog_by_dict_list(db, pricelog_dict_list=results['update'])
         log.info(get_filename() + f" sync_2days_to_pricelog_today update end")
     if len(results['add']) > 0:
         log.info(get_filename() + f" sync_2days_to_pricelog_today add length={len(results['add'])}")
         log.info(get_filename() + f" sync_2days_to_pricelog_today add start")
         #log.info(get_filename() + f"{results['add']}")
-        OrganizerQuery.add_price_log_by_dict_list(results['add'])
+        OrganizerQuery.add_price_log_by_dict_list(db, pricelog_dict_list=results['add'])
         log.info(get_filename() + f" sync_2days_to_pricelog_today add end")
     return
 
@@ -133,8 +138,8 @@ def __get_update_for_pricelog_by_2days(two_days_list :List[PriceLog_2days],
 
 
 @start_end_db_log(DBOrganizerCmd.PRICELOG_CLEANER)
-def pricelog_cleaner():
-    old_list = OrganizerQuery.get_old_pricelog_before_days(DAYS_TO_MOVE_OLD_DATA)
+def pricelog_cleaner(db :Session):
+    old_list = OrganizerQuery.get_old_pricelog_before_days(db, days=DAYS_TO_MOVE_OLD_DATA)
     move_list :List[Dict]= []
     for old in old_list:
         move_list.append(old.toDict())
@@ -142,15 +147,16 @@ def pricelog_cleaner():
         log = getLogger()
         log.info(get_filename() + f" pricelog_cleaner move length={len(move_list)}")
         log.info(get_filename() + f" pricelog_cleaner move start")
-        OldItemQuery.add_pricelog_of_old_by_dict_list(move_list)
+        old_db = next(get_old_db_session())
+        OldItemQuery.add_pricelog_of_old_by_dict_list(old_db, pricelog_dict_list=move_list)
         log.info(get_filename() + f" pricelog_cleaner move end")
-    OrganizerQuery.delete_old_pricelog_before_days(DAYS_TO_MOVE_OLD_DATA)
+    OrganizerQuery.delete_old_pricelog_before_days(db, days=DAYS_TO_MOVE_OLD_DATA)
 
 @start_end_db_log(DBOrganizerCmd.PRICELOG_2DAYS_CLEANER)
-def pricelog_2days_cleaner():
-    OrganizerQuery.delete_old_pricelog_2days_before_days(DAYS_TO_MOVE_OLD_DATA)
+def pricelog_2days_cleaner(db :Session):
+    OrganizerQuery.delete_old_pricelog_2days_before_days(db, days=DAYS_TO_MOVE_OLD_DATA)
     
-    pricelog_result = OrganizerQuery.get_pricelog_2days_all()
+    pricelog_result = OrganizerQuery.get_pricelog_2days_all(db)
     delete_pricelog_list = __get_delete_pricelog_2days_list(pricelog_result)
     #print(f"delete_list_len={len(delete_pricelog_list)}")
     if len(delete_pricelog_list) > 0:
@@ -158,7 +164,7 @@ def pricelog_2days_cleaner():
         log.info(get_filename() + f" pricelog_2days_cleaner delete length={len(delete_pricelog_list)}")
         delete_log_id_list = [v.log_id for v in delete_pricelog_list]
         log.info(get_filename() + f" pricelog_2days_cleaner delete start")
-        OrganizerQuery.delete_pricelog_2days_by_log_id_list(delete_log_id_list)
+        OrganizerQuery.delete_pricelog_2days_by_log_id_list(db, log_id_list=delete_log_id_list)
         log.info(get_filename() + f" pricelog_2days_cleaner delete end")
 
 def __get_delete_pricelog_2days_list(pricelog_result :List[PriceLog_2days]):
@@ -216,20 +222,20 @@ def param_parser(argv):
     args = parser.parse_args(argv[1:])
     return args
 
-def start_func(orgcmd :DBOrganizerCmd):
+def start_func(db :Session, orgcmd :DBOrganizerCmd):
     if orgcmd == DBOrganizerCmd.ALL:
-        pricelog_cleaner()
-        sync_2days_to_pricelog_today()
-        pricelog_2days_cleaner()
+        pricelog_cleaner(db)
+        sync_2days_to_pricelog_today(db)
+        pricelog_2days_cleaner(db)
         return
     if orgcmd == DBOrganizerCmd.SYNC_PRICELOG:
-        sync_2days_to_pricelog_today()
+        sync_2days_to_pricelog_today(db)
         return
     if orgcmd == DBOrganizerCmd.PRICELOG_2DAYS_CLEANER:
-        pricelog_2days_cleaner()
+        pricelog_2days_cleaner(db)
         return
     if orgcmd == DBOrganizerCmd.PRICELOG_CLEANER:
-        pricelog_cleaner()
+        pricelog_cleaner(db)
         return
     return
 
@@ -239,9 +245,10 @@ def start_cmd(argv):
         print('No Param, Please cmd name')
         return
     cmnlog.createLogger(cmnlog.LogName.DB_ORGANIZE)
+    db = next(get_session())
     for i in DBOrganizerCmd:
         if i.name.upper() == param.name.upper():
             print(f'start func {str(param.name).upper()}')
-            start_func(i)
+            start_func(db, orgcmd=i)
             print(f'end func {str(param.name).upper()}')
             break

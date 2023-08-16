@@ -8,35 +8,11 @@ from proc import getAndWrite
 
 from proc import db_organizer
 
-from proc.proc_status import ProcStatusAccess, ProcName
+from proc.proc_status import ProcName
+from proc import manager_util
 
-def getProcStatusAccess(pnum):
-    name = ProcName.PARSE
-    psa = ProcStatusAccess(name, pnum)
-    return psa
+from accessor.read_sqlalchemy import get_session
 
-def writeProcFault(psa):
-    if psa.getStatus() == ProcStatusAccess.FAULT:
-        return
-    psa.update(ProcStatusAccess.FAULT)
-    return psa
-
-def writeProcActive(psa):
-    if psa.getStatus() == ProcStatusAccess.ACTIVE:
-        return
-    psa.update(ProcStatusAccess.ACTIVE)
-    return psa
-
-def writeProcWaiting(psa):
-    if psa.getStatus() == ProcStatusAccess.WAITING:
-        return
-    psa.update(ProcStatusAccess.WAITING)
-    return psa
-
-def writeProcStart(pnum):
-    psa = getProcStatusAccess(pnum)
-    psa.add(ProcStatusAccess.DURING_STARTUP, os.getpid())
-    return psa
 
 def get_filename():
     return os.path.basename(__file__)
@@ -69,27 +45,28 @@ class ParseProc:
     def runParseProc(self, id):
         logger = self.getLogger()
         logger.info(get_filename() + ' start parseproc id=' + str(id))
-        psa = writeProcStart(id)
+        db = next(get_session())
+        psa = manager_util.writeProcStart(db, pnum=id, name=ProcName.PARSE)
         if (self.dlproc == None):
             logger.error(get_filename() + ' dlproc None')
-            writeProcFault(psa)
+            manager_util.writeProcFault(db, psa=psa)
             return
         is_parse = False
         while True:
             task = self.dlproc.getParseTask()
             if (task == None):
-                writeProcWaiting(psa)
+                manager_util.writeProcWaiting(db, psa=psa)
                 if is_parse:
                     is_parse = False
                     logger.info(get_filename() + " start db_organizer sync")
-                    db_organizer.start_func(db_organizer.DBOrganizerCmd.SYNC_PRICELOG)
+                    db_organizer.start_func(db, orgcmd=db_organizer.DBOrganizerCmd.SYNC_PRICELOG)
                     logger.info(get_filename() + " end db_organizer sync")
                 else:
                     time.sleep(0.1)
                 continue
-            writeProcActive(psa)
+            manager_util.writeProcActive(db, psa=psa)
             logger.info(get_filename() + ' pid=' + str(id) + ' start Parse url='+ task.url)
-            getAndWrite.startParse(task.url, task.itemid, task.dlhtml, logger)
+            getAndWrite.startParse(db=db, url=task.url, item_id=task.itemid, fname=task.dlhtml, logger=logger)
             is_parse = True
             logger.info(get_filename() + ' pid=' + str(id) + ' end Parse url='+ task.url)
 

@@ -5,6 +5,8 @@ router = APIRouter(
     prefix="/search"
     ,tags=["search"]
 )
+from sqlalchemy.orm import Session
+from accessor.read_sqlalchemy import get_session
 from common import (
     read_templates,
 )
@@ -29,8 +31,11 @@ def read_search(request :Request, sfq :SearchFilterQuery = Depends()):
     return res
 
 @router.post("/add/", response_class=HTMLResponse)
-def read_search_add(request :Request, saform :SearchToAddForm = Depends()):
-    stac = template_value.search.SearchToAddContext(request=request, saform=saform)
+def read_search_add(request :Request,
+                    saform :SearchToAddForm = Depends(),
+                    db :Session = Depends(get_session)
+                    ):
+    stac = template_value.search.SearchToAddContext(request=request, saform=saform, db=db)
     context = dict(stac)
     res = templates.TemplateResponse(
         "search/add_search.html"

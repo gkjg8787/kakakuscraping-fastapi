@@ -1,5 +1,5 @@
 from common import util
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 def test_is_today_true():
@@ -31,3 +31,10 @@ def test_is_local_today_false_2days_ago():
     two_ago = util.utcTolocaltime(datetime.utcnow() - timedelta(2))
     print(f'2days_ago={two_ago}')
     assert not util.isLocalToday(two_ago)
+
+def test_is_local_today_datetime():
+    utcd = datetime(2023, 8, 9, 1, 28, 14, tzinfo=timezone.utc)
+    locd = util.utcTolocaltime(utcd)
+    isloc = util.isLocalToday(locd)
+    print(f'ori={utcd}, loc={locd}, isloc={isloc}')
+    assert isloc
