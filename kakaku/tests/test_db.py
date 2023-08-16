@@ -17,15 +17,15 @@ from main import app
 import settings
 
 DATABASES = {
-    "sqlite_default":{
+    "default":{
         "drivername":"sqlite",
         "database":f"{settings.BASE_DIR}/db/test.sqlite",
     },
-    "sqlite_old_db":{
+    "old_db":{
         "drivername":"sqlite",
         "database":f"{settings.BASE_DIR}/db/test_old.sqlite",
     },
-    "default":{
+    "postgre_default":{
         "drivername":"postgresql+psycopg2",
         "username":"dbuser",
         "password":"posgre134",
@@ -33,7 +33,7 @@ DATABASES = {
         "database":"testdb",
         "port":"5432",
     },
-    "old_db":{
+    "postgre_old_db":{
         "drivername":"postgresql+psycopg2",
         "username":"dbuser",
         "password":"posgre134",

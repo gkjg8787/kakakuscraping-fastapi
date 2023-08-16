@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 
 from main import app
 from common import filter_name
+import common.util as cmn_util
 from accessor.item import (
     ItemQuery,
 )
@@ -406,7 +407,7 @@ def test_read_users_items_view_chart_no_data(test_db):
 def add_once_pricelog(db):
     pldict = {
         'url_id':1,
-        'created_at':'2023-08-15 17:12:03',
+        'created_at':cmn_util.dbtimeTodatetime('2023-08-15 17:12:03'),
         'uniqname':'test_uniq_name',
         'usedprice':1500,
         'newprice':3000,
