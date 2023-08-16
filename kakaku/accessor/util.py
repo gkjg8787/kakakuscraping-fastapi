@@ -2,6 +2,8 @@ from typing import Union
 from sqlalchemy import (
     func,
     schema,
+    cast,
+    Boolean,
 )
 from accessor.read_sqlalchemy import (
     is_sqlite,
@@ -15,15 +17,11 @@ def utc_to_jst_datetime_for_query(column_datetime :schema.Column):
     if is_sqlite():
         return func.datetime(column_datetime, '+9 hours')
     if is_postgre():
-        return column_datetime.op('AT TIME ZONE')('Asia/Tokyo')
+        return column_datetime.op('AT TIME ZONE')('UTC').op('AT TIME ZONE')('Asia/Tokyo')
     return None
 
 def utc_to_jst_date_for_query(column_datetime :schema.Column):
-    if is_sqlite():
-        return func.date(column_datetime, '+9 hours')
-    if is_postgre():
-        return func.date(column_datetime.op('AT TIME ZONE')('Asia/Tokyo'))
-    return None
+    return func.date(utc_to_jst_datetime_for_query(column_datetime))
 
 def get_jst_datetime_for_query(interval_days :Union[int,None] = None,
                                interval_years :Union[int,None] = None):
@@ -45,6 +43,7 @@ def get_jst_datetime_for_query(interval_days :Union[int,None] = None,
         if interval_years is None:
             return ret
         return ret.op('+')(f'{interval_years} years')
+    return None
     
 def get_jst_date_for_query(interval_days :Union[int,None] = None,
                            interval_years :Union[int,None] = None):
@@ -52,3 +51,9 @@ def get_jst_date_for_query(interval_days :Union[int,None] = None,
                                                 interval_years=interval_years)
                                                 )
 
+def text_to_boolean(column_bool : schema.Column):
+    if is_sqlite():
+        return column_bool
+    if is_postgre():
+        return cast(column_bool, Boolean)
+    return None

@@ -14,6 +14,7 @@ from common.templates_string import HTMLOption
 
 from common import const_value
 from accessor.item import GroupQuery
+from sqlalchemy.orm import Session
 
 from parameter_parser.util import is_suppoer_url, is_valid_id
 
@@ -152,8 +153,8 @@ class TemplatesGroup(BaseModel):
     groupname: str = ''
     selected: str = ''
 
-def get_groups(f:Dict) -> List:
-    results = [TemplatesGroup(group_id=g.group_id, groupname=g.groupname) for g in GroupQuery.get_all()]
+def get_groups(db :Session, f:Dict) -> List:
+    results = [TemplatesGroup(group_id=g.group_id, groupname=g.groupname) for g in GroupQuery.get_all(db)]
     if not FilterQueryName.GID.value in f:
         return results
     for r in results:

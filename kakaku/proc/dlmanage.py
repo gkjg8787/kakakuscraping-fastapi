@@ -10,35 +10,11 @@ from common import cmnlog
 from common.read_config import get_back_server_queue_timeout
 from proc.proc_status import ProcStatusAccess, ProcName
 
+from accessor.read_sqlalchemy import get_session
+from proc import manager_util
+
 QUEUE_TIMEOUT = int(get_back_server_queue_timeout()) #5
 
-def getProcStatusAccess(pnum):
-    name = ProcName.DOWNLOAD
-    psa = ProcStatusAccess(name, pnum)
-    return psa
-
-def writeProcFault(psa):
-    if psa.getStatus() == ProcStatusAccess.FAULT:
-        return
-    psa.update(ProcStatusAccess.FAULT)
-    return psa
-
-def writeProcActive(psa):
-    if psa.getStatus() == ProcStatusAccess.ACTIVE:
-        return
-    psa.update(ProcStatusAccess.ACTIVE)
-    return psa
-
-def writeProcWaiting(psa):
-    if psa.getStatus() == ProcStatusAccess.WAITING:
-        return
-    psa.update(ProcStatusAccess.WAITING)
-    return psa
-
-def writeProcStart(pnum):
-    psa = getProcStatusAccess(pnum)
-    psa.add(ProcStatusAccess.DURING_STARTUP, os.getpid())
-    return psa
 
 def get_filename():
     return os.path.basename(__file__)
@@ -89,8 +65,9 @@ class DlProc:
         stime = 0
         etime = 0
         logger.info(get_filename() + ' start dlproc id=' + str(id))
-        psa = writeProcStart(id)
-        writeProcWaiting(psa)
+        db = next(get_session())
+        psa = manager_util.writeProcStart(db, pnum=id, name=ProcName.DOWNLOAD)
+        manager_util.writeProcWaiting(db, psa=psa)
         while True:
             try:
                 task = taskq.get(timeout=QUEUE_TIMEOUT)
@@ -98,19 +75,19 @@ class DlProc:
                 if etime - stime < 1 :
                     time.sleep((1 - (etime - stime)))
                 logger.info(get_filename() + ' get dltask url=' + task.url)
-                writeProcActive(psa)
+                manager_util.writeProcActive(db, psa=psa)
                 dlhtml = download_html.downLoadHtml(task.url)
                 stime = time.time()
                 if len(dlhtml) == 0:
                     logger.error(get_filename() + ' fail download')
-                    writeProcFault(psa)
+                    manager_util.writeProcFault(db, psa=psa)
                     continue
                 logger.info(get_filename() + ' download html=' + dlhtml)
                 task.dlhtml = dlhtml
                 retq.put(task)
                 logger.info(get_filename() + ' put parsetask')
             except queue.Empty:
-                writeProcWaiting(psa)
+                manager_util.writeProcWaiting(db, psa=psa)
                 time.sleep(0.1)
 
     def putDlTask(self, url, itemid):

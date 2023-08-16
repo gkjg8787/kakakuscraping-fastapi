@@ -1,6 +1,5 @@
 from typing import List
 from datetime import datetime
-from .read_sqlalchemy import getSession
 
 from model.server import (
     ProcStatus,
@@ -12,70 +11,65 @@ from sqlalchemy import (
     delete,
     update,
 )
+from sqlalchemy.orm import Session
+
 class ProcStatusQuery:
     @staticmethod
-    def getProcStatuses(names: List) -> List:
-        ses = getSession()
+    def getProcStatuses(db :Session, names: List) -> List:
         stmt = select(ProcStatus).where(ProcStatus.name.in_(names))
-        return ses.execute(stmt).all()
+        return db.execute(stmt).all()
     
     @staticmethod
-    def getAllProcStatuses() -> List:
-        ses = getSession()
+    def getAllProcStatuses(db :Session) -> List:
         stmt = select(ProcStatus)
-        return ses.scalars(stmt).all()
+        return db.scalars(stmt).all()
     
     @staticmethod
-    def addProcStatus(procstses: List) -> None:
-        ses = getSession()
-        ses.add_all(procstses)
-        ses.commit()
+    def addProcStatus(db :Session, procstses: List[ProcStatus]) -> None:
+        db.add_all(procstses)
+        db.commit()
+        for proc in procstses:
+            db.refresh(proc)
 
     @staticmethod
-    def deleteProcStatuses(names: List) -> None:
-        ses = getSession()
+    def deleteProcStatuses(db :Session, names: List) -> None:
         stmt = delete(ProcStatus).where(ProcStatus.name.in_(names))
-        ses.execute(stmt)
-        ses.commit()
+        db.execute(stmt)
+        db.commit()
 
     @staticmethod
-    def deleteAllProcStatuses() -> None:
-        ses = getSession()
+    def deleteAllProcStatuses(db :Session) -> None:
         stmt = delete(ProcStatus)
-        ses.execute(stmt)
-        ses.commit()
+        db.execute(stmt)
+        db.commit()
 
     @staticmethod
-    def updateProcStatus(procsts: ProcStatus) -> None:
-        ses = getSession()
+    def updateProcStatus(db :Session, procsts: ProcStatus) -> None:
         stmt = ( update(ProcStatus)
                 .where(ProcStatus.name==procsts.name)
                 .values(status=procsts.status, proc_id=procsts.proc_id)
                 )
-        ses.execute(stmt)
-        ses.commit()
+        db.execute(stmt)
+        db.commit()
 
 class OrganizeLogQuery:
     @staticmethod
-    def add_log(name :str, status :str):
-        ses = getSession()
+    def add_log(db :Session, name :str, status :str):
         is_log = ( select(OrganizeLog)
                   .where(OrganizeLog.name == name)
                   )
-        log = ses.scalar(is_log)
+        log = db.scalar(is_log)
         if log:
             log.status = status
             log.created_at = datetime.utcnow()
         else:
-            ses.add(OrganizeLog(name=name, status=status))
-        ses.commit()
-        ses.close()
+            db.add(OrganizeLog(name=name, status=status))
+            db.commit()
     
     @staticmethod
-    def get_log(name :str):
+    def get_log(db :Session, name :str):
         stmt = ( select(OrganizeLog)
                 .where(OrganizeLog.name == name)
                 )
-        ses = getSession()
-        ret = ses.scalar(stmt)
-        return ret
+        return db.scalar(stmt)
+

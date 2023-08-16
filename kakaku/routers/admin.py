@@ -1,6 +1,10 @@
 from fastapi import APIRouter, Request, status, Depends
 from fastapi.responses import RedirectResponse, HTMLResponse
 
+from sqlalchemy.orm import Session
+
+from accessor.read_sqlalchemy import get_session
+
 from common import read_templates
 
 from template_value.admin import DashBoardTemplate, SystemCtrlBtnName
@@ -18,8 +22,8 @@ router = APIRouter(
 templates = read_templates.templates
 
 @router.get("/dashboard/", response_class=HTMLResponse)
-def read_admin_dashboard(request: Request):
-    dbt = DashBoardTemplate(request)
+def read_admin_dashboard(request: Request, db :Session = Depends(get_session)):
+    dbt = DashBoardTemplate(request, db=db)
     return templates.TemplateResponse(
         "admin/controlpanel.html"
         ,dict(dbt)

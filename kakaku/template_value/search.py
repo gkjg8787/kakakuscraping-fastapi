@@ -5,6 +5,8 @@ from pathlib import Path
 
 from pydantic import BaseModel
 
+from sqlalchemy.orm import Session
+
 from common import (
     filter_name,
     const_value,
@@ -145,7 +147,7 @@ class SearchToAddContext(BaseTemplateValue):
     POST_URL_PATH :str = filter_name.TemplatePostName.URL_PATH.value
     POST_SEARCH_QUERY :str = filter_name.TemplatePostName.SEARCH_QUERY.value
 
-    def __init__(self, request, saform :SearchToAddForm):
+    def __init__(self, request, saform :SearchToAddForm, db :Session):
         super().__init__(request=request)
         if not saform.is_valid():
             self.errmsg = saform.errmsg
@@ -157,7 +159,7 @@ class SearchToAddContext(BaseTemplateValue):
             self.search_query = saform.search_query
         if saform.item_id > 0:
             self.add_item_id = saform.item_id
-            item = NewestQuery.get_newest_data_by_item_id(item_id=self.add_item_id)
+            item = NewestQuery.get_newest_data_by_item_id(db, item_id=self.add_item_id)
             if not item:
                 self.add_item_id = const_value.NONE_ID
                 msg = "指定されたIDのアイテムが存在しません"
@@ -165,10 +167,10 @@ class SearchToAddContext(BaseTemplateValue):
             else:
                 itemdic = {k:v for k,v in item._mapping.items()}
                 self.add_item_name = itemdic['name']
-        self.itemlist = self.get_item_list(self.add_item_id)
+        self.itemlist = self.get_item_list(db, self.add_item_id)
     
-    def get_item_list(self, add_item_id:int):
-        newest_list = NewestQuery.get_newest_data(dict())
+    def get_item_list(self, db :Session, add_item_id:int):
+        newest_list = NewestQuery.get_newest_data(db, filter=dict())
         results :List[AddSelectItem]= []
         if len(newest_list) == 0:
             return results

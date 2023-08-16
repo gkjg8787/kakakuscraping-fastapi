@@ -1,5 +1,6 @@
 from typing import Dict, List
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
 
 from common.filter_name import (
     FilterQueryName,
@@ -14,8 +15,8 @@ class TemplatesStore(BaseModel):
     name: str
     selected: str = ''
 
-def get_stores(f:Dict) -> List:
-    results = [TemplatesStore(id=s.store_id, name=s.storename) for s in StoreQuery.get_all()]
+def get_stores(db :Session, f:Dict) -> List:
+    results = [TemplatesStore(id=s.store_id, name=s.storename) for s in StoreQuery.get_all(db)]
     if not FilterQueryName.STORE.value in f:
         return results
     for r in results:
@@ -24,9 +25,9 @@ def get_stores(f:Dict) -> List:
             break
     return results
 
-def get_stores_for_newest(filter :Dict) -> List:
-    results = [TemplatesStore(id=s.store_id, name=s.storename) for s in StoreQuery.get_all()]
-    newest_store_list = __get_newest_store_list(NewestQuery.get_storenames())
+def get_stores_for_newest(db :Session, filter :Dict) -> List:
+    results = [TemplatesStore(id=s.store_id, name=s.storename) for s in StoreQuery.get_all(db)]
+    newest_store_list = __get_newest_store_list(NewestQuery.get_storenames(db))
     results = [r for r in results if r.name in newest_store_list ]
 
     if not FilterQueryName.STORE.value in filter \

@@ -1,7 +1,9 @@
 import sys
 import argparse
 import json
+from typing import List, Dict
 
+from sqlalchemy.orm import Session
 
 from itemcomb import sumitemcomb, storepostage
 
@@ -9,6 +11,7 @@ from accessor.item import (
     ItemQuery,
 )
 from accessor.store import StoreQuery
+from accessor.read_sqlalchemy import get_session
 
 def getBoundaryInDict(d):
     BOUNDARY = 'boundary'
@@ -22,12 +25,12 @@ def getPostageInDict(d):
         return '0'
     return d[POSTAGE]
 
-def createStoreConf(itemidlist):
-    res = ItemQuery.get_current_storename_list_by_item_id(itemidlist)
+def createStoreConf(db :Session, itemidlist :List[int]):
+    res = ItemQuery.get_current_storename_list_by_item_id(db, item_id_list=itemidlist)
     if res is None or len(res) == 0:
         return {}
-    storenames = [t for r in res for t in r]
-    sp = StoreQuery.get_storepostage_by_storename(storenames)
+    storenames :List[str] = [t for r in res for t in r]
+    sp = StoreQuery.get_storepostage_by_storename(db, storenames=storenames)
     dicl = [dict(row._mapping.items()) for row in sp]
     storeconf = {}
     for d in dicl:
@@ -39,27 +42,28 @@ def createStoreConf(itemidlist):
         storeconf[d['storename']].append(vald)
     return storeconf
 
-def startCalcSumitemComb(itemidlist):
-    res = ItemQuery.get_latest_price_by_item_id_list(itemidlist)
+def startCalcSumitemComb(db :Session, itemidlist :List[int]):
+    res = ItemQuery.get_latest_price_by_item_id_list(db, item_id_list=itemidlist)
     itemlist = [dict(row._mapping.items()) for row in res]
     #print(itemlist)
-    storeconf = createStoreConf(itemidlist)
+    storeconf = createStoreConf(db, itemidlist=itemidlist)
     #print(storeconf)
     ret = sumitemcomb.searchcomb(storeconf, itemlist, 'json')
     return ret
 
-def getCalcSumitemComb():
+def getCalcSumitemComb(db :Session):
     cmdstr, itemidlist, updateterms = parseParamOpt()
     if cmdstr == 'idcalc':
-        ret = startCalcSumitemComb(itemidlist)
+        ret = startCalcSumitemComb(db, itemidlist=itemidlist)
         return ret
     elif cmdstr == 'upcalc':
-        storepostage.updateShippingTerms(updateterms)
-        ret = startCalcSumitemComb(itemidlist)
+        storepostage.updateShippingTerms(db, shippingterms=updateterms)
+        ret = startCalcSumitemComb(db, itemidlist=itemidlist)
         return ret
 
 def startcmd():
-    res = getCalcSumitemComb()
+    db = next(get_session())
+    res = getCalcSumitemComb(db)
     #htmltext = sumitemcomb_adapt_deco.createHtml(json.loads(res))
     #print(htmltext)
     return res

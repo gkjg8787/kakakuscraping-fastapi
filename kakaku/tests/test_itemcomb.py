@@ -1,5 +1,6 @@
 
 from itemcomb.storepostage import getAndRegistShippingTermsByItemId
+
 def test_get_storepostage():
     item_id_list = [1,2]
     ret = getAndRegistShippingTermsByItemId(item_id_list)

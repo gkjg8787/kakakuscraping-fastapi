@@ -1,11 +1,13 @@
 
-from typing import List
+from typing import List, Dict
 import argparse
 import json
 import datetime
 
+from sqlalchemy.orm import Session
 
 from model.store import Store, StorePostage
+from accessor.read_sqlalchemy import get_session
 from accessor.store import StoreQuery
 from accessor.item import ItemQuery
 from itemcomb import itemcomb_error
@@ -30,16 +32,16 @@ class StorePostageResultName:
     ERROR = "error"
 
 def jsonToStoreModel(jsondict):
-    res = []
+    res :List[Dict[str, Store]]= []
     for store in jsondict[StoreDictKey.STORES]:
-        storeres = {}
+        storeres :Dict[str, Store]= {}
         st = Store(
             storename=store[StoreDictKey.STORENAME]
             ,store_id=store[StoreDictKey.STORE_ID]
         )
         storeres[StoreDictKey.STORE] = st
 
-        res_pos = []
+        res_pos :List[StorePostage] = []
         for pos in store[StoreDictKey.STOREPOSTAGE]:
             sp = StorePostage(
                 store_id=pos[StoreDictKey.STORE_ID]
@@ -54,36 +56,36 @@ def jsonToStoreModel(jsondict):
     return res
 
 
-def updateShippingTerms(shippingterms):
+def updateShippingTerms(db :Session, shippingterms :Dict):
     storeinfo = jsonToStoreModel(shippingterms)
     storeidlist = [sp[StoreDictKey.STORE].store_id for sp in storeinfo]
-    StoreQuery.delete_storepostage_by_store_id_list(storeidlist)
+    StoreQuery.delete_storepostage_by_store_id_list(db, store_id_list=storeidlist)
     storepostages = [sp for sps in storeinfo for sp in sps[StoreDictKey.POSTAGE]]
-    StoreQuery.insert_storepostage_list(storepostages)
+    StoreQuery.insert_storepostage_list(db, storepostage_list=storepostages)
 
-def update_shippingterms(store_id_list :List[int], storepostage_list :List):
-    StoreQuery.delete_storepostage_by_store_id_list(store_id_list)
-    StoreQuery.insert_storepostage_list(storepostage_list)
+def update_shippingterms(db :Session, store_id_list :List[int], storepostage_list :List):
+    StoreQuery.delete_storepostage_by_store_id_list(db, store_id_list=store_id_list)
+    StoreQuery.insert_storepostage_list(db, storepostage_list=storepostage_list)
 
-def getAndRegistShippingTerms(storenames):
-    StoreQuery.regist_stores(storenames)
-    res = StoreQuery.get_storepostage_by_storename(storenames)
-    dicl = []
+def getAndRegistShippingTerms(db :Session, storenames):
+    StoreQuery.regist_stores(db, storename_list=storenames)
+    res = StoreQuery.get_storepostage_by_storename(db, storenames=storenames)
+    dicl :List[Dict]= []
     for row in res:
         dic = {}
         for k,v in row._mapping.items():
             dic[k] = v
         dicl.append(dic)
-    resdic = {}
+    resdic :Dict[List[Dict]]= {}
     resdic[StorePostageResultName.RESULT] = dicl
     return resdic
 
-def getAndRegistShippingTermsByItemId(itemids :List[int]):
-    res = ItemQuery.get_current_storename_list_by_item_id(itemids)
+def getAndRegistShippingTermsByItemId(db :Session, itemids :List[int]):
+    res = ItemQuery.get_current_storename_list_by_item_id(db, item_id_list=itemids)
     if res is None or len(res) == 0:
         return {StorePostageResultName.ERROR:itemcomb_error.ItemCombError.NO_STORE_DATA}
     storenames = [t for r in res for t in r]
-    return getAndRegistShippingTerms(storenames)
+    return getAndRegistShippingTerms(db, storenames=storenames)
 
 def parseParamOpt():
     parser = argparse.ArgumentParser(description='ctrl Shipping Terms')
@@ -124,18 +126,19 @@ def resultTotype(res, typestr, itemids=[]):
 
 def startcmd():
     cmdtype, res, outtype = parseParamOpt()
+    db = next(get_session())
     if cmdtype == FuncType.ITEM_ID:
-        result = getAndRegistShippingTermsByItemId(res)
+        result = getAndRegistShippingTermsByItemId(db, res)
         res = resultTotype(result, outtype, res)
         print(res)
         return
     if cmdtype == FuncType.STORENAME:
-        result = getAndRegistShippingTerms(res)
+        result = getAndRegistShippingTerms(db, res)
         res = resultTotype(result, outtype)
         print(res)
         return
     if cmdtype == FuncType.UPDATE_TERMS:
-        updateShippingTerms(res)
+        updateShippingTerms(db, res)
         return
 
 if __name__ == '__main__':

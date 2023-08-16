@@ -5,6 +5,8 @@ import json
 
 from pydantic import BaseModel
 
+from sqlalchemy.orm import Session
+
 from common import (
     filter_name,
     const_value,
@@ -44,13 +46,13 @@ class ItemSelectionContext(BaseTemplateValue):
     ITEMID_Q_NAME :str = filter_name.ItemDetailQueryName.ITEMID.value
     ITEM_LIMIT :int = 0
 
-    def __init__(self, request, nfq :ppi.NewestFilterQuery):
+    def __init__(self, request, nfq :ppi.NewestFilterQuery, db :Session):
         fd = nfq.get_filter_dict()
         super().__init__(request=request
-                         ,res=NewestQuery.get_newest_data(fd)
+                         ,res=NewestQuery.get_newest_data(db, filter=fd)
                         ,actstslist = ppi.get_actstslist(fd)
                         ,itemSortList = ppi.get_item_sort_list(fd)
-                        ,groups = ppi.get_groups(fd)
+                        ,groups = ppi.get_groups(db, f=fd)
                         ,storelist = []
                         ,fquery=fd
                          )
@@ -58,7 +60,7 @@ class ItemSelectionContext(BaseTemplateValue):
         if item_limit and str(item_limit).isdigit() and int(item_limit) > 0:
             self.ITEM_LIMIT = int(item_limit)
         self.res_length = len(self.res)
-        self.storelist = pps.get_stores_for_newest(filter=self.fquery)
+        self.storelist = pps.get_stores_for_newest(db, filter=self.fquery)
     
         if filter_name.FilterQueryName.GID.value in self.fquery:
             gid = int(self.fquery[filter_name.FilterQueryName.GID.value])
@@ -179,13 +181,13 @@ class ShippingConditionContext(BaseTemplateValue):
     POST_ITEM_ID :str = filter_name.TemplatePostName.ITEM_ID.value
     POST_STORENAME :str = filter_name.TemplatePostName.STORE_NAME.value
 
-    def __init__(self, request, scq :ppc.ShippingConditionQuery):
+    def __init__(self, request, scq :ppc.ShippingConditionQuery, db :Session):
         super().__init__(request=request)
         if not scq.is_valid():
             self.errmsg = scq.errmsg
             return
         self.item_id_list = scq.item_id_list
-        results = getAndRegistShippingTermsByItemId(self.item_id_list)
+        results = getAndRegistShippingTermsByItemId(db, itemids=self.item_id_list)
         if StorePostageResultName.ERROR in results:
             self.errmsg = results[StorePostageResultName.ERROR].value
             return
@@ -236,13 +238,13 @@ class ItemCombCalcResultContext(BaseTemplateValue):
     item_list :List[ResultItem] = []
     store_list :List = []
 
-    def __init__(self, request, icrf :ppc.ItemCombinationResultForm):
+    def __init__(self, request, icrf :ppc.ItemCombinationResultForm, db :Session):
         super().__init__(request=request)
         if not icrf.is_valid() or len(icrf.store_list) == 0:
             return
-        self.update_shippingterms_data(icrf)
+        self.update_shippingterms_data(db, icrf=icrf)
         #print(f"icrf.store_list={icrf.store_list}")
-        res = startCalcSumitemComb(icrf.item_id_list)
+        res = startCalcSumitemComb(db, itemidlist=icrf.item_id_list)
         #print(f"res={res}")
         self.set_convert_result(json.loads(res))
     
@@ -300,7 +302,7 @@ class ItemCombCalcResultContext(BaseTemplateValue):
                 self.item_count += 1
         self.itemnames = '、'.join(items)
 
-    def update_shippingterms_data(self, icrf : ppc.ItemCombinationResultForm):
+    def update_shippingterms_data(self, db :Session, icrf : ppc.ItemCombinationResultForm):
         store_id_list :List[int] = []
         storepostage_list :List[mstore.StorePostage] = []
         for store in icrf.store_list:
@@ -309,7 +311,8 @@ class ItemCombCalcResultContext(BaseTemplateValue):
             if len(sps) > 0:
                 storepostage_list.extend(sps)
         
-        update_shippingterms(store_id_list=store_id_list,
+        update_shippingterms(db=db,
+                             store_id_list=store_id_list,
                              storepostage_list=storepostage_list)
 
 class StoreShippingInfo:

@@ -3,16 +3,19 @@ import argparse
 import json
 import datetime
 
+from sqlalchemy.orm import Session
+from accessor.read_sqlalchemy import get_session
+
 from proc.proc_status import ProcStatusAccess
 from proc.system_status import SystemStatusAccess
 
-def getSystemStatus():
+def getSystemStatus(db :Session):
     ssa = SystemStatusAccess()
-    ssa.update()
+    ssa.update(db)
     return ssa.getStatus().name
 
-def getProcStatus():
-    pstses = ProcStatusAccess.get_all()
+def getProcStatus(db :Session):
+    pstses = ProcStatusAccess.get_all(db)
     rets = []
     for psts in pstses:
         rets.append(psts.toDict())
@@ -34,11 +37,12 @@ def json_serial(obj):
 
 def main(argv):
     args = parseParamOpt(argv[1:])
+    db = next(get_session())
     ret = {}
     if args.system:
-        ret["SystemStatus"] = getSystemStatus()
+        ret["SystemStatus"] = getSystemStatus(db)
     if args.proc:
-        ret["ProcStatus"] = getProcStatus()
+        ret["ProcStatus"] = getProcStatus(db)
     if len(ret) > 0:
         print(json.dumps(ret, default=json_serial))
 

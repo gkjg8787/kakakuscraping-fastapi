@@ -1,7 +1,9 @@
 
 import os
 import subprocess
-from typing import List
+from typing import List, Union
+
+from sqlalchemy.orm import Session
 
 from accessor.server import ProcStatusQuery as psq
 from model.server import ProcStatus
@@ -24,27 +26,22 @@ class ProcStatusAccess:
         self.status :str = ProcStatusAccess.NONE
         self.isMyself :bool = myself
     
-    def add(self, status, pid=None) -> None:
+    def add(self, db :Session, status, pid :Union[int, None]=None) -> None:
         if not pid is None:
             self.pid = pid
         self.checkProcId()
         ps = ProcStatus(proc_id=self.pid, status=status, name=self.name)
-        psq.addProcStatus([ps])
+        psq.addProcStatus(db, procstses=[ps])
 
-    def update(self, status) -> None:
+    def update(self, db :Session, status :str) -> None:
         self.checkProcId()
         ps = ProcStatus(name=self.name, proc_id=self.pid, status=status)
         self.status = status
-        psq.updateProcStatus(ps)
+        psq.updateProcStatus(db, procsts=ps)
     
-    def delete(self) -> None:
-        psq.deleteProcStatuses([self.name])
-    """
-    def get(self):
-        psts = psq.getProcStatuses([self.name])
-        if not len(psts) == 0:
-            self.status = psts[0].status
-    """
+    def delete(self, db :Session) -> None:
+        psq.deleteProcStatuses(db, names=[self.name])
+
     def getStatus(self) -> str:
         return self.status
     
@@ -65,12 +62,12 @@ class ProcStatusAccess:
 
     
     @staticmethod
-    def get_all() -> List:
-        return psq.getAllProcStatuses()
+    def get_all(db :Session) -> List:
+        return psq.getAllProcStatuses(db)
     
     @staticmethod
-    def delete_all() -> None:
-        psq.deleteAllProcStatuses()
+    def delete_all(db :Session) -> None:
+        psq.deleteAllProcStatuses(db)
     
     @staticmethod
     def getPsCommand() -> List:
