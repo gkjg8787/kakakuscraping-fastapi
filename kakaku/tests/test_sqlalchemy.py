@@ -1,7 +1,11 @@
+from typing import Optional
 from accessor.item import (
     ItemQuery,
     NewestQuery,
     UrlQuery,
+)
+from accessor.store import (
+    StoreQuery
 )
 from accessor import util as sa_util
 from common import util as cm_util
@@ -33,6 +37,15 @@ def insert_pricelog_sync(db, pldict :dict):
     db.execute(insert_pricelog)
     db.execute(insert_pricelog_2days)
     db.commit()
+
+def insert_item_and_newestitem(db, item_name :str = "", url_path :str = ""):
+    NewestQuery.add_item(db=db,item_name=item_name, url_path=url_path)
+
+def insert_stores(db, storename_list :list[str]):
+    StoreQuery.add_storename_list(db, storename_list=storename_list)
+
+def update_newestitem(db, nidict :dict):
+    NewestQuery.update_items_by_dict(db, nidict=nidict)
 
 def test_get_lowest_price_ever():
     item_id = 7
