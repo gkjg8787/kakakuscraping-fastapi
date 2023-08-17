@@ -123,3 +123,33 @@ def test_read_item_price_combination_result_one_item(test_db):
 
     drop_test_db()
 
+def test_read_input_search_shop_shipping_top(test_db):
+    response = client.get(
+        f'{prefix}/shipping/search/',
+        )
+    assert response.status_code == 200
+    is_html(response.text)
+    assert "送料検索ツール" in response.text
+
+def test_read_input_search_shop_shipping_no_word(test_db):
+    params = {filter_name.FilterQueryName.WORD.value:""}
+    response = client.get(
+        f'{prefix}/shipping/search/',
+        params=params
+        )
+    assert response.status_code == 200
+    is_html(response.text)
+    assert "送料検索ツール" in response.text
+    assert "検索ワードが指定されていません" in response.text
+
+def test_read_input_search_shop_shipping_search_store(test_db):
+    storename = "静岡本店"
+    params = {filter_name.FilterQueryName.WORD.value:storename}
+    response = client.get(
+        f'{prefix}/shipping/search/',
+        params=params
+        )
+    assert response.status_code == 200
+    is_html(response.text)
+    assert "送料検索ツール" in response.text
+    assert f"店名：{storename}" in response.text
