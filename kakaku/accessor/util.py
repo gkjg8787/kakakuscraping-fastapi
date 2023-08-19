@@ -4,6 +4,7 @@ from sqlalchemy import (
     schema,
     cast,
     Boolean,
+    DECIMAL,
 )
 from accessor.read_sqlalchemy import (
     is_sqlite,
@@ -56,4 +57,11 @@ def text_to_boolean(column_bool : schema.Column):
         return column_bool
     if is_postgre():
         return cast(column_bool, Boolean)
+    return None
+
+def text_to_decimal(column_value : schema.Column):
+    if is_sqlite():
+        return column_value
+    if is_postgre():
+        return cast(column_value, DECIMAL)
     return None
