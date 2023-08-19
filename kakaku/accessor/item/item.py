@@ -42,6 +42,7 @@ from accessor.util import (
     INTERVAL_ONE_YEARS_AGO,
     INTERVAL_YESTERDAY,
     text_to_boolean,
+    text_to_decimal,
 )
 
 from html_parser.htmlparse import ParseItemInfo
@@ -194,12 +195,12 @@ class NewestQuery:
             return stmt
         if fnum == ItemSortName.LOW_TRENDRATE.id:
             stmt = (stmt
-                    .order_by(-NewestItem.trendrate.desc())
+                    .order_by(text_to_decimal(NewestItem.trendrate).asc())
                     )
             return stmt
         if fnum == ItemSortName.HIGH_TRENDRATE.id:
             stmt = (stmt
-                    .order_by(-NewestItem.trendrate.asc())
+                    .order_by(text_to_decimal(NewestItem.trendrate).desc())
                     )
             return stmt
         if fnum == ItemSortName.NEW_UPDATE_TIME.id:
