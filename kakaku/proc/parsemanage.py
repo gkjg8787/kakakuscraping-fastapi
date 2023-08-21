@@ -55,7 +55,6 @@ class ParseProc:
         while True:
             task = self.dlproc.getParseTask()
             if (task == None):
-                manager_util.writeProcWaiting(db, psa=psa)
                 if is_parse:
                     is_parse = False
                     logger.info(get_filename() + " start db_organizer sync")
@@ -65,6 +64,7 @@ class ParseProc:
                     db_organizer.start_func(db, orgcmd=db_organizer.DBOrganizerCmd.PRICELOG_2DAYS_CLEANER)
                     logger.info(get_filename() + " end db_organizer pricelog_2days cleaner")
                 else:
+                    manager_util.writeProcWaiting(db, psa=psa)
                     time.sleep(0.1)
                 continue
             manager_util.writeProcActive(db, psa=psa)

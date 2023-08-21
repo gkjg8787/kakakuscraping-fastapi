@@ -129,8 +129,9 @@ def waitTask(task, result, db :Session):
     logger = getLogger(cmnlog.LogName.MANAGER)
     logger.info(get_filename() + ' waitTask start')
     psa = getProcStatusAccess()
-    manager_util.writeProcWaiting(db, psa=psa)
+    manager_util.writeProcActive(db, psa=psa)
     check_db_organize(db)
+    manager_util.writeProcWaiting(db, psa=psa)
     while True:
         try:
             t = task.get(timeout=QUEUE_TIMEOUT)
