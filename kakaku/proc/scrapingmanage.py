@@ -95,6 +95,10 @@ def start_db_organize(db :Session, cmdstr :str):
         db_organizer.start_func(db=db, orgcmd=db_organizer.DBOrganizerCmd.ALL)
     elif cmdstr == sendcmd.ScrOrder.DB_ORGANIZE_SYNC:
         db_organizer.start_func(db=db, orgcmd=db_organizer.DBOrganizerCmd.SYNC_PRICELOG)
+    elif cmdstr == sendcmd.ScrOrder.DB_ORGANIZE_LOG_2DAYS_CLEANER:
+        db_organizer.start_func(db=db, orgcmd=db_organizer.DBOrganizerCmd.PRICELOG_2DAYS_CLEANER)
+    elif cmdstr == sendcmd.ScrOrder.DB_ORGANIZE_LOG_CLEANER:
+        db_organizer.start_func(db=db, orgcmd=db_organizer.DBOrganizerCmd.PRICELOG_CLEANER)
     return
 
 def scrapingURL(task, db :Session):

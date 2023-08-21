@@ -61,6 +61,9 @@ class ParseProc:
                     logger.info(get_filename() + " start db_organizer sync")
                     db_organizer.start_func(db, orgcmd=db_organizer.DBOrganizerCmd.SYNC_PRICELOG)
                     logger.info(get_filename() + " end db_organizer sync")
+                    logger.info(get_filename() + " start db_organizer pricelog_2days cleaner")
+                    db_organizer.start_func(db, orgcmd=db_organizer.DBOrganizerCmd.PRICELOG_2DAYS_CLEANER)
+                    logger.info(get_filename() + " end db_organizer pricelog_2days cleaner")
                 else:
                     time.sleep(0.1)
                 continue
