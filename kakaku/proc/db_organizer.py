@@ -189,12 +189,14 @@ def __get_delete_pricelog_2days_list(pricelog_result :List[PriceLog_2days]):
                     delete_target.append(pricelog)
                 continue
             delete_max = len(pricelog_dict[k]) - MAX_LOG_2DAYS_DATA_CNT
+            if delete_max <= 0:
+                continue
             for idx, pricelog in enumerate(delete_target):
                 old = __get_old_pricelog_2days(delete_target[idx:])
                 if old is None:
                     continue
                 delete_pricelog_list.append(old)
-                if delete_max == len(delete_pricelog_list):
+                if delete_max <= len(delete_pricelog_list):
                     break
                 continue
     
