@@ -1,3 +1,4 @@
+import os
 import pytest
 from uuid import uuid4
 
@@ -5,6 +6,11 @@ from sqlalchemy import URL, create_engine
 from sqlalchemy.orm import Session, sessionmaker, scoped_session
 from sqlalchemy.orm.session import close_all_sessions
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy_utils import (
+    create_database as cdb,
+    drop_database as ddb,
+    database_exists,
+)
 
 from model import (
     item,
@@ -95,4 +101,28 @@ def drop_test_db():
     TEST_OLD_DB_URL = URL.create(**DATABASES['old_db'])
     old_eng = create_engine(TEST_OLD_DB_URL, echo=is_echo)
     item.Base.metadata.drop_all(bind=old_eng)
-    
+
+def create_database():
+    if 'sqlite' in DATABASES['default']['drivername']:
+        return
+    def create_database_func(dbkey):
+        engine_url = URL.create(**DATABASES[dbkey])
+        if database_exists(engine_url):
+            return
+        cdb(engine_url)
+    create_database_func('default')
+    create_database_func('old_db')
+
+def drop_database():
+    if 'sqlite' in DATABASES['default']['drivername']:
+        os.remove(DATABASES['default']['database'])
+        os.remove(DATABASES['old_db']['database'])
+        return
+    def drop_database_func(dbkey):
+        engine_url = URL.create(**DATABASES[dbkey])
+        if not database_exists(engine_url):
+            return
+        ddb(engine_url)
+
+    drop_database_func('default')
+    drop_database_func('old_db')

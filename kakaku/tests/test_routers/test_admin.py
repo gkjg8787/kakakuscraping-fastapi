@@ -8,7 +8,7 @@ from proc import get_sys_status
 from accessor.read_sqlalchemy import get_session
 from common import filter_name
 from tests.test_db import test_db, drop_test_db
-from tests.routers.test_common import (
+from tests.test_routers.test_common import (
     RedirectCheckValue,
     check_redirect,
     is_html,
@@ -18,10 +18,10 @@ client = TestClient(app)
 prefix = '/admin'
 
 def check_status_waittime(jstsname :str, waittime :int = 0):
-    db = next(get_session())
-    sysstr = get_sys_status.getSystemStatus(db)
-    if syssts.SystemStatusToJName.get_jname(sysstr) != jstsname:
-        time.sleep(waittime)
+    #db = next(get_session())
+    #sysstr = get_sys_status.getSystemStatus(db)
+    #if syssts.SystemStatusToJName.get_jname(sysstr) != jstsname:
+    time.sleep(waittime)
     response = client.get(
         f'{prefix}/dashboard/',
     )

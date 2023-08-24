@@ -3,15 +3,16 @@ from accessor.item import (
     ItemQuery,
     NewestQuery,
     UrlQuery,
+    UrlActive,
 )
 from accessor.store import (
     StoreQuery
 )
-from accessor import util as sa_util
-from common import util as cm_util
+
 from sqlalchemy import (
     select,
     insert,
+    delete,
     func,
 )
 from accessor.item.item import OrganizerQuery
@@ -22,8 +23,14 @@ from model.item import (
     UrlInItem,
     PriceLog,
     PriceLog_2days,
+    Url,
+    Group,
+    GroupItem,
 )
-from .test_db import test_db
+from model.store import (
+    Store,
+    StorePostage,
+)
 
 def insert_pricelog_sync(db, pldict :dict):
     insert_pricelog = (
@@ -38,44 +45,114 @@ def insert_pricelog_sync(db, pldict :dict):
     db.execute(insert_pricelog_2days)
     db.commit()
 
-def insert_item_and_newestitem(db, item_name :str = "", url_path :str = ""):
-    NewestQuery.add_item(db=db,item_name=item_name, url_path=url_path)
+def insert_pricelog_dict_list_sync(db, pldict_list :list[dict]):
+    insert_pricelog = (
+        insert(PriceLog)
+        .values(pldict_list)
+    )
+    insert_pricelog_2days = (
+        insert(PriceLog_2days)
+        .values(pldict_list)
+    )
+    db.execute(insert_pricelog)
+    db.execute(insert_pricelog_2days)
+    db.commit()
+
+def insert_item_dict(db, item_dict :dict):
+    stmt = ( insert(Item)
+            .values(item_dict)
+            )
+    db.execute(stmt)
+    db.commit()
+
+def insert_item_dict_list(db, item_list :list[dict]):
+    stmt = ( insert(Item)
+                .values(item_list)
+            )
+    db.execute(stmt)
+    db.commit()
+
+def insert_newestitem_dict(db, nidict :dict):
+    stmt = ( insert(NewestItem)
+            .values(nidict)
+            )
+    db.execute(stmt)
+    db.commit()
+
+def insert_newestitem_dict_list(db, nidict_list :list[dict]):
+    stmt = ( insert(NewestItem)
+            .values(nidict_list)
+            )
+    db.execute(stmt)
+    db.commit()
+
+def insert_urlinitem_dict(db, urlinitem_dict:dict):
+    stmt = ( insert(UrlInItem)
+            .values(urlinitem_dict)
+            )
+    db.execute(stmt)
+    db.commit()
+
+def insert_urlinitem_dict_list(db, urlinitem_list :list[dict]):
+    stmt = ( insert(UrlInItem)
+            .values(urlinitem_list)
+            )
+    db.execute(stmt)
+    db.commit()
+
+def insert_url(db, url_id :int, urlpath :str):
+    stmt = ( insert(Url)
+          .values(url_id=url_id,
+                  urlpath=urlpath,
+                  )
+          )
+    db.execute(stmt)
+    db.commit()
+
+def insert_url_dict_list(db, url_list:list[dict]):
+    stmt = ( insert(Url)
+          .values(url_list)
+          )
+    db.execute(stmt)
+    db.commit()
+
 
 def insert_stores(db, storename_list :list[str]):
     StoreQuery.add_storename_list(db, storename_list=storename_list)
 
-def update_newestitem(db, nidict :dict):
-    NewestQuery.update_items_by_dict(db, nidict=nidict)
-
-def test_get_lowest_price_ever():
-    item_id = 7
-    val = NewestQuery.get_lowest_price_ever(item_id=item_id)
-    assert int(val) == 2211
-
-def test_organizerquery_get_pricelog_2days_today(test_db):
-    val = OrganizerQuery.get_pricelog_2days_today()
-    assert len(val) == 0
-
-def test_organizerquery_get_pricelog_today(test_db):
-    val = OrganizerQuery.get_pricelog_today()
-    assert len(val) == 0
-
-def test_isLocalToday(test_db):
-    stmt = (select(func.now()) #postgres
+def insert_store_dict_list(db, storename_dict_list :list[dict]):
+    stmt = ( insert(Store)
+            .values(storename_dict_list)
             )
-    ret = test_db.scalar(stmt)
-    assert cm_util.isLocalToday(cm_util.utcTolocaltime(ret))
+    db.execute(stmt)
+    db.commit()
 
-def test_isLocalToday_alchemy_tolocal(test_db):
-    stmt = (select(func.now().op('AT TIME ZONE')('Asia/Tokyo')))
-    ret = test_db.scalar(stmt)
-    assert cm_util.isLocalToday(ret)
+def delete_item_model(db):
+    __delete_item_model(db)
+    db.commit()
 
-def test_get_newest_created_at(test_db):
-    stmt = ( select(Item.name,
-                    NewestItem.created_at.op('AT TIME ZONE')('UTC').op('AT TIME ZONE')('Asia/Tokyo'))
-            .join(UrlInItem, NewestItem.item_id == UrlInItem.item_id)
-            .join(Item, NewestItem.item_id == Item.item_id)
-        )
-    ret = test_db.execute(stmt).all()
-    print(ret)
+def __delete_item_model(db):
+    db.execute(delete(Item))
+    db.execute(delete(Url))
+    db.execute(delete(UrlInItem))
+    db.execute(delete(PriceLog))
+    db.execute(delete(PriceLog_2days))
+    db.execute(delete(NewestItem))
+    db.execute(delete(Group))
+    db.execute(delete(GroupItem))
+    
+
+def delete_store_model(db):
+    __delete_store_model(db)
+    db.commit()
+
+def __delete_store_model(db):
+    db.execute(delete(Store))
+    db.execute(delete(StorePostage))
+
+def delete_item_and_store_model(db):
+    __delete_item_model(db)
+    __delete_store_model(db)
+    db.commit()
+
+

@@ -8,7 +8,7 @@ from accessor.item import (
 )
 
 from tests.test_db import test_db, drop_test_db
-from tests.routers.test_common import (
+from tests.test_routers.test_common import (
     RedirectCheckValue,
     check_redirect,
     is_html,

@@ -1002,21 +1002,6 @@ class UrlQuery:
         db.commit()
         db.refresh(uii)
     
-    
-    @classmethod
-    def update_urlinitem(cls, db :Session, url_id :int, item_id :int, isactive :bool) -> None:
-        cls.__update_urlinitem(db, url_id=url_id, item_id=item_id, isactive=isactive)
-    
-    @classmethod
-    def __update_urlinitem(cls, db :Session, url_id :int, item_id :int, isactive :bool) -> None:
-        stmt = ( update(UrlInItem)
-                .where(UrlInItem.url_id == url_id)
-                .where(UrlInItem.item_id == item_id)
-                .values(active=str(isactive))
-                )
-        db.execute(stmt)
-        db.commit()
-
     @classmethod
     def update_url_active(cls, db :Session, item_id :int, url_id :int, isactive :UrlActive) -> None:
         stmt = ( update(UrlInItem)
