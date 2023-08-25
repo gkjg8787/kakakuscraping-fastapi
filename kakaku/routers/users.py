@@ -1,7 +1,8 @@
 from urllib.parse import urlencode
 from fastapi import APIRouter, Request, Form, Depends, status, HTTPException
 from fastapi.responses import RedirectResponse, HTMLResponse
-
+from sqlalchemy.orm import Session
+from accessor.read_sqlalchemy import get_session
 from common import (
     read_templates,
     cookie_name,
@@ -18,14 +19,17 @@ router = APIRouter(
 templates = read_templates.templates
 
 @router.get("/", response_class=HTMLResponse)
-def read_users(request: Request, nfq: ppi.NewestFilterQuery = Depends()):
+def read_users(request: Request,
+               nfq: ppi.NewestFilterQuery = Depends(),
+               db :Session = Depends(get_session)
+               ):
     if nfq.is_cookie_available():
         return RedirectResponse(
             url=str(request.url_for("read_users")) + "?" + urlencode(nfq.get_filter_dict())
             ,status_code=status.HTTP_302_FOUND
         )
     
-    nil = template_value.item.NewestItemList(request=request, nfq=nfq)
+    nil = template_value.item.NewestItemList(request=request, nfq=nfq, db=db)
     context = dict(nil)
     res = templates.TemplateResponse(
         "users/iteminfo_listview.html"
@@ -57,8 +61,11 @@ def read_users_items_add(request: Request):
     )
 
 @router.post("/items/add/result/", response_class=HTMLResponse)
-def read_users_items_add_post(request: Request, addurl: ppi.AddItemUrlForm = Depends()):
-    aiupc = template_value.item.AddItemUrlPostContext(request=request, adduform=addurl)
+def read_users_items_add_post(request: Request,
+                              addurl: ppi.AddItemUrlForm = Depends(),
+                              db :Session = Depends(get_session)
+                              ):
+    aiupc = template_value.item.AddItemUrlPostContext(request=request, adduform=addurl, db=db)
     context = dict(aiupc)
     return templates.TemplateResponse(
         "users/add_item.html"
@@ -66,12 +73,15 @@ def read_users_items_add_post(request: Request, addurl: ppi.AddItemUrlForm = Dep
     )
 
 @router.post("/items/updates/")#, response_class=HTMLResponse)
-def read_users_items_update_all(request: Request, item_all_update :str = Form()):
+def read_users_items_update_all(request: Request,
+                                item_all_update :str = Form(),
+                                db :Session = Depends(get_session)
+                                ):
     if not item_all_update \
         or item_all_update != filter_name.ItemUpdateValue.ITEM_ALL_UPDATE:
         return RedirectResponse(url=request.url_for("read_users")
                             ,status_code=status.HTTP_302_FOUND)
-    uaiupc = template_value.item.UpdateAllItemUrlPostContext(request=request)
+    uaiupc = template_value.item.UpdateAllItemUrlPostContext(request=request, db=db)
     context = dict(uaiupc)
     return templates.TemplateResponse(
         "users/update_item.html"
@@ -79,8 +89,11 @@ def read_users_items_update_all(request: Request, item_all_update :str = Form())
     )
 
 @router.post("/items/v/update/", response_class=HTMLResponse)
-def read_users_url_update(request :Request, upurlform:ppi.UpdateItemUrlForm = Depends()):
-    upiupc = template_value.item.UpdateItemUrlPostContext(request=request, upurlform=upurlform)
+def read_users_url_update(request :Request,
+                          upurlform:ppi.UpdateItemUrlForm = Depends(),
+                          db :Session = Depends(get_session)
+                          ):
+    upiupc = template_value.item.UpdateItemUrlPostContext(request=request, upurlform=upurlform, db=db)
     context = dict(upiupc)
     return templates.TemplateResponse(
         "users/update_item.html"
@@ -88,8 +101,11 @@ def read_users_url_update(request :Request, upurlform:ppi.UpdateItemUrlForm = De
         )
 
 @router.post("/items/v/update/all/", response_class=HTMLResponse)
-def read_users_items_update(request :Request, upurlallform :ppi.UpdateItemAllUrlForm = Depends()):
-    upiuallpc = template_value.item.UpdateItemAllUrlPostContext(request=request, upurlform=upurlallform)
+def read_users_items_update(request :Request,
+                            upurlallform :ppi.UpdateItemAllUrlForm = Depends(),
+                            db :Session = Depends(get_session)
+                            ):
+    upiuallpc = template_value.item.UpdateItemAllUrlPostContext(request=request, upurlform=upurlallform, db=db)
     context = dict(upiuallpc)
     return templates.TemplateResponse(
         "users/update_item.html"
@@ -97,8 +113,11 @@ def read_users_items_update(request :Request, upurlallform :ppi.UpdateItemAllUrl
         )
 
 @router.get("/items/v/", response_class=HTMLResponse)
-def read_users_items_view(request: Request, idq :ppi.ItemDetailQuery = Depends()):
-    idc = template_value.item.ItemDetailContext(request=request, idq=idq)
+def read_users_items_view(request: Request,
+                          idq :ppi.ItemDetailQuery = Depends(),
+                          db :Session = Depends(get_session)
+                          ):
+    idc = template_value.item.ItemDetailContext(request=request, idq=idq, db=db)
     if not idc.has_data():
         return RedirectResponse(url=request.url_for("read_users")
                             ,status_code=status.HTTP_302_FOUND)
@@ -121,11 +140,14 @@ def read_users_items_add_url(request: Request, addurl :ppi.AddUrlForm = Depends(
         )
 
 @router.post("/items/v/addurl/result/", response_class=HTMLResponse)
-def read_users_items_add_url_result(request: Request, addurl :ppi.AddUrlForm = Depends()):
+def read_users_items_add_url_result(request: Request,
+                                    addurl :ppi.AddUrlForm = Depends(),
+                                    db :Session = Depends(get_session)
+                                    ):
     if addurl.item_id == const_value.NONE_ID:
         return RedirectResponse(url=request.url_for("read_users")
                             ,status_code=status.HTTP_302_FOUND)
-    aupc = template_value.item.AddUrlPostContext(request=request, adduform=addurl)
+    aupc = template_value.item.AddUrlPostContext(request=request, adduform=addurl, db=db)
     context = dict(aupc)
     return templates.TemplateResponse(
         "users/add_url.html"
@@ -133,11 +155,14 @@ def read_users_items_add_url_result(request: Request, addurl :ppi.AddUrlForm = D
         )
 
 @router.post("/items/v/name/update/", response_class=HTMLResponse)
-def read_users_items_update_item_name(request: Request, upname :ppi.UpdateItemNameForm = Depends()):
+def read_users_items_update_item_name(request: Request,
+                                      upname :ppi.UpdateItemNameForm = Depends(),
+                                      db :Session = Depends(get_session)
+                                      ):
     if upname.item_id == const_value.NONE_ID:
         return RedirectResponse(url=request.url_for("read_users")
                             ,status_code=status.HTTP_302_FOUND)
-    uinic = template_value.item.UpdateItemNameInitContext(request=request, upnameform=upname)
+    uinic = template_value.item.UpdateItemNameInitContext(request=request, upnameform=upname, db=db)
     context = dict(uinic)
     return templates.TemplateResponse(
         "users/update_itemname.html"
@@ -145,11 +170,14 @@ def read_users_items_update_item_name(request: Request, upname :ppi.UpdateItemNa
         )
 
 @router.post("/items/v/name/update/result/", response_class=HTMLResponse)
-def read_users_items_update_item_name_result(request: Request, upname :ppi.UpdateItemNameForm = Depends()):
+def read_users_items_update_item_name_result(request: Request,
+                                             upname :ppi.UpdateItemNameForm = Depends(),
+                                             db :Session = Depends(get_session)
+                                             ):
     if upname.item_id == const_value.NONE_ID:
         return RedirectResponse(url=request.url_for("read_users")
                             ,status_code=status.HTTP_302_FOUND)
-    uinpc = template_value.item.UpdateItemNamePostContext(request=request, upnameform=upname)
+    uinpc = template_value.item.UpdateItemNamePostContext(request=request, upnameform=upname, db=db)
     context = dict(uinpc)
     return templates.TemplateResponse(
         "users/update_itemname.html"
@@ -158,23 +186,30 @@ def read_users_items_update_item_name_result(request: Request, upname :ppi.Updat
 
 
 @router.post("/items/v/url/inact/all/", response_class=HTMLResponse)
-def read_users_items_inact_url_all(request: Request, inactform :ppi.InActAllUrlForm = Depends()):
+def read_users_items_inact_url_all(request: Request,
+                                   inactform :ppi.InActAllUrlForm = Depends(),
+                                   db :Session = Depends(get_session)
+                                   ):
     if inactform.item_id == const_value.NONE_ID:
         return RedirectResponse(url=request.url_for("read_users")
                             ,status_code=status.HTTP_302_FOUND)
     iaaupc = template_value.item.InActAllUrlPostContext(request=request,
-                                               inactform=inactform)
+                                               inactform=inactform,
+                                               db=db)
     context = dict(iaaupc)
     return templates.TemplateResponse(
         "users/update_act_url.html"
         ,context
         )
 @router.post("/items/v/url/inact/", response_class=HTMLResponse)
-def read_users_items_inact_url(request :Request, inactform :ppi.InActUrlForm = Depends()):
+def read_users_items_inact_url(request :Request,
+                               inactform :ppi.InActUrlForm = Depends(),
+                               db :Session = Depends(get_session)
+                               ):
     if inactform.item_id == const_value.NONE_ID:
         return RedirectResponse(url=request.url_for("read_users")
                             ,status_code=status.HTTP_302_FOUND)
-    iaupc = template_value.item.InActUrlPostContext(request=request, inactform=inactform)
+    iaupc = template_value.item.InActUrlPostContext(request=request, inactform=inactform, db=db)
     context = dict(iaupc)
     return templates.TemplateResponse(
         "users/update_act_url.html"
@@ -182,11 +217,14 @@ def read_users_items_inact_url(request :Request, inactform :ppi.InActUrlForm = D
         )
 
 @router.post("/items/v/url/act/", response_class=HTMLResponse)
-def read_users_items_act_url(request :Request, actform :ppi.ActUrlForm = Depends()):
+def read_users_items_act_url(request :Request,
+                             actform :ppi.ActUrlForm = Depends(),
+                             db :Session = Depends(get_session)
+                             ):
     if actform.item_id == const_value.NONE_ID:
         return RedirectResponse(url=request.url_for("read_users")
                             ,status_code=status.HTTP_302_FOUND)
-    iaupc = template_value.item.ActUrlPostContext(request=request, actform=actform)
+    iaupc = template_value.item.ActUrlPostContext(request=request, actform=actform, db=db)
     context = dict(iaupc)
     return templates.TemplateResponse(
         "users/update_act_url.html"
@@ -194,12 +232,16 @@ def read_users_items_act_url(request :Request, actform :ppi.ActUrlForm = Depends
         )
 
 @router.post("/items/v/url/remove/", response_class=HTMLResponse)
-def read_users_items_url_remove(request :Request, remurlform :ppi.RemoveItemUrlForm = Depends()):
+def read_users_items_url_remove(request :Request,
+                                remurlform :ppi.RemoveItemUrlForm = Depends(),
+                                db :Session = Depends(get_session)
+                                ):
     if remurlform.item_id == const_value.NONE_ID:
         return RedirectResponse(url=request.url_for("read_users")
                             ,status_code=status.HTTP_302_FOUND)
     riupc = template_value.item.RemoveItemUrlPostContext(request=request,
-                                                         remurlform=remurlform)
+                                                         remurlform=remurlform,
+                                                         db=db)
     context = dict(riupc)
     return templates.TemplateResponse(
         "users/remove_items_url.html"
@@ -207,8 +249,11 @@ def read_users_items_url_remove(request :Request, remurlform :ppi.RemoveItemUrlF
         )
 
 @router.get("/items/v/chart/", response_class=HTMLResponse)
-def read_users_items_view_chart(request: Request, idq :ppi.ItemDetailQuery = Depends()):
-    idcc = template_value.item.ItemDetailChartContext(request, idq=idq)
+def read_users_items_view_chart(request: Request,
+                                idq :ppi.ItemDetailQuery = Depends(),
+                                db :Session = Depends(get_session)
+                                ):
+    idcc = template_value.item.ItemDetailChartContext(request, idq=idq, db=db)
     if not idcc.has_data():
         return RedirectResponse(url=request.url_for("read_users")
                             ,status_code=status.HTTP_302_FOUND)
@@ -218,10 +263,13 @@ def read_users_items_view_chart(request: Request, idq :ppi.ItemDetailQuery = Dep
         ,context
         )
 @router.post("/items/v/remove/", response_class=HTMLResponse)
-def read_users_items_remove(request :Request, diform :ppi.DeleteItemForm = Depends()):
+def read_users_items_remove(request :Request,
+                            diform :ppi.DeleteItemForm = Depends(),
+                            db :Session = Depends(get_session)
+                            ):
     if not diform.is_valid():
         raise HTTPException(status_code=404, detail="Item not found")
-    diic = template_value.item.DeleteItemInitContext(request=request, diform=diform)
+    diic = template_value.item.DeleteItemInitContext(request=request, diform=diform, db=db)
     context = dict(diic)
     return templates.TemplateResponse(
         "users/del_item.html"
@@ -229,10 +277,13 @@ def read_users_items_remove(request :Request, diform :ppi.DeleteItemForm = Depen
         )
 
 @router.post("/items/v/remove/result/", response_class=HTMLResponse)
-def read_users_items_remove_result(request :Request, diform :ppi.DeleteItemForm = Depends()):
+def read_users_items_remove_result(request :Request,
+                                   diform :ppi.DeleteItemForm = Depends(),
+                                   db :Session = Depends(get_session)
+                                   ):
     if not diform.is_valid():
         raise HTTPException(status_code=404, detail="Item not found")
-    dic = template_value.item.DeleteItemContext(request=request, diform=diform)
+    dic = template_value.item.DeleteItemContext(request=request, diform=diform, db=db)
     context = dict(dic)
     return templates.TemplateResponse(
         "users/del_item.html"
@@ -252,8 +303,11 @@ def read_users_groups_add(request :Request):
     )
 
 @router.post("/groups/add/result/", response_class=HTMLResponse)
-def read_users_groups_add_result(request :Request, addgform :ppi.AddGroupForm = Depends()):
-    agpc = template_value.item.AddGroupPostContext(request=request, addgform=addgform)
+def read_users_groups_add_result(request :Request,
+                                 addgform :ppi.AddGroupForm = Depends(),
+                                 db :Session = Depends(get_session)
+                                 ):
+    agpc = template_value.item.AddGroupPostContext(request=request, addgform=addgform, db=db)
     context = dict(agpc)
     return templates.TemplateResponse(
         "users/add_group.html"
@@ -261,8 +315,11 @@ def read_users_groups_add_result(request :Request, addgform :ppi.AddGroupForm = 
     )
 
 @router.get("/groups/edit/", response_class=HTMLResponse)
-def read_users_groups_edit(request :Request, groupfilter :ppi.NewestFilterQueryForGroup = Depends()):
-    editgroup = template_value.item.EditGroupContext(request=request, nfqg=groupfilter)
+def read_users_groups_edit(request :Request,
+                           groupfilter :ppi.NewestFilterQueryForGroup = Depends(),
+                           db :Session = Depends(get_session)
+                           ):
+    editgroup = template_value.item.EditGroupContext(request=request, nfqg=groupfilter, db=db)
     if not editgroup.gfid or editgroup.gfid == const_value.NONE_ID:
         return RedirectResponse(url=request.url_for("read_users")
                             ,status_code=status.HTTP_302_FOUND)
@@ -273,18 +330,24 @@ def read_users_groups_edit(request :Request, groupfilter :ppi.NewestFilterQueryF
     )
 
 @router.post("/groups/edit/update/", response_class=HTMLResponse)
-def read_users_groups_edit_update(request :Request, giform :ppi.GroupItemUpdateForm = Depends()):
-    ugi = template_value.item.UpdateGroupItem(giform=giform)
+def read_users_groups_edit_update(request :Request,
+                                  giform :ppi.GroupItemUpdateForm = Depends(),
+                                  db :Session = Depends(get_session)
+                                  ):
+    ugi = template_value.item.UpdateGroupItem(giform=giform, db=db)
     
     return RedirectResponse(url=str(request.url_for("read_users_groups_edit")) + ugi.get_query()
                             ,status_code=status.HTTP_302_FOUND)
 
 @router.post("/groups/delete/", response_class=HTMLResponse)
-def read_users_groups_delete(request :Request, delgform :ppi.DeleteGroupForm = Depends()):
+def read_users_groups_delete(request :Request,
+                             delgform :ppi.DeleteGroupForm = Depends(),
+                             db :Session = Depends(get_session)
+                             ):
     if not delgform.is_valid():
         return RedirectResponse(url=request.url_for("read_users")
                             ,status_code=status.HTTP_302_FOUND)
-    dgic = template_value.item.DeleteGroupInitContext(request=request, delgform=delgform)
+    dgic = template_value.item.DeleteGroupInitContext(request=request, delgform=delgform, db=db)
     context = dict(dgic)
     return templates.TemplateResponse(
         "users/del_group.html"
@@ -292,11 +355,14 @@ def read_users_groups_delete(request :Request, delgform :ppi.DeleteGroupForm = D
     )
 
 @router.post("/groups/delete/result/", response_class=HTMLResponse)
-def read_users_groups_delete_result(request :Request, delgform :ppi.DeleteGroupForm = Depends()):
+def read_users_groups_delete_result(request :Request,
+                                    delgform :ppi.DeleteGroupForm = Depends(),
+                                    db :Session = Depends(get_session)
+                                    ):
     if not delgform.is_valid():
         return RedirectResponse(url=request.url_for("read_users")
                             ,status_code=status.HTTP_302_FOUND)
-    dgc = template_value.item.DeleteGroupContext(request=request, delgform=delgform)
+    dgc = template_value.item.DeleteGroupContext(request=request, delgform=delgform, db=db)
     context = dict(dgc)
     return templates.TemplateResponse(
         "users/del_group.html"
@@ -304,11 +370,14 @@ def read_users_groups_delete_result(request :Request, delgform :ppi.DeleteGroupF
     )
 
 @router.post("/groups/rename/", response_class=HTMLResponse)
-def read_users_groups_rename(request :Request, renamegform :ppi.RenameGroupNameInitForm = Depends()):
+def read_users_groups_rename(request :Request,
+                             renamegform :ppi.RenameGroupNameInitForm = Depends(),
+                             db :Session = Depends(get_session)
+                             ):
     if not renamegform.is_valid():
         return RedirectResponse(url=request.url_for("read_users")
                             ,status_code=status.HTTP_302_FOUND)
-    dgic = template_value.item.RenameGroupNameInitContext(request=request, rgnform=renamegform)
+    dgic = template_value.item.RenameGroupNameInitContext(request=request, rgnform=renamegform, db=db)
     context = dict(dgic)
     return templates.TemplateResponse(
         "users/rename_group.html"
@@ -316,11 +385,14 @@ def read_users_groups_rename(request :Request, renamegform :ppi.RenameGroupNameI
     )
 
 @router.post("/groups/rename/result/", response_class=HTMLResponse)
-def read_users_groups_rename_result(request :Request, renamegform :ppi.RenameGroupNameForm = Depends()):
+def read_users_groups_rename_result(request :Request,
+                                    renamegform :ppi.RenameGroupNameForm = Depends(),
+                                    db :Session = Depends(get_session)
+                                    ):
     if not renamegform.is_valid():
         return RedirectResponse(url=request.url_for("read_users")
                             ,status_code=status.HTTP_302_FOUND)
-    dgic = template_value.item.RenameGroupNameContext(request=request, rgnform=renamegform)
+    dgic = template_value.item.RenameGroupNameContext(request=request, rgnform=renamegform, db=db)
     context = dict(dgic)
     return templates.TemplateResponse(
         "users/rename_group.html"

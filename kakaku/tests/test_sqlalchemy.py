@@ -1,29 +1,158 @@
+from typing import Optional
 from accessor.item import (
     ItemQuery,
     NewestQuery,
     UrlQuery,
+    UrlActive,
+)
+from accessor.store import (
+    StoreQuery
+)
+
+from sqlalchemy import (
+    select,
+    insert,
+    delete,
+    func,
 )
 from accessor.item.item import OrganizerQuery
 
-def test_get_most_recent_old_price_by_url_id():
-    url_id = 7
-    val = ItemQuery.get_most_recent_old_price_by_url_id(url_id=url_id)
-    assert int(val) == 2700
+from model.item import (
+    NewestItem,
+    Item,
+    UrlInItem,
+    PriceLog,
+    PriceLog_2days,
+    Url,
+    Group,
+    GroupItem,
+)
+from model.store import (
+    Store,
+    StorePostage,
+)
 
-def test_get_most_recent_old_price_by_item_id():
-    item_id = 7
-    val = ItemQuery.get_most_recent_old_price_by_item_id(item_id=item_id)
-    assert int(val) == 2211
+def insert_pricelog_sync(db, pldict :dict):
+    insert_pricelog = (
+        insert(PriceLog)
+        .values(pldict)
+    )
+    insert_pricelog_2days = (
+        insert(PriceLog_2days)
+        .values(pldict)
+    )
+    db.execute(insert_pricelog)
+    db.execute(insert_pricelog_2days)
+    db.commit()
 
-def test_get_lowest_price_ever():
-    item_id = 7
-    val = NewestQuery.get_lowest_price_ever(item_id=item_id)
-    assert int(val) == 2211
+def insert_pricelog_dict_list_sync(db, pldict_list :list[dict]):
+    insert_pricelog = (
+        insert(PriceLog)
+        .values(pldict_list)
+    )
+    insert_pricelog_2days = (
+        insert(PriceLog_2days)
+        .values(pldict_list)
+    )
+    db.execute(insert_pricelog)
+    db.execute(insert_pricelog_2days)
+    db.commit()
 
-def test_organizerquery_get_pricelog_2days_today():
-    val = OrganizerQuery.get_pricelog_2days_today()
-    assert len(val) == 0
+def insert_item_dict(db, item_dict :dict):
+    stmt = ( insert(Item)
+            .values(item_dict)
+            )
+    db.execute(stmt)
+    db.commit()
 
-def test_organizerquery_get_pricelog_today():
-    val = OrganizerQuery.get_pricelog_today()
-    assert len(val) == 0
+def insert_item_dict_list(db, item_list :list[dict]):
+    stmt = ( insert(Item)
+                .values(item_list)
+            )
+    db.execute(stmt)
+    db.commit()
+
+def insert_newestitem_dict(db, nidict :dict):
+    stmt = ( insert(NewestItem)
+            .values(nidict)
+            )
+    db.execute(stmt)
+    db.commit()
+
+def insert_newestitem_dict_list(db, nidict_list :list[dict]):
+    stmt = ( insert(NewestItem)
+            .values(nidict_list)
+            )
+    db.execute(stmt)
+    db.commit()
+
+def insert_urlinitem_dict(db, urlinitem_dict:dict):
+    stmt = ( insert(UrlInItem)
+            .values(urlinitem_dict)
+            )
+    db.execute(stmt)
+    db.commit()
+
+def insert_urlinitem_dict_list(db, urlinitem_list :list[dict]):
+    stmt = ( insert(UrlInItem)
+            .values(urlinitem_list)
+            )
+    db.execute(stmt)
+    db.commit()
+
+def insert_url(db, url_id :int, urlpath :str):
+    stmt = ( insert(Url)
+          .values(url_id=url_id,
+                  urlpath=urlpath,
+                  )
+          )
+    db.execute(stmt)
+    db.commit()
+
+def insert_url_dict_list(db, url_list:list[dict]):
+    stmt = ( insert(Url)
+          .values(url_list)
+          )
+    db.execute(stmt)
+    db.commit()
+
+
+def insert_stores(db, storename_list :list[str]):
+    StoreQuery.add_storename_list(db, storename_list=storename_list)
+
+def insert_store_dict_list(db, storename_dict_list :list[dict]):
+    stmt = ( insert(Store)
+            .values(storename_dict_list)
+            )
+    db.execute(stmt)
+    db.commit()
+
+def delete_item_model(db):
+    __delete_item_model(db)
+    db.commit()
+
+def __delete_item_model(db):
+    db.execute(delete(Item))
+    db.execute(delete(Url))
+    db.execute(delete(UrlInItem))
+    db.execute(delete(PriceLog))
+    db.execute(delete(PriceLog_2days))
+    db.execute(delete(NewestItem))
+    db.execute(delete(Group))
+    db.execute(delete(GroupItem))
+    
+
+def delete_store_model(db):
+    __delete_store_model(db)
+    db.commit()
+
+def __delete_store_model(db):
+    db.execute(delete(Store))
+    db.execute(delete(StorePostage))
+
+def delete_item_and_store_model(db):
+    __delete_item_model(db)
+    __delete_store_model(db)
+    db.commit()
+
+

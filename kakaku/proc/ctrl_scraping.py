@@ -2,6 +2,8 @@ import argparse
 from enum import auto
 import time
 
+from sqlalchemy.orm import Session
+
 from common.filter_name import AutoLowerName
 
 from proc.scrapingmanage import (
@@ -12,6 +14,8 @@ from proc.sendcmd import ScrOrder
 
 from proc.get_sys_status import getSystemStatus
 from proc.system_status import SystemStatus
+
+from accessor.read_sqlalchemy import get_session
 
 class ScrapingProcAction(AutoLowerName):
     START = auto()
@@ -34,7 +38,7 @@ def start_scrapingmanager():
 def end_scrapingmanager():
     sendTask(ScrOrder.END, "", -1)
 
-def proc_action(cmdname :str):
+def proc_action(db :Session, cmdname :str):
     if cmdname == ScrapingProcAction.START.value:
         start_scrapingmanager()
         return
@@ -47,7 +51,7 @@ def proc_action(cmdname :str):
         while cnt < TRY_WAIT_PROC_EXIT_TIME:
             time.sleep(WAIT_PROC_EXIT_TIME)
             cnt += 1
-            sts_name = getSystemStatus()
+            sts_name = getSystemStatus(db)
             if sts_name == SystemStatus.STOP.name:
                 start_scrapingmanager()
                 break
@@ -55,13 +59,14 @@ def proc_action(cmdname :str):
         return
     return
 
-def start_func(act :ScrapingProcAction):
-    proc_action(act.value)
+def start_func(db :Session, act :ScrapingProcAction):
+    proc_action(db, act.value)
     return
 
 def start_cmd(argv):
     param = parse_paramter(argv)
-    proc_action(param.cmdorder)
+    db = next(get_session())
+    proc_action(db, param.cmdorder)
     return
 
 

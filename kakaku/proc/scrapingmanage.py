@@ -13,6 +13,10 @@ from common import cmnlog, util
 from proc.dlmanage import DlProc
 from proc.parsemanage import ParseProc
 from proc.proc_status import ProcStatusAccess, ProcName
+from proc import manager_util
+
+from sqlalchemy.orm import Session
+from accessor.read_sqlalchemy import get_session
 
 from common.read_config import (
     get_back_server_config,
@@ -31,28 +35,16 @@ class QueueManager(BaseManager):
     pass
 
 def getProcStatusAccess():
-    return ProcStatusAccess(ProcName.MANAGER)
+    return ProcStatusAccess(name=ProcName.MANAGER)
 
-def writeAllProcStop():
-    ProcStatusAccess.delete_all()
+def writeAllProcStop(db :Session):
+    ProcStatusAccess.delete_all(db)
 
-def writeProcActive(psa=None):
+def writeProcStart(db :Session, psa :Optional[ProcStatusAccess]=None):
+    writeAllProcStop(db)
     if psa is None :
         psa = getProcStatusAccess()
-    psa.update(ProcStatusAccess.ACTIVE)
-    return psa
-
-def writeProcWaiting(psa=None):
-    if psa is None :
-        psa = getProcStatusAccess()
-    psa.update(ProcStatusAccess.WAITING)
-    return psa
-
-def writeProcStart(psa=None):
-    writeAllProcStop()
-    if psa is None :
-        psa = getProcStatusAccess()
-    psa.add(ProcStatusAccess.DURING_STARTUP, os.getpid())
+    psa.add(db, status=ProcStatusAccess.DURING_STARTUP, pid=os.getpid())
     return psa
 
 def get_filename():
@@ -65,7 +57,8 @@ def startQueue():
     cmnlog.initProcessLogger()
     logger = getLogger(cmnlog.LogName.MANAGER)
     logger.info(get_filename() + ' manager start')
-    writeProcStart()
+    db = next(get_session())
+    writeProcStart(db=db)
 
     # タスクを受け取るキュー
     task_queue = queue.Queue()
@@ -88,23 +81,27 @@ def startQueue():
 
     createSubProc()
 
-    waitTask(task, result)
+    waitTask(task=task, result=result, db=db)
 
     # 終了
     endSubProc()
-    writeAllProcStop()
+    writeAllProcStop(db=db)
     manager.shutdown()
     logger.info(get_filename() + ' manager end')
 
-def start_db_organize(cmdstr :str):
+def start_db_organize(db :Session, cmdstr :str):
     from proc import db_organizer
     if cmdstr == sendcmd.ScrOrder.DB_ORGANIZE_DAYS:
-        db_organizer.start_func(db_organizer.DBOrganizerCmd.ALL)
+        db_organizer.start_func(db=db, orgcmd=db_organizer.DBOrganizerCmd.ALL)
     elif cmdstr == sendcmd.ScrOrder.DB_ORGANIZE_SYNC:
-        db_organizer.start_func(db_organizer.DBOrganizerCmd.SYNC_PRICELOG)
+        db_organizer.start_func(db=db, orgcmd=db_organizer.DBOrganizerCmd.SYNC_PRICELOG)
+    elif cmdstr == sendcmd.ScrOrder.DB_ORGANIZE_LOG_2DAYS_CLEANER:
+        db_organizer.start_func(db=db, orgcmd=db_organizer.DBOrganizerCmd.PRICELOG_2DAYS_CLEANER)
+    elif cmdstr == sendcmd.ScrOrder.DB_ORGANIZE_LOG_CLEANER:
+        db_organizer.start_func(db=db, orgcmd=db_organizer.DBOrganizerCmd.PRICELOG_CLEANER)
     return
 
-def scrapingURL(task):
+def scrapingURL(task, db :Session):
     logger = getLogger(cmnlog.LogName.MANAGER)
     if task.cmdstr == sendcmd.ScrOrder.UPDATE:
         logger.info(get_filename() + ' get UPDATE')
@@ -112,33 +109,35 @@ def scrapingURL(task):
         dlproc.putDlTask(task.url, task.id)
         return
     if task.cmdstr == sendcmd.ScrOrder.UPDATE_ACT_ALL:
-        updateAllItems.updateAllitems(dlproc)
+        updateAllItems.updateAllitems(db, dlproc)
         return
     if task.cmdstr == sendcmd.ScrOrder.DB_ORGANIZE_SYNC\
         or task.cmdstr == sendcmd.ScrOrder.DB_ORGANIZE_DAYS:
-        start_db_organize(task.cmdstr)
+        start_db_organize(db, cmdstr=task.cmdstr)
         return
 
-def check_db_organize():
+def check_db_organize(db :Session):
     from accessor.server import OrganizeLogQuery
     from proc import db_organizer
-    ret = OrganizeLogQuery.get_log(db_organizer.DBOrganizerCmd.PRICELOG_CLEANER.name)
+    ret = OrganizeLogQuery.get_log(db, name=db_organizer.DBOrganizerCmd.PRICELOG_CLEANER.name)
     if not ret \
         or (ret and not util.isLocalToday(util.utcTolocaltime(ret.created_at))):
-        start_db_organize(sendcmd.ScrOrder.DB_ORGANIZE_DAYS)
+        start_db_organize(db, cmdstr=sendcmd.ScrOrder.DB_ORGANIZE_DAYS)
     return
 
-def waitTask(task, result):
+def waitTask(task, result, db :Session):
     logger = getLogger(cmnlog.LogName.MANAGER)
     logger.info(get_filename() + ' waitTask start')
-    psa = writeProcWaiting()
-    check_db_organize()
+    psa = getProcStatusAccess()
+    manager_util.writeProcActive(db, psa=psa)
+    check_db_organize(db)
+    manager_util.writeProcWaiting(db, psa=psa)
     while True:
         try:
             t = task.get(timeout=QUEUE_TIMEOUT)
             logger.info(get_filename() + ' get task')
             if not psa.getStatus() == ProcStatusAccess.ACTIVE:
-                writeProcActive(psa)
+                manager_util.writeProcActive(db, psa=psa)
 
             if(t.cmdstr == sendcmd.ScrOrder.END):
                 logger.info(get_filename() + ' get END')
@@ -146,10 +145,10 @@ def waitTask(task, result):
             elif(t.cmdstr not in sendcmd.ScrOrder.ORDERLIST):
                 logger.error(get_filename() + 'not in cmdstr =' + t.cmdstr)
             else:
-                scrapingURL(t)
+                scrapingURL(t, db=db)
         except queue.Empty:
             if not psa.getStatus() == ProcStatusAccess.WAITING:
-                writeProcWaiting(psa)
+                manager_util.writeProcWaiting(db, psa=psa)
             time.sleep(0.1)
 
 def createSubProc():

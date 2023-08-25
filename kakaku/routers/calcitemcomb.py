@@ -1,6 +1,9 @@
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import RedirectResponse, HTMLResponse
 
+from sqlalchemy.orm import Session
+from accessor.read_sqlalchemy import get_session
+
 from common import read_templates
 from parameter_parser.item import NewestFilterQuery
 from parameter_parser.calcitemcomb import (
@@ -22,8 +25,11 @@ router = APIRouter(
 templates = read_templates.templates
 
 @router.get("/select/", response_class=HTMLResponse)
-def read_select_item_price_combination(request :Request, nfq: NewestFilterQuery = Depends()):
-    isc = ItemSelectionContext(request=request, nfq=nfq)
+def read_select_item_price_combination(request :Request,
+                                       nfq: NewestFilterQuery = Depends(),
+                                       db :Session = Depends(get_session)
+                                       ):
+    isc = ItemSelectionContext(request=request, nfq=nfq, db=db)
     context = dict(isc)
     return templates.TemplateResponse(
         "itemcomb/item_selection.html"
@@ -31,8 +37,11 @@ def read_select_item_price_combination(request :Request, nfq: NewestFilterQuery 
         )
 
 @router.get("/shipping/", response_class=HTMLResponse)
-def read_input_shop_shipping_condition(request :Request, scq :ShippingConditionQuery = Depends()):
-    scc = ShippingConditionContext(request=request, scq=scq)
+def read_input_shop_shipping_condition(request :Request,
+                                       scq :ShippingConditionQuery = Depends(),
+                                       db :Session = Depends(get_session)
+                                       ):
+    scc = ShippingConditionContext(request=request, scq=scq, db=db)
     context = dict(scc)
     return templates.TemplateResponse(
         "itemcomb/shipping_condition.html"
@@ -41,7 +50,10 @@ def read_input_shop_shipping_condition(request :Request, scq :ShippingConditionQ
 
 
 @router.post("/result/", response_class=HTMLResponse)
-async def read_item_price_combination_result(request :Request, icr :ItemCombinationResultForm = Depends()):
+async def read_item_price_combination_result(request :Request,
+                                             icr :ItemCombinationResultForm = Depends(),
+                                             db :Session = Depends(get_session)
+                                             ):
     stores = []
     async with request.form() as fm:
         for k, v in fm._dict.items():
@@ -51,7 +63,7 @@ async def read_item_price_combination_result(request :Request, icr :ItemCombinat
                 store = f"{k}={s}"
                 stores.append(store)
     icr.set_store_list(stores)
-    iccrc = ItemCombCalcResultContext(request=request, icrf=icr)
+    iccrc = ItemCombCalcResultContext(request=request, icrf=icr, db=db)
     context = dict(iccrc)
     return templates.TemplateResponse(
         "itemcomb/result_combination.html"

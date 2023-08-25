@@ -32,12 +32,16 @@ class ScrOrder:
     UPDATE_ACT_ALL = 'UPDATE_ACT_ALL'
     DB_ORGANIZE_DAYS = 'DB_ORGANIZE_DAYS'
     DB_ORGANIZE_SYNC = 'DB_ORGANIZE_SYNC'
+    DB_ORGANIZE_LOG_2DAYS_CLEANER = 'DB_ORGANIZE_LOG_2DAYS_CLEANER'
+    DB_ORGANIZE_LOG_CLEANER = 'DB_ORGANIZE_LOG_CLEANER'
     ORDERLIST = (START,
                  END,
                  UPDATE,
                  UPDATE_ACT_ALL,
                  DB_ORGANIZE_DAYS,
                  DB_ORGANIZE_SYNC,
+                 DB_ORGANIZE_LOG_2DAYS_CLEANER,
+                 DB_ORGANIZE_LOG_CLEANER,
                  )
     
 

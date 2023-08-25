@@ -5,6 +5,7 @@ import datetime
 from typing import Dict, List, Optional
 
 from distutils.util import strtobool
+from sqlalchemy.orm import Session
 
 from accessor.item import (
     NewestQuery,
@@ -48,16 +49,17 @@ def getLowestPrice(an :int, bn :int):
         return an
     return bn
 
-def get_oldprice(item_id :int = const_value.NONE_ID,
+def get_oldprice(db :Session,
+                 item_id :int = const_value.NONE_ID,
                  url_id :int = const_value.NONE_ID
                  ):
     if item_id > const_value.NONE_ID:
-        oldprice = ItemQuery.get_most_recent_old_price_of_2days_by_item_id(item_id=item_id)
+        oldprice = ItemQuery.get_most_recent_old_price_of_2days_by_item_id(db, item_id=item_id)
         if oldprice:
             return oldprice
         return const_value.INIT_PRICE
     if url_id > const_value.NONE_ID:
-        oldprice = ItemQuery.get_most_recent_old_price_of_2days_by_url_id(url_id=url_id)
+        oldprice = ItemQuery.get_most_recent_old_price_of_2days_by_url_id(db, url_id=url_id)
         if oldprice:
             return oldprice
         return const_value.INIT_PRICE
@@ -82,20 +84,18 @@ def convert_pricelog(pddict) -> Dict:
     return ret
 
 
-def update_newestitem(pddict):
+def update_newestitem(db :Session, pddict):
     if pddict is None:
         return
     nidict = convert_newestitem(pddict)
-    NewestQuery.update_items_by_dict(nidict)
+    NewestQuery.update_items_by_dict(db, nidict=nidict)
 
-def update_itemsname(url_id :int, uniqname :str):
-    ItemQuery.update_items_name_by_url_id(url_id, uniqname)
+def update_itemsname(db :Session, url_id :int, uniqname :str):
+    ItemQuery.update_items_name_by_url_id(db, url_id=url_id, uniqname=uniqname)
 
-def update_stores(storename_list :List[str]):
-    add_storename_list = get_add_storename(storename_list)
-    store.StoreQuery.add_storename_list(add_storename_list)
-    #if storename:
-        #store.StoreQuery.add_store(storename)
+def update_stores(db :Session, storename_list :List[str]):
+    add_storename_list = get_add_storename(db, storename_list=storename_list)
+    store.StoreQuery.add_storename_list(db, storename_list=add_storename_list)
 
 def combine_duplicates_item(parseitems :htmlparse.ParseItems):
     items = parseitems.getItems()
@@ -131,12 +131,12 @@ def is_combine_price(cur :int, insert :int):
         return True
     return False
 
-def update_itemsprices(parseitems :htmlparse.ParseItems, item_id :int, url_id :int):
+def update_itemsprices(db :Session, parseitems :htmlparse.ParseItems, item_id :int, url_id :int):
     if item_id and int(item_id) != const_value.NONE_ID:
-        oldprice = get_oldprice(item_id=item_id)
+        oldprice = get_oldprice(db, item_id=item_id)
     else:
-        oldprice = get_oldprice(url_id=url_id)
-    pricelog_list = ItemQuery.get_pricelog_2days_by_url_id(url_id=url_id)
+        oldprice = get_oldprice(db, url_id=url_id)
+    pricelog_list = ItemQuery.get_pricelog_2days_by_url_id(db, url_id=url_id)
     storename_list = []
     items = combine_duplicates_item(parseitems=parseitems)
     is_update_itemsname = False
@@ -146,13 +146,13 @@ def update_itemsprices(parseitems :htmlparse.ParseItems, item_id :int, url_id :i
             pricedatadict = pd.getOrderedDict()
             if not is_update_itemsname:
                 is_update_itemsname = True
-                update_itemsname(pricedatadict["url_id"], pricedatadict["uniqname"])
-            update_itemsprice(pricedatadict, pricelog_list)
+                update_itemsname(db, url_id=int(pricedatadict["url_id"]), uniqname=pricedatadict["uniqname"])
+            update_itemsprice(db, pricedatadict=pricedatadict, pricelog_list=pricelog_list)
             storename_list.append(pricedatadict['storename'])
             lowest_pricedatadict = min_pricedatadict(lowest_pricedatadict, pricedatadict)
             continue
-    update_newestitem(lowest_pricedatadict)
-    update_stores(storename_list)
+    update_newestitem(db, pddict=lowest_pricedatadict)
+    update_stores(db, storename_list=storename_list)
 
 def min_pricedatadict(p1 :Optional[Dict], p2 :Dict):
     if p1 is None:
@@ -167,33 +167,34 @@ def min_pricedatadict(p1 :Optional[Dict], p2 :Dict):
                 return p2
     return p1
 
-def get_add_storename(storename_list :List[str]):
+def get_add_storename(db :Session, storename_list :List[str]):
     add_list = []
-    db_storename_list = [s.storename for s in store.StoreQuery.get_all()]
+    db_storename_list = [s.storename for s in store.StoreQuery.get_all(db)]
     for storename in storename_list:
         if not storename in db_storename_list:
             add_list.append(storename)
     return add_list
 #@stop_watch
-def upsert_pricelog(pldict :Dict, newest_pricelog):
+def upsert_pricelog(db :Session, pldict :Dict, newest_pricelog):
     if newest_pricelog\
         and isLocalToday(utcTolocaltime(newest_pricelog.created_at)):
         if __is_update_price(insert_new=pldict['newprice'],
                               insert_used=pldict['usedprice'],
                               db_new=newest_pricelog.newprice,
                               db_used=newest_pricelog.usedprice):
-            ItemQuery.update_pricelog_2days_by_dict_and_log_id(pldict=pldict,
-                                                           log_id=newest_pricelog.log_id)
+            ItemQuery.update_pricelog_2days_by_dict_and_log_id(db,
+                                                               pldict=pldict,
+                                                               log_id=newest_pricelog.log_id)
             return True
         if __is_add_price(insert_new=pldict['newprice'],
                               insert_used=pldict['usedprice'],
                               db_new=newest_pricelog.newprice,
                               db_used=newest_pricelog.usedprice):
-            ItemQuery.add_pricelog_2days_by_dict(pldict)
+            ItemQuery.add_pricelog_2days_by_dict(db, pldict=pldict)
             return True
         return False
     else:
-        ItemQuery.add_pricelog_2days_by_dict(pldict)
+        ItemQuery.add_pricelog_2days_by_dict(db, pldict=pldict)
         return True
 
 def __is_add_price(insert_new :int,
@@ -238,24 +239,25 @@ def get_newest_pricelog(pricelog_list :List, url_id :int, storename :str):
     return newest
 
 #@stop_watch
-def update_itemsprice(pricedatadict :Dict,
+def update_itemsprice(db :Session,
+                      pricedatadict :Dict,
                       pricelog_list :List):
     newest_pricelog = get_newest_pricelog(pricelog_list,
                                           pricedatadict['url_id'],
                                           pricedatadict['storename'])
     pldict = convert_pricelog(pricedatadict)
-    upsert_pricelog(pldict, newest_pricelog)
+    upsert_pricelog(db, pldict=pldict, newest_pricelog=newest_pricelog)
 
 def get_parse_data(fname, url_id, url):
     dt_now = datetime.datetime.utcnow()
     date = dt_now.replace(microsecond = 0)
     return gethtmlparse.getParser(fname, url_id, date, url)
     
-def startParse(url :str, item_id, fname :str, logger=None) -> None:
-    url_id = UrlQuery.add_url(url)
+def startParse(db :Session, url :str, item_id, fname :str, logger=None) -> None:
+    url_id = UrlQuery.add_url(db, urlpath=url)
     gp = get_parse_data(fname, url_id, url)
     if gp is None:
         logprint("ERROR UNSUPPORTED URL", True, logger)
         return
-    update_itemsprices(parseitems=gp, item_id=item_id, url_id=url_id)
+    update_itemsprices(db=db, parseitems=gp, item_id=item_id, url_id=url_id)
     deleteTempFile(fname)

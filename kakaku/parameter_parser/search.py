@@ -87,6 +87,7 @@ class SearchToAddForm():
     url_path :str = ""
     item_id :int = const_value.NONE_ID
     search_query :str = ""
+    errmsg :str = ""
     def __init__(self,
                  item_id :Optional[str]=Form(None),
                  item_name :Optional[str]=Form(None),
@@ -109,5 +110,6 @@ class SearchToAddForm():
             else:
                 self.errmsg = "対象外のURLです"
                 return False
+        self.errmsg = "URLが不明です"
         return False
 

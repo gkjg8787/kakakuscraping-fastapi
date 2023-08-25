@@ -198,11 +198,11 @@ def startitemcomb(storeconf, itemlist):
     if len(storeconf)==0:
         #storeconf = gstoreconf
         print('Error no storeconf')
-        sys.exit()
+        return ""
     if len(itemlist)==0:
         #itemlist = gitemlist
         print('Error no itemlist')
-        sys.exit()
+        return ""
     return saitekiPrice(itemlist, storeconf)
 
 def startcmd():
