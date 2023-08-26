@@ -46,7 +46,10 @@
 
     <h2>操作メニュー</h2>
         <p><form action="{{ url_for('read_users_items_view_chart') }}" method="get">
-          <button type="submit" name="{{ ITEMID_Q_NAME }}" value="{{ items['item_id'] }}">グラフ表示</button>
+            <button type="submit" name="{{ ITEMID_Q_NAME }}" value="{{ items['item_id'] }}">グラフ表示</button>
+        </form></p>
+        <p><form action="{{ url_for('read_search') }}" method="get">
+            <button type="submit" name="{{ SEARCH_WORD_NAME }}" value="{{ items['name'] }}">アイテム名で外部検索</button>
         </form></p>
         <p><form action="{{ url_for('read_users_items_add_url') }}" method="post">
             <button type="submit" name="{{ POST_ITEM_ID }}" value="{{ items['item_id'] }}">URL追加</button>
@@ -56,7 +59,7 @@
         </form></p>
         {% if urllist %}
         <p><form action="{{ url_for('read_users_items_inact_url_all') }}" method="post"> 
-          <button type="submit" name="{{ POST_ITEM_ID }}" value="{{ items['item_id'] }}">URL一括無効化</button>
+            <button type="submit" name="{{ POST_ITEM_ID }}" value="{{ items['item_id'] }}">URL一括無効化</button>
         </form></p>
         {% endif %}
         <p><form action="{{ url_for('read_users_items_remove') }}" method="post">

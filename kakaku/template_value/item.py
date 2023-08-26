@@ -115,6 +115,7 @@ class ItemDetailContext(BaseTemplateValue):
     POST_URL_ID :str = filter_name.TemplatePostName.URL_ID.value
     POST_URL_PATH :str = filter_name.TemplatePostName.URL_PATH.value
     ACTIVE_VALUE :str = UrlActive.ACTIVE.value
+    SEARCH_WORD_NAME :str = filter_name.FilterQueryName.WORD.value
 
     def __init__(self, request, idq :ppi.ItemDetailQuery, db :Session):
         super().__init__(
