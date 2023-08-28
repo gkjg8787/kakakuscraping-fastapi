@@ -1,6 +1,7 @@
 import time
 import datetime
 import sys
+import hashlib
 
 from common import read_config
 from downloader.requestoption import RequestOpt
@@ -13,7 +14,8 @@ def downLoadHtml(url):
     retbool, text = __getUrlHtml(url)
     if not retbool: return ''
     dt_now = datetime.datetime.now()
-    filename = "{0:%Y%m%d_%H%M%S_%f}".format(dt_now) + ".html"
+    title = url + ":" + "{0:%Y%m%d_%H%M%S_%f}".format(dt_now)
+    filename = hashlib.md5(title.encode('utf-8')).hexdigest()
     of = open(dirpath + filename, 'x', encoding='UTF-8')
     of.write(text)
     of.close()
