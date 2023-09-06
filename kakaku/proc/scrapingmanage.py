@@ -57,8 +57,8 @@ def startQueue():
     cmnlog.initProcessLogger()
     logger = getLogger(cmnlog.LogName.MANAGER)
     logger.info(get_filename() + ' manager start')
-    db = next(get_session())
-    writeProcStart(db=db)
+    with next(get_session()) as db:
+        writeProcStart(db=db)
 
     # タスクを受け取るキュー
     task_queue = queue.Queue()
@@ -80,12 +80,13 @@ def startQueue():
     result = manager.get_result_queue()
 
     createSubProc()
-
-    waitTask(task=task, result=result, db=db)
+    with next(get_session()) as db:
+        waitTask(task=task, result=result, db=db)
 
     # 終了
     endSubProc()
-    writeAllProcStop(db=db)
+    with next(get_session()) as db:
+        writeAllProcStop(db=db)
     manager.shutdown()
     logger.info(get_filename() + ' manager end')
 
