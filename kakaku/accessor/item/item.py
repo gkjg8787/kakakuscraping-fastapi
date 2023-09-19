@@ -717,15 +717,20 @@ class ItemQuery:
                                                                   item_id :int,
                                                                   year :int
                                                                   ):
-        stmt = ( select(utc_to_jst_date_for_query(PriceLog.created_at).label("created_at"),
-                        func.min(PriceLog.usedprice).label("price")
+        subq = ( select( utc_to_jst_date_for_query(PriceLog.created_at).label("created_at"),
+                        PriceLog.usedprice
                         )
                 .select_from(PriceLog)
                 .join(UrlInItem, UrlInItem.url_id == PriceLog.url_id)
                 .where(UrlInItem.item_id == item_id)
                 .where(utc_to_jst_datetime_for_query(PriceLog.created_at) >= get_jst_datetime_for_query(interval_years=year*INTERVAL_ONE_YEARS_AGO))
                 .where(PriceLog.usedprice > 0)
-                .group_by(utc_to_jst_date_for_query(PriceLog.created_at))
+                ).subquery("subq")
+        stmt = ( select(subq.c.created_at,
+                        func.min(subq.c.usedprice).label("price")
+                        )
+                .group_by(subq.c.created_at)
+
         )
         return db.execute(stmt).all()
     
@@ -735,15 +740,20 @@ class ItemQuery:
                                                                  item_id :int,
                                                                  year :int
                                                                  ):
-        stmt = ( select(utc_to_jst_date_for_query(PriceLog.created_at).label("created_at"),
-                        func.min(PriceLog.newprice).label("price")
+        subq = ( select( utc_to_jst_date_for_query(PriceLog.created_at).label("created_at"),
+                        PriceLog.newprice
                         )
                 .select_from(PriceLog)
                 .join(UrlInItem, UrlInItem.url_id == PriceLog.url_id)
                 .where(UrlInItem.item_id == item_id)
                 .where(utc_to_jst_datetime_for_query(PriceLog.created_at) >= get_jst_datetime_for_query(interval_years=year*INTERVAL_ONE_YEARS_AGO))
                 .where(PriceLog.newprice > 0)
-                .group_by(utc_to_jst_date_for_query(PriceLog.created_at))
+                ).subquery("subq")
+        stmt = ( select(subq.c.created_at,
+                        func.min(subq.c.newprice).label("price")
+                        )
+                .group_by(subq.c.created_at)
+
         )
         return db.execute(stmt).all()
 
@@ -1081,7 +1091,10 @@ class UrlQuery:
         db.execute(stmt)
         db.commit()
     
-
-    
-
-    
+class AnalysisQuery:
+    @classmethod
+    def get_pricelog_from_day(cls, db :Session, day :int):
+        stmt = (select(PriceLog)
+                .where(utc_to_jst_date_for_query(PriceLog.created_at) >= get_jst_date_for_query(day))
+                )
+        return db.scalars(stmt).all()

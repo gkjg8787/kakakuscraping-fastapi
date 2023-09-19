@@ -114,3 +114,27 @@ class ItemCombPostKey:
     OPE = 'b_ope'
     POSTAGE = 'postage'
     STORENAME = 'store_name'
+
+class AnalysisQueryName(AutoLowerName):
+    ATID = auto()
+
+@unique
+class AnalysisTermName(Enum):
+    ONE_WEEK = (1, "１週間",)
+    TWO_WEEK = (2, "２週間",)
+    ONE_MONTH = (3, "１か月",)
+    THREE_MONTH = (4, "３か月",)
+    SIX_MONTH = (5, "６か月",)
+    ONE_YEAR = (6, "１年",)
+
+    def __init__(self, id:int, text:str):
+        self.id = id
+        self.qname = self.name.lower()
+        self.jname = text
+    
+    @classmethod
+    def hasId(cls, id:int) -> bool:
+        for isn in cls:
+            if isn.id == id:
+                return True
+        return False

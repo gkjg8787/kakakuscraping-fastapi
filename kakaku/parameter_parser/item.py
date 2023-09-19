@@ -448,3 +448,16 @@ class RenameGroupNameForm:
 
 class DeleteItemForm(ItemIdForm):
     pass
+
+class AnalysisQuery():
+    itemid :str = ""
+    atid :str = ""
+
+    def __init__(self,
+                 itemid :str = "",
+                 atid :str = "",
+                 ):
+        if is_valid_id(itemid):
+            self.itemid = itemid
+        if is_valid_id(atid):
+            self.atid = atid

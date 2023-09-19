@@ -698,3 +698,19 @@ class DeleteItemContext(BaseTemplateValue):
     def delete_data(self, db :Session):
         ItemQuery.delete_item_relation_by_item_id(db, item_id=self.item_id)
         self.delSuccess = True
+
+class ItemAnalysisContext(BaseTemplateValue):
+    item_id :int = const_value.NONE_ID
+    analysis_term_id :int = filter_name.AnalysisTermName.ONE_WEEK.id
+
+    ITEMID_Q_NAME :str = filter_name.ItemDetailQueryName.ITEMID.value
+    ANALYSIS_Q_NAME :str = filter_name.AnalysisQueryName.ATID.value
+
+    def __init__(self, request, anaq :ppi.AnalysisQuery, db :Session):
+        super().__init__(request=request)
+
+        if anaq.itemid:
+            self.item_id = int(anaq.itemid)
+        if anaq.atid:
+            self.analysis_term_id = int(anaq.atid)
+            

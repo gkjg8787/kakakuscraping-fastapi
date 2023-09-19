@@ -88,6 +88,18 @@ def read_users_items_update_all(request: Request,
         ,context
     )
 
+@router.post("/items/analysis/", response_class=HTMLResponse)
+def read_users_analysis(request: Request,
+                        anaq :ppi.AnalysisQuery = Depends(),
+                        db :Session = Depends(get_session)
+                        ):
+    iac = template_value.item.ItemAnalysisContext(request=request, anaq=anaq, db=db)
+    context = dict(iac)
+    return templates.TemplateResponse(
+        "users/item_analysis.html"
+        ,context
+    )
+
 @router.post("/items/v/update/", response_class=HTMLResponse)
 def read_users_url_update(request :Request,
                           upurlform:ppi.UpdateItemUrlForm = Depends(),
