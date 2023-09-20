@@ -5,7 +5,7 @@ from common.read_config import get_support_url
 def is_suppoer_url(url_path :str) -> bool:
     if not url_path:
         return False
-    sulist = get_support_url()
+    sulist = get_support_url().values()
     up = urlparse(url_path)
     if up.netloc in sulist:
         return True

@@ -14,7 +14,7 @@ templates = Jinja2Templates(directory="templates")
 
 def isSupportDomain(urlpath) -> bool:
     """Custom filter"""
-    suplist = get_support_url()
+    suplist = get_support_url().values()
     parsed_url = urlparse(urlpath)
     if parsed_url.netloc in suplist:
         return True
