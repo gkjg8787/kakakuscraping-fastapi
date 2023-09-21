@@ -42,12 +42,12 @@ SEARCH_CACHE=True
 CACHE_TIME=60
 CACHE_MAX_NUM=5
 
-SUPPORT_DOMAIN = [
-    'www.suruga-ya.jp',
-    'www.netoff.co.jp',
-    'www.bookoffonline.co.jp',
-    'ec.geo-online.co.jp',
-]
+SUPPORT_DOMAIN = {
+    'surugaya':'www.suruga-ya.jp',
+    'netoff':'www.netoff.co.jp',
+    'bookoff':'shopping.bookoff.co.jp',
+    'geo':'ec.geo-online.co.jp',
+}
 
 SCRAPING_BACK_SERVER = {
     "addr":"127.0.0.1",

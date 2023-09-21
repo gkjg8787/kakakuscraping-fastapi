@@ -1,12 +1,11 @@
-from urllib.parse import urlencode
+from urllib.parse import urlencode, quote
 
 class BookoffURL:
     def __init__(self, rsopts):
-        self.base = 'https://www.bookoffonline.co.jp/display/'
-        self.fixword = 'L001'
-        self.comma_query = { 'st':'a'
-                         }
-        self.search_word = { 'q' : '' }
+        self.base = 'https://shopping.bookoff.co.jp/search/'
+        self.stock = 'a'
+        self.category = None
+        self.search_word = ''
         self.query = {}
         self.rsopts = rsopts
         self.isExistCate = True
@@ -36,10 +35,12 @@ class BookoffURL:
     
     def setStock(self):
         #新品、中古在庫あり
-        self.comma_query['st'] = 'z'
+        self.stock = 'z'
     
     def setPage(self, num):
-        self.comma_query['p'] = num
+        if num == 1:
+            return
+        self.query['p'] = num
     
     def inCategoryTable(self, table, val):
         if not val in table: 
@@ -51,10 +52,10 @@ class BookoffURL:
 
     
     def setCategory(self,num):
-        self.comma_query['bg'] = num
+        self.category = num
 
     def setWord(self, word):
-        self.search_word['q'] = word
+        self.search_word = word
     
     def encodeBookoffSJIS(self, val):
         b = val.encode('shift-jis')
@@ -69,12 +70,15 @@ class BookoffURL:
         ret = ret.replace('&', ',')
         ret += ',q=%s' % self.encodeBookoffSJIS(self.search_word['q'])
         return ret
+    
 
     def createURL(self):
-        url = '%s%s' % (self.base, self.fixword)
-        url += self.joinCommaQuery()
+        url = '%s/%s/%s' % (self.base, 'stock', self.stock)
+        if self.category:
+            url = '%s/%s/%s' % (url, 'genre', str(self.category))
+        url = '%s/%s/%s' % (url, 'keyword', quote(self.search_word))
         if len(self.query) > 0:
-            url = '%s&%s' % (url, urlencode(self.query))
+            url = '%s?%s' % (url, urlencode(self.query))
         return url
 
     def isExistCategory(self):

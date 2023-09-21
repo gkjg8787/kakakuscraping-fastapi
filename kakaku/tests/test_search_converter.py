@@ -67,11 +67,11 @@ def test_convertToSearchResultItems_full():
         },
         {
             SearchParser.STORENAME : "ブックオフ",
-            SearchParser.IMAGE_URL : "https://content.bookoffonline.co.jp/goodsimages/L/001046/0010467610L.jpg",
+            SearchParser.IMAGE_URL : "https://content.bookoff.co.jp/goodsimages/LL/001046/0010467610LL.jpg",
             SearchParser.TITLE : "ハウルの動く城",
-            SearchParser.TITLE_URL:"https://www.bookoffonline.co.jp/old/0010467610",
-            SearchParser.CATEGORY:"(通常)(ＤＶＤ)宮崎駿(監督、脚本),倍賞千恵子(ソフィー),木村拓哉(ハウル)",
-            SearchParser.USED:"中古価格：￥1,430（税込）",
+            SearchParser.TITLE_URL:"https://shopping.bookoff.co.jp/used/0010467610",
+            SearchParser.CATEGORY:"ＤＶＤ",
+            SearchParser.USED:"1,430円",
             SearchParser.IMAGE_ON_ERR:bookoff_img_on_err,
         },
         {

@@ -23,54 +23,60 @@ class BookoffParse(htmlparse.ParseItems):
         self.parsePrice(soup, iteminfo)
     
     def existZaiko(self, soup):
-        q = r'#buttongroup .nosotck'
+        q = r'.productInformation__stock__alert'
         elem = soup.select(q)
         if len(elem) == 0:
             return True
         return False
     
     def parseTitle(self, soup):
-        q = r'#ttlArea h1'
+        q = r'.productInformation__title'
         elem = soup.select(q)
         title = self.trimStr(str(elem[0].text))
         return title
     
     def parsePrice(self, soup, iteminfo):
-        q = r'#itemdet'
-        elem = soup.select(q)
-        #if not self.isUsed(elem): return
-        self.parseUsedPrice(elem[0], iteminfo)
-        self.parseNewPrice(elem[0], iteminfo)
+        elem = soup
+        price = self.parseCommonPrice(elem)
+        if not self.parseUsedPrice(elem, iteminfo, price):
+            self.parseNewPrice(elem, iteminfo, price)
         iteminfo.taxin = self.getTaxin(elem)
     
-    def parseUsedPrice(self, soup, iteminfo):
-        q = r'#spec .oldprice'
+    def parseCommonPrice(self, soup):
+        q = r'.productInformation__price--large'
         elem = soup.select(q)
-        ptn = r'￥([1-9][0-9,]+)'
+        ptn = r'([1-9][0-9,]+)'
         for e in elem:
             m = re.findall(ptn, e.text)
             if len(m) == 0: continue
-            iteminfo.usedPrice = int(m[0].replace(',', ''))
-            return
+            return int(m[0].replace(',', ''))
+        return None
+
+    def parseUsedPrice(self, soup, iteminfo, price):
+        if not price:
+            return False
+        q = r'.productInformation__Btn__used.-active'
+        elem = soup.select_one(q)
+        if elem:
+            iteminfo.usedPrice = int(price)
+            return True
+        return False
+
+        
     
-    def parseNewPrice(self, soup, iteminfo):
-        q = r'#spec .mainprice'
-        elem = soup.select(q)
-        ptn = r'￥([1-9][0-9,]+)'
-        for e in elem:
-            m = re.findall(ptn, e.text)
-            if len(m) == 0: continue
-            iteminfo.newPrice = int(m[0].replace(',', ''))
-            return
+    def parseNewPrice(self, soup, iteminfo, price):
+        if not price:
+            return False
+        q = r'.productInformation__Btn__new.-active'
+        elem = soup.select_one(q)
+        if elem:
+            iteminfo.newPrice = int(price)
+            return True
+        return False
     
     def getTaxin(self, elem):
-        q = r'#spec .price_tax'
-        tax = elem[0].select(q)
-        for s in tax:
-            if '（税込）' in s:
-                return True
-        
-        return False
+        return True
+ 
 
     def getItems(self):
         return (self.iteminfo,)

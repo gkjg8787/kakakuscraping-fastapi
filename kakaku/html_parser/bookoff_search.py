@@ -13,13 +13,13 @@ class SearchBookoff(SearchParser):
         self.allitem[self.PAGE] = self.getPageElem()
     
     def parseItems(self):
-        q = r'#resList .list_group'
+        q = r'.js-hoverItem'
         ret = self.soup.select(q)
         sresult = []
         for v in ret:
             itemd ={}
             itemd[self.STORENAME] = "ブックオフ"
-            itemd[self.IMAGE_ON_ERR] = "https://content.bookoffonline.co.jp/images/goods/item_l.gif"
+            itemd[self.IMAGE_ON_ERR] = "https://content.bookoff.co.jp/images/goods/item_ll.gif"
             self.setTitle(v, itemd)
             self.setImage(v, itemd)
             self.setCategory(v, itemd)
@@ -33,22 +33,23 @@ class SearchBookoff(SearchParser):
         print(self.allitem)
     
     def setTitle(self, elem, itemd):
-        titleo = elem.select('.itemttl a')
+        titleo = elem.select('.productItem__title')
         itemd[self.TITLE] = titleo[0].text
-        itemd[self.TITLE_URL] = self.getPerfectURL(titleo[0]['href'])
+        itemlink = elem.select('.js-hoverItemLink')
+        itemd[self.TITLE_URL] = self.getPerfectURL(itemlink[0]['href'])
 
     def getPerfectURL(self, url):
         ptn = r'^/'
         m = re.findall(ptn, url)
         if m == None or len(m) == 0: return url
-        return 'https://www.bookoffonline.co.jp' + url
+        return 'https://shopping.bookoff.co.jp' + url
 
     def setCategory(self, elem, itemd):
-        cateo = elem.select('.subtitle')
-        itemd[self.CATEGORY] = cateo[0].text.replace('\u3000', ' ')
+        cateo = elem.select('.productItem__genreItem--category')
+        itemd[self.CATEGORY] = self.htmlTrim(cateo[0].text)
 
     def setImage(self, elem, itemd):
-        imageo = elem.select('.list_l img')
+        imageo = elem.select('.productItem__image img')
         if len(imageo) == 0:
             self.createImageURL(elem, itemd)
             return
@@ -56,11 +57,12 @@ class SearchBookoff(SearchParser):
         itemd[self.IMAGE_URL] = imageo[0]['src']
     
     def createImageURL(self, elem, itemd):
-        itemd[self.IMAGE_URL] = 'https://content.bookoffonline.co.jp/images/goods/item_l.gif'
+        itemd[self.IMAGE_URL] = itemd[self.IMAGE_ON_ERR]
 
     def setPrice(self, elem, itemd):
         price = self.getMainPrice(elem)
         isnew = self.isNewPrice(elem)
+        price = price + '円'
         if isnew:
             itemd[self.NEW] = price
         else:
@@ -69,40 +71,36 @@ class SearchBookoff(SearchParser):
         self.setSinagire(elem, itemd)
 
     def getMainPrice(self, elem):
-        q = r'.mainprice'
+        q = r'.productItem__price'
         priceo = elem.select(q)
-        ptn = r'(￥[1-9][0-9,]+（税込）)'
+        ptn = r'([1-9][0-9,]+)'
         m = re.findall(ptn, self.htmlTrim(priceo[0].text))
         return m[0]
     
     def isNewPrice(self, elem):
-        q = r'.details tr'
+        q = r'.productItem__tagList .tagList .tag'
         tro = elem.select(q)
-        tabq = r'th.tab01'
         for tr in tro:
-            tabo = tr.select(tabq)
-            if len(tabo) == 0:
-                continue
-            if '中古価格' in tabo[0].text:
+            if '新品' in tr.text:
+                return True
+            if '中古' in tr.text:
                 return False
         return True
 
     def setSinagire(self, elem, itemd):
-        stocko = elem.select('.nostockbtn')
+        stocko = elem.select('.productItem__stock--alert')
         if len(stocko) != 0:
             itemd[self.SINAGIRE] = '品切れ'
         
     def parsePageNum(self, info):
-        q = r'.numNavi'
+        q = r'.pagination__page'
         pages = self.soup.select(q)
-        if len(pages) == 0: return
-        text = self.htmlTrim(pages[0].text)
-        ptn = r'\[([0-9]+)\]'
-        m = re.findall(ptn, text)
-        #print('text={} , m={}'.format(text, m))
+        if len(pages) == 0:
+            return
         pmin = -1
         pmax = -1
-        for v in m:
+        for p in pages:
+            v = self.htmlTrim(p.text)
             if pmin == -1:
                 pmin = int(v)
                 pmax = int(v)
@@ -126,9 +124,13 @@ class SearchBookoff(SearchParser):
         return pageret
 
     def addMorePage(self, info):
-        q = r'.numNavi a'
-        moreo = self.soup.select(q)
-        for p in moreo:
-            if '次へ' in p.text:
-                info[self.MOREPAGE] = self.TRUE
-                return
+        disable = r'span.pagination__next'
+        diso = self.soup.select_one(disable)
+        if diso:
+            return
+        next = r'a.pagination__next'
+        nexto = self.soup.select_one(next)
+        if not nexto:
+            return
+        info[self.MOREPAGE] = self.TRUE
+        return
