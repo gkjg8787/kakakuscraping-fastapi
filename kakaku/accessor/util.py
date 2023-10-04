@@ -66,3 +66,6 @@ def text_to_decimal(column_value : schema.Column):
     if is_postgre():
         return cast(column_value, DECIMAL)
     return None
+
+def sqlalchemy_result_all_to_dict_list(result):
+    return [dict(row._mapping.items()) for row in result]

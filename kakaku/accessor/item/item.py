@@ -1,5 +1,6 @@
 from typing import List, Dict, Optional
 from enum import Enum
+from datetime import date
 
 from sqlalchemy import (
     select,
@@ -1093,8 +1094,42 @@ class UrlQuery:
     
 class AnalysisQuery:
     @classmethod
-    def get_pricelog_from_day(cls, db :Session, day :int):
-        stmt = (select(PriceLog)
-                .where(utc_to_jst_date_for_query(PriceLog.created_at) >= get_jst_date_for_query(day))
+    def get_itemlog_from_day(cls, db :Session, days :int):
+        stmt = (select(UrlInItem.item_id,
+                       PriceLog.url_id,
+                       UrlInItem.active,
+                       PriceLog.newprice,
+                       PriceLog.usedprice,
+                       PriceLog.storename,
+                       PriceLog.created_at,
+                       )
+                .select_from(PriceLog)
+                .join(UrlInItem, UrlInItem.url_id == PriceLog.url_id)
+                .where(utc_to_jst_date_for_query(PriceLog.created_at) >= get_jst_date_for_query(interval_days=days))
                 )
-        return db.scalars(stmt).all()
+        return db.execute(stmt).all()
+    
+    @classmethod
+    def get_itemlog_period_datetime_from_day(cls, db :Session, days :int):
+        stmt = (select(func.min(PriceLog.created_at).label('start'),
+                       func.max(PriceLog.created_at).label('end'))
+                .where(utc_to_jst_date_for_query(PriceLog.created_at) >= get_jst_date_for_query(interval_days=days))
+                )
+        return db.execute(stmt).all()
+
+    @classmethod
+    def get_itemlog_by_period_date(cls, db :Session, start_jst :date, end_jst :date):
+        date_list = [start_jst, end_jst]
+        stmt = (select(UrlInItem.item_id,
+                       PriceLog.url_id,
+                       UrlInItem.active,
+                       PriceLog.newprice,
+                       PriceLog.usedprice,
+                       PriceLog.storename,
+                       PriceLog.created_at,
+                       )
+                .select_from(PriceLog)
+                .join(UrlInItem, UrlInItem.url_id == PriceLog.url_id)
+                .where(utc_to_jst_date_for_query(PriceLog.created_at).in_(date_list))
+                )
+        return db.execute(stmt).all()

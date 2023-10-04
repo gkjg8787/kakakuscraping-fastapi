@@ -1,0 +1,7 @@
+{%- if trend.is_up %}
+<div class="trendency up_trend">{{ trend.name }}</div>
+{%- elif trend.is_down %}
+<div class="trendency down_trend">{{ trend.name }}</div>
+{%- else %}
+<div class="trendency no_change_trend">{{ trend.name }}</div>
+{%- endif %}

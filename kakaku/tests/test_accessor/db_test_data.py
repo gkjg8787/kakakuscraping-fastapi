@@ -1,4 +1,8 @@
 
+from datetime import datetime, timedelta
+
+from dateutil.relativedelta import relativedelta
+
 from common.util import dbtimeTodatetime
 from tests.test_sqlalchemy import (
     insert_item_dict_list,
@@ -20,6 +24,7 @@ BOOKOFF_SENTOCHIHIRO = "https://www.bookoffonline.co.jp/old/0001243579"
 GEO_PONYO = "https://ec.geo-online.co.jp/shop/g/g192218002/"
 
 SURUGAYA = "駿河屋"
+SURUGAYA_CHIBA = "駿河屋千葉中央店"
 NETOFF = "ネットオフ"
 BOOKOFF = "ブックオフ"
 GEO = "ゲオ"
@@ -178,4 +183,124 @@ def add_data_set_1_plus_store(db):
         {"store_id":4, "storename":GEO},
     ]
     insert_store_dict_list(db, storename_dict_list=storename_list)
-    
+
+def add_analysis_data_set_1(db):
+    item_list = [
+        {"item_id":1, "name":"one_item"},
+        {"item_id":2, "name":"two_item"},
+        {"item_id":3, "name":"three_item"},
+    ]
+    url_list = [
+        {"url_id":1, "urlpath":SURUGAYA_OTHER_GEDOSENKI},
+        {"url_id":2, "urlpath":SURUGAYA_OTHER_RAPYUTA},
+        {"url_id":3, "urlpath":NETOFF_HAURU},
+        {"url_id":4, "urlpath":BOOKOFF_SENTOCHIHIRO},
+    ]
+    urlinitem_list = [
+        {"item_id":1, "url_id":1, "active":"True"},
+        {"item_id":2, "url_id":2, "active":"True"},
+        {"item_id":3, "url_id":3, "active":"True"},
+        {"item_id":3, "url_id":4, "active":"True"},
+    ]
+    one_week_ago = datetime.utcnow() + timedelta(days=-7)
+    three_days_ago = datetime.utcnow() + timedelta(days=-3)
+
+    pricelog_list = [
+        {
+            "url_id": 1, "created_at":one_week_ago,
+            "uniqname":"one_item", "usedprice":1500, "newprice":-1,
+            "taxin":True, "onsale":False, "salename":None,
+            "issuccess":True, "trendrate":0, "storename":SURUGAYA,
+        },
+        {
+            "url_id": 2, "created_at":one_week_ago,
+            "uniqname":"two_item", "usedprice":1200, "newprice":-1,
+            "taxin":True, "onsale":False, "salename":None,
+            "issuccess":True, "trendrate":0, "storename":SURUGAYA,
+        },
+        {
+            "url_id": 2, "created_at":one_week_ago,
+            "uniqname":"two_item2", "usedprice":1600, "newprice":-1,
+            "taxin":True, "onsale":False, "salename":None,
+            "issuccess":True, "trendrate":0, "storename":SURUGAYA_CHIBA,
+        },
+        {
+            "url_id": 3, "created_at":one_week_ago,
+            "uniqname":"three_item", "usedprice":3000, "newprice":-1,
+            "taxin":True, "onsale":False, "salename":None,
+            "issuccess":True, "trendrate":0, "storename":NETOFF_HAURU,
+        },
+        {
+            "url_id": 4, "created_at":one_week_ago,
+            "uniqname":"four_item", "usedprice":3300, "newprice":-1,
+            "taxin":True, "onsale":False, "salename":None,
+            "issuccess":True, "trendrate":0, "storename":BOOKOFF_SENTOCHIHIRO,
+        },
+        {
+            "url_id": 1, "created_at":three_days_ago,
+            "uniqname":"one_item", "usedprice":1400, "newprice":-1,
+            "taxin":True, "onsale":False, "salename":None,
+            "issuccess":True, "trendrate":-0.07, "storename":SURUGAYA,
+        },
+        {
+            "url_id": 2, "created_at":three_days_ago,
+            "uniqname":"two_item", "usedprice":1200, "newprice":-1,
+            "taxin":True, "onsale":False, "salename":None,
+            "issuccess":True, "trendrate":0, "storename":SURUGAYA,
+        },
+        {
+            "url_id": 2, "created_at":three_days_ago,
+            "uniqname":"two_item2", "usedprice":1600, "newprice":-1,
+            "taxin":True, "onsale":False, "salename":None,
+            "issuccess":True, "trendrate":0.33, "storename":SURUGAYA_CHIBA,
+        },
+        {
+            "url_id": 3, "created_at":three_days_ago,
+            "uniqname":"three_item", "usedprice":3000, "newprice":-1,
+            "taxin":True, "onsale":False, "salename":None,
+            "issuccess":True, "trendrate":0, "storename":NETOFF_HAURU,
+        },
+        {
+            "url_id": 4, "created_at":three_days_ago,
+            "uniqname":"four_item", "usedprice":3300, "newprice":-1,
+            "taxin":True, "onsale":False, "salename":None,
+            "issuccess":True, "trendrate":0, "storename":BOOKOFF_SENTOCHIHIRO,
+        },
+                {
+            "url_id": 1, "created_at":datetime.utcnow(),
+            "uniqname":"one_item", "usedprice":1400, "newprice":-1,
+            "taxin":True, "onsale":False, "salename":None,
+            "issuccess":True, "trendrate":0, "storename":SURUGAYA,
+        },
+        {
+            "url_id": 2, "created_at":datetime.utcnow(),
+            "uniqname":"two_item", "usedprice":1000, "newprice":-1,
+            "taxin":True, "onsale":False, "salename":None,
+            "issuccess":True, "trendrate":-0.17, "storename":SURUGAYA,
+        },
+        {
+            "url_id": 2, "created_at":datetime.utcnow(),
+            "uniqname":"two_item2", "usedprice":1600, "newprice":-1,
+            "taxin":True, "onsale":False, "salename":None,
+            "issuccess":True, "trendrate":0.6, "storename":SURUGAYA_CHIBA,
+        },
+        {
+            "url_id": 3, "created_at":datetime.utcnow(),
+            "uniqname":"three_item", "usedprice":3300, "newprice":-1,
+            "taxin":True, "onsale":False, "salename":None,
+            "issuccess":True, "trendrate":0.1, "storename":NETOFF_HAURU,
+        },
+        {
+            "url_id": 4, "created_at":datetime.utcnow(),
+            "uniqname":"four_item", "usedprice":3600, "newprice":-1,
+            "taxin":True, "onsale":False, "salename":None,
+            "issuccess":True, "trendrate":0.09, "storename":BOOKOFF_SENTOCHIHIRO,
+        },
+    ]
+
+    insert_item_dict_list(db, item_list=item_list)
+    insert_url_dict_list(db, url_list=url_list)
+    insert_urlinitem_dict_list(db, urlinitem_list=urlinitem_list)
+    insert_pricelog_dict_list_sync(db, pldict_list=pricelog_list)
+
+

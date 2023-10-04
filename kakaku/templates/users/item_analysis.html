@@ -2,9 +2,115 @@
 {% extends "layout.html" %}
 
 {% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/analysis.css') }}" type="text/css">
     <title>アイテム分析</title> 
 {% endblock %}
 
 {% block body %}
     <h1>アイテム分析</h1>
+    <h2>({{ period_start }})から({{ period_end }})までのACTIVEなアイテムの分析</h2>
+    
+    <form method="get" action="">
+        対象期間 : <select name="{{ ANALYSIS_Q_NAME }}" onchange="submit(this.form)">
+            {%- for ap in analysisPeriodList %}
+            <option value="{{ ap.id }}" {{ ap.selected }}>
+                {{ ap.text }}
+            </option>
+            {%- endfor %}
+        </select>
+    </form>
+
+    <h3>アイテム数の変動</h3>
+    {%- with trend = item_count.trend %}
+    {%- include "users/item_analysis_trend.html" %}
+    {%- endwith %}
+    <div>{{ period_start }}：{{ item_count.start }}</div>
+    <div >{{ period_end }}：{{ item_count.end }}</div>
+    
+    <h3>URL数の変動</h3>
+    {%- with trend = url_count.trend %}
+    {%- include "users/item_analysis_trend.html" %}
+    {%- endwith %}
+    <div>{{ period_start }}：{{ url_count.start }}</div>
+    <div >{{ period_end }}：{{ url_count.end }}</div>
+
+    <h3>アイテムの価格変動</h3>
+    <div>
+        <h4>価格の上下</h4>
+        {%- with trend = item_price.updown_trend %}
+        {%- include "users/item_analysis_trend.html" %}
+        {%- endwith %}
+        <div>上昇数(%)：{{ item_price.up.count }} ({{ "{:.2%}".format(item_price.up.count_rate | float) }})</div>
+        <div >平均上昇幅：{{ "{:.2f}".format(item_price.up.average) }}円</div>
+        <div>下落数(%)：{{ item_price.down.count }} ({{ "{:.2%}".format(item_price.down.count_rate | float) }})</div>
+        <div >平均下落幅：{{ "{:.2f}".format(item_price.down.average) }}円</div>
+        <div>変化しなかった数(%)：{{ item_price.no_change.count }} ({{ "{:.2%}".format(item_price.no_change.count_rate | float) }})</div>
+        <div>在庫ありから在庫なしになった数(%)：{{ item_price.to_out_of_stock.count }} ({{ "{:.2%}".format(item_price.to_out_of_stock.count_rate | float) }})</div>
+        <div>在庫なしから在庫ありになった数(%)：{{ item_price.to_in_stock.count }} ({{ "{:.2%}".format(item_price.to_in_stock.count_rate | float) }})</div>
+        <div>ずっと在庫なしだった数(%)：{{ item_price.no_stock.count }} ({{ "{:.2%}".format(item_price.no_stock.count_rate | float) }})</div>
+        
+
+        <h4>平均価格</h4>
+        {%- with trend = item_price.average_trend %}
+        {%- include "users/item_analysis_trend.html" %}
+        {%- endwith %}
+        <div>{{ period_start }}：{{ "{:.2f}".format(item_price.start.average) }}円</div>
+        <div >{{ period_end }}：{{ "{:.2f}".format(item_price.end.average) }}円</div>
+
+        <h4>価格の中央値</h4>
+        {%- with trend = item_price.median_trend %}
+        {%- include "users/item_analysis_trend.html" %}
+        {%- endwith %}
+        <div>{{ period_start }}：{{ item_price.start.median }}円</div>
+        <div >{{ period_end }}：{{ item_price.end.median }}円</div>
+    </div>
+
+    <h3>URLの取得成否</h3>
+    {%- with trend = url_download.trend %}
+    {%- include "users/item_analysis_trend.html" %}
+    {%- endwith %}
+    <div>{{ period_start }}：
+        <ul>
+            <li>成功：{{ url_download.start.success }}</li>
+            <li>失敗：{{ url_download.start.failed }}</li>
+        </ul>
+    </div>
+    <div >{{ period_end }}：
+        <ul>
+            <li>成功：{{ url_download.end.success }}</li>
+            <li>失敗：{{ url_download.end.failed }}</li>
+        </ul>
+    </div>
+
+    <h3>店舗数の変動</h3>
+    {%- with trend = store_count.trend %}
+    {%- include "users/item_analysis_trend.html" %}
+    {%- endwith %}
+    <div>{{ period_start }}：{{ store_count.start }}</div>
+    <div >{{ period_end }}：{{ store_count.end }}</div>
+
+    <h3>店舗の頻出数の変動</h3>
+    <div>{{ period_start }}：
+        <ol>
+            {%- for store in store_most_common.start %}
+            <li>{{ store["storename"] }}：{{ store["count"] }}</li>
+            {%- endfor %}
+        </ol>
+    </div>
+    <div >{{ period_end }}：
+        <ol>
+            {%- for store in store_most_common.end %}
+            <li>{{ store["storename"] }}：{{ store["count"] }}</li>
+            {%- endfor %}
+        </ol>
+    </div>
+
+    <h3>URL毎の平均店舗数の変動</h3>
+    {%- with trend = url_store_count_average.trend %}
+    {%- include "users/item_analysis_trend.html" %}
+    {%- endwith %}
+    <div>{{ period_start }}：{{ "{:.2f}".format(url_store_count_average.start) }}</div>
+    <div >{{ period_end }}：{{ "{:.2f}".format(url_store_count_average.end) }}</div>
+
+    <p><a href="{{ url_for('read_users') }}">アイテム一覧へ戻る</a></p>
 {% endblock %}

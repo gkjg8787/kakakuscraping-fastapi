@@ -3,9 +3,6 @@ from fastapi.testclient import TestClient
 from main import app
 from common import filter_name
 import common.util as cmn_util
-from accessor.item import (
-    ItemQuery,
-)
 
 from tests.test_db import test_db, drop_test_db
 from tests.test_routers.test_common import (
@@ -16,6 +13,8 @@ from tests.test_routers.test_common import (
 from tests.test_sqlalchemy import (
     insert_pricelog_sync,
 )
+from tests.test_accessor import db_test_data
+from analysis.database_analysis import LogAnalysisError
 
 client = TestClient(app)
 prefix = '/users'
@@ -620,3 +619,27 @@ def test_read_users_groups_rename_result_rename_group(test_db):
     group_name = 'change group name'
     assert f'{group_name}に変更しました。' in response.text
     drop_test_db()
+
+def test_read_users_analysis_no_data(test_db):
+    response = client.get(f'{prefix}/items/analysis/')
+    assert response.status_code == 200
+    is_html(response.text)
+    assert LogAnalysisError.DATA_IS_ZERO.value in response.text
+
+def test_read_users_analysis_no_log(test_db):
+    add_item_name_and_url_success()
+    response = client.get(f'{prefix}/items/analysis/')
+    assert response.status_code == 200
+    is_html(response.text)
+    assert LogAnalysisError.DICT_IS_ZERO.value in response.text
+    drop_test_db()
+
+def test_read_users_analysis(test_db):
+    db_test_data.add_analysis_data_set_1(test_db)
+    response = client.get(f'{prefix}/items/analysis/')
+    assert response.status_code == 200
+    is_html(response.text)
+    assert 'URL毎の平均店舗数の変動' in response.text
+    drop_test_db()
+
+    

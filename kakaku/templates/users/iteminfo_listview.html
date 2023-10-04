@@ -61,6 +61,11 @@
         {%- else %}
         <p><button disabled>アイテムの価格計算</button></p>
         {%- endif %}
+        {%- if res %}
+        <p><a href="{{ url_for('read_users_analysis') }}" class="like_button_link">アイテムの分析</a></p>
+        {%- else %}
+        <p><button disabled>アイテムの分析</button></p>
+        {%- endif %}
         <p><a href="{{ url_for('read_admin_dashboard') }}" class="like_button_link">管理画面</a></p>
         
         

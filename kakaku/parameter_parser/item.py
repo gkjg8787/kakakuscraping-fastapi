@@ -449,7 +449,7 @@ class RenameGroupNameForm:
 class DeleteItemForm(ItemIdForm):
     pass
 
-class AnalysisQuery():
+class AnalysisBaseQuery():
     itemid :str = ""
     atid :str = ""
 

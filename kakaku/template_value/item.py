@@ -25,6 +25,9 @@ from proc.sendcmd import ScrOrder
 
 from proc import get_sys_status, system_status
 
+from analysis import database_analysis
+
+
 def is_update_process_alive(db :Session):
     syssts = get_sys_status.getSystemStatus(db)
     if syssts == system_status.SystemStatus.FAULT.name \
@@ -699,18 +702,81 @@ class DeleteItemContext(BaseTemplateValue):
         ItemQuery.delete_item_relation_by_item_id(db, item_id=self.item_id)
         self.delSuccess = True
 
+class ItemAnalysisPeriod:
+    id :int
+    selected :str = ""
+    text :str
+
+    def __init__(self, id :int, text :str):
+        self.id = id
+        self.text = text
+
 class ItemAnalysisContext(BaseTemplateValue):
     item_id :int = const_value.NONE_ID
     analysis_term_id :int = filter_name.AnalysisTermName.ONE_WEEK.id
 
+    period_start :str = ""
+    period_end :str = ""
+
+    item_count : database_analysis.CountResult = None
+    url_count :database_analysis.CountResult = None
+
+    item_price :database_analysis.PriceResult = None
+
+    url_download :database_analysis.UrlDownLoadResult = None
+
+    store_count :database_analysis.CountResult = None
+
+    store_most_common :database_analysis.StoreMostCommonResult = None
+
+    url_store_count_average :database_analysis.UrlStoreCountAverageResult = None
+
+    analysisPeriodList :list[ItemAnalysisPeriod] = []
+
     ITEMID_Q_NAME :str = filter_name.ItemDetailQueryName.ITEMID.value
     ANALYSIS_Q_NAME :str = filter_name.AnalysisQueryName.ATID.value
 
-    def __init__(self, request, anaq :ppi.AnalysisQuery, db :Session):
+    errmsg :str = ""
+
+    def __init__(self, request, anaq :ppi.AnalysisBaseQuery, db :Session):
         super().__init__(request=request)
 
         if anaq.itemid:
             self.item_id = int(anaq.itemid)
         if anaq.atid:
             self.analysis_term_id = int(anaq.atid)
-            
+
+        result = database_analysis.get_log_analysis(db=db, atid=self.analysis_term_id)
+        if result.is_error():
+            self.errmsg = result.get_error().value
+            return
+        
+        self.period_start = result.get_start_datetime().date()
+        self.period_end = result.get_end_datetime().date()
+
+        self.item_count = result.get_item_count()
+        self.url_count = result.get_url_count()
+
+        self.item_price = result.get_item_price()
+
+        self.url_download = result.get_url_download()
+
+        self.store_count = result.get_store_count()
+
+        STORE_RANKING_MAX = 5
+        self.store_most_common = result.get_store_most_common(max_store_num=STORE_RANKING_MAX)
+
+        self.url_store_count_average = result.get_url_store_count_average()
+
+        self.analysisPeriodList = self.create_analysis_period_list(self.analysis_term_id)
+    
+    @staticmethod
+    def create_analysis_period_list(analysis_term_id :int):
+        analysisPeriodList = []
+        for atn in filter_name.AnalysisTermName:
+            iap = ItemAnalysisPeriod(id=atn.id, text=atn.jname)
+            if analysis_term_id == atn.id:
+                iap.selected = templates_string.HTMLOption.SELECTED.value
+            analysisPeriodList.append(iap)
+        return analysisPeriodList
+        
