@@ -28,7 +28,7 @@
     </p>
     {%- endif %}
     {%- if search_query %}
-    <p><a href="{{ url_for('read_search') }}{{ search_query }}">検索へ戻る</a></p>
+    <p><a href="{{ url_for('read_search') }}{{ search_query }}" class="plain-link">検索へ戻る</a></p>
     {%- endif %}
-    <p><a href="{{ url_for('read_users') }}">アイテム一覧へ戻る</a></p>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
 {% endblock %}

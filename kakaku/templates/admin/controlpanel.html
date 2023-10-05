@@ -12,7 +12,7 @@
     {% if updatemsg %}
         <p>{{ updatemsg }}</p>
     {% endif %}
-    <p><a href="{{ url_for('read_admin_dashboard') }}">更新</a></p>
+    <p><a href="{{ url_for('read_admin_dashboard') }}" class="plain-link">画面更新</a></p>
     <form method="post" action="{{ url_for('read_admin_dashboard_post') }}">
         {% if sysstop %}
         <button type="submit" name="{{ system_ctrl_btn_name }}" value="{{ STARTUP }}">起動</button>
@@ -22,5 +22,5 @@
         <button type="submit" name="{{ system_ctrl_btn_name }}" value="{{ RESTART }}">再起動</button>
         {% endif %}
     </form>
-    <p><a href="{{ url_for('read_users') }}">戻る</a></p>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">戻る</a></p>
 {% endblock %}

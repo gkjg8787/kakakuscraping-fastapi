@@ -21,5 +21,5 @@
         {{ groupname }}に変更しました。<br>
     </p>
     {% endif %}
-    <p><a href="{{ url_for('read_users_groups_edit') }}?{{ GROUPID_NAME }}={{ gid }}">戻る</a></p>
+    <p><a href="{{ url_for('read_users_groups_edit') }}?{{ GROUPID_NAME }}={{ gid }}" class="plain-link">戻る</a></p>
 {% endblock %}

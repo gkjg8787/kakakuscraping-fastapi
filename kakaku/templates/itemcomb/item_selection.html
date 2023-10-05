@@ -17,7 +17,7 @@
     {%- if errmsg %}
         <p>{{ errmsg }}</p>
     {%- endif %}
-    <p><a href="{{ url_for('read_users') }}">戻る</a></p>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">戻る</a></p>
     <h2>アイテム一覧</h2>
     <h3>フィルタ</h3>
     <p>
@@ -70,5 +70,5 @@
         <button type="submit">次へ</button>
         {%- endif %}
     </form>
-    <p><a href="{{ url_for('read_users') }}">戻る</a></p>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">戻る</a></p>
 {% endblock %}

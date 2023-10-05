@@ -2,6 +2,7 @@
 {% extends "layout.html" %}
 
 {% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
     <link rel="stylesheet" href="{{ url_for('static', path='/css/analysis.css') }}" type="text/css">
     <title>アイテム分析</title> 
 {% endblock %}
@@ -112,5 +113,5 @@
     <div>{{ period_start }}：{{ "{:.2f}".format(url_store_count_average.start) }}</div>
     <div >{{ period_end }}：{{ "{:.2f}".format(url_store_count_average.end) }}</div>
 
-    <p><a href="{{ url_for('read_users') }}">アイテム一覧へ戻る</a></p>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
 {% endblock %}

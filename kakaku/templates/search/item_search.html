@@ -14,8 +14,8 @@
 {% block body %}
     <div class="pagebody">
         <div class="headertitle flex_box">
-            <div><a href="{{ url_for('read_users') }}">戻る</a></div>
-            <div class="title"><a href="{{ url_for('read_search') }}">サイト検索</a></div>
+            <div><a href="{{ url_for('read_users') }}" class="plain-link">戻る</a></div>
+            <div class="title"><a href="{{ url_for('read_search') }}" class="plain-link">サイト検索</a></div>
             <div class="search_inputbox">
                 <form id="search_inputform" action="" method="get" accept-charset="utf-8">
                     <select name="{{ CATEGORY_NAME }}">

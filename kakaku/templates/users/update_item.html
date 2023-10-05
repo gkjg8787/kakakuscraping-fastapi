@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 
 {% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
     <title>アイテム更新</title>
     {%- if updateSuccess %}
     {%- if return_user %}
@@ -22,8 +23,8 @@
       </p>
     {%- endif %}
     {%- if return_user %}
-    <p><a href="{{ url_for('read_users') }}">アイテム一覧へ戻る</a></p>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
     {%- else %}
-    <p><a href="{{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ item_id }}">アイテム詳細へ戻る</a></p>
+    <p><a href="{{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ item_id }}" class="plain-link">アイテム詳細へ戻る</a></p>
     {%- endif %}
 {% endblock %}

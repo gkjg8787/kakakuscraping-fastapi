@@ -66,7 +66,7 @@
             <input type="hidden" name="{{ POST_ITEM_ID }}" value="{{ items['item_id'] }}">
             <button type="submit">このアイテムを削除</button>
         </form></p>
-        <p><a href="{{ url_for('read_users') }}#item{{ items['item_id'] }}">戻る</a></p>
+        <p><a href="{{ url_for('read_users') }}#item{{ items['item_id'] }}" class="plain-link">戻る</a></p>
     <h2>登録URL一覧</h2>
     {% if urllist %}
     <form action="{{ url_for('read_users_items_update') }}" method="post">

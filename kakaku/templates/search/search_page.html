@@ -1,20 +1,20 @@
 <div class="retpage">
     <ul>
         {%- if page.pre_url %}
-        <li><a href="{{ page.pre_url }}" class="prepage">前のページ</a></li>
+        <li><a href="{{ page.pre_url }}" class="prepage plain-link">前のページ</a></li>
         {%- endif %}
         {%- for p in page.pages %}
             {%- if p.cure_page %}
             <li><span class="curpage">{{ p.num }}</span></li>
             {%- else %}
-            <li><a href="{{ p.url }}" class="pageurl">{{ p.num }}</a></li>
+            <li><a href="{{ p.url }}" class="pageurl plain-link">{{ p.num }}</a></li>
             {%- endif %}
         {%- endfor %}
         {%- if page.more_page %}
         <span class="morepage">…</span>
         {%- endif %}
         {%- if page.next_url %}
-        <li><a href="{{ page.next_url }}" class="folpage">次のページ</a></li>
+        <li><a href="{{ page.next_url }}" class="folpage plain-link">次のページ</a></li>
         {%- endif %}
     </ul>
 </div>

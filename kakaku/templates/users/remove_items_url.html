@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 
 {% block head %}
+  <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
   <title>URLの除外</title>
   <meta http-equiv="refresh" content=" 3; url={{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ item_id }}">
 {% endblock %}
@@ -14,5 +15,5 @@
       除外しました。3秒後に戻ります。<br>
     </p>
   {% endif %}
-  <p><a href="{{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ item_id }}">戻る</a></p>
+  <p><a href="{{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ item_id }}" class="plain-link">戻る</a></p>
 {% endblock %}

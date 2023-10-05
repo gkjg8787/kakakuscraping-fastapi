@@ -19,7 +19,7 @@
     {% else %}
     <p>グループ名 : {{ group_name }}</p>
     <p>作成しました。<br>3秒後、グループへ移動します。</p>
-    <p><a href="{{ url_for('read_users_groups_edit') }}?{{ GROUPID_NAME }}={{ group_id }}">作成したグループへ移動する</a></p><br>
+    <p><a href="{{ url_for('read_users_groups_edit') }}?{{ GROUPID_NAME }}={{ group_id }}" class="plain-link">作成したグループへ移動する</a></p><br>
     {% endif %}
-    <p><a href="{{ url_for('read_users') }}">戻る</a></p>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">戻る</a></p>
 {% endblock %}

@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 
 {% block head %}
+  <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
   <title>商品名変更</title>
   {% if updateSuccess %}
     <meta http-equiv="refresh" content=" 3; url={{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ item_id }}">
@@ -16,12 +17,12 @@
       <p style="color:red;">{{ errmsg }}</p>
       <input type="hidden" name="{{ POST_ITEM_ID }}" value="{{ item_id }}">
       <p><input type="submit" value="送信"></p>
-      <p><a href="{{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ item_id }}">戻る</a></p>
+      <p><a href="{{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ item_id }}" class="plain-link">戻る</a></p>
     </form>
   {% else %}
     <p>
       変更しました。<br>
     </p>
-    <p><a href="{{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ item_id }}">戻る</a></p>
+    <p><a href="{{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ item_id }}" class="plain-link">戻る</a></p>
   {% endif %}
 {% endblock %}

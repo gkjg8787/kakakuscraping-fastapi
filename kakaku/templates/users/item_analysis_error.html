@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 
 {% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
     <link rel="stylesheet" href="{{ url_for('static', path='/css/analysis.css') }}" type="text/css">
     <title>アイテム分析</title> 
 {% endblock %}
@@ -8,5 +9,5 @@
 {% block body %}
     <h1>アイテム分析</h1>
     <p style="color:red;">{{ errmsg }}</p>
-    <p><a href="{{ url_for('read_users') }}">アイテム一覧へ戻る</a></p>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
 {% endblock %}

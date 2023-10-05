@@ -36,3 +36,28 @@ table.store_item_table tr>*:first-child {
 .store_sum_pos_in {
     margin-top:10px;
 }
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    body {
+      background-color: #000;
+      color: #fff;
+    }
+    table tr, table td, table th {
+        color:#fff;
+    }
+    table.store_item_table, table.all_item_table th {
+        border-bottom-color: #fff;
+    }
+    .detail_store_title {
+        text-decoration-color:#fff;
+    }
+    .gray_background {
+        background: #696969;
+    }
+    table tr:nth-child(odd) td.gray_background {
+        background: #696969;
+    }
+    a.plain-link:link, a.plain-link:visited {
+      color:  #E29506;
+    }
+  }

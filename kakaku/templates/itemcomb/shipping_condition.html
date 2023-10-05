@@ -1,6 +1,7 @@
 {% extends "layout.html" %}
 
 {% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
     <link rel="stylesheet" href="{{ url_for('static', path='/css/storepos.css') }}" type="text/css">
     <title>送料条件の入力</title>
     <script type="text/javascript" src="{{ url_for('static', path='/js/storepos.js') }}"></script>
@@ -13,7 +14,7 @@
     <p style="color:red;">{{ errmsg }}</p>
     {%- endif %}
     <p>
-        <a href="{{ url_for('read_input_search_shop_shipping') }}" target="_blank" rel="noopener noreferrer">送料検索ツールを別のタブで開く</a>
+        <a href="{{ url_for('read_input_search_shop_shipping') }}" target="_blank" rel="noopener noreferrer" class="plain-link">送料検索ツールを別のタブで開く</a>
     </p>
     <form action="{{ url_for('read_item_price_combination_result') }}" method="post" accept-charset="utf-8">
         {%- for item_id in item_id_list %}
@@ -84,6 +85,6 @@
             {%- endif %}
         </div>
     </form>
-    <p><a href="{{ url_for('read_select_item_price_combination') }}">選択へ戻る</a></p>
-    <p><a href="{{ url_for('read_users') }}">アイテム一覧へ戻る</a></p>
+    <p><a href="{{ url_for('read_select_item_price_combination') }}" class="plain-link">選択へ戻る</a></p>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
 {% endblock %}

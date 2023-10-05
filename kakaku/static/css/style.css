@@ -106,4 +106,7 @@ a.like_button_link:hover {
   table tr:nth-child(odd) td.gray_background {
       background: #696969;
   }
+  a.plain-link:link, a.plain-link:visited {
+    color:  #E29506;
+  }
 }
