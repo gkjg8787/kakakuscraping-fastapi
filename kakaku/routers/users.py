@@ -382,10 +382,12 @@ def read_users_groups_delete_result(request :Request,
                             ,status_code=status.HTTP_302_FOUND)
     dgc = template_value.item.DeleteGroupContext(request=request, delgform=delgform, db=db)
     context = dict(dgc)
-    return templates.TemplateResponse(
+    res = templates.TemplateResponse(
         "users/del_group.html"
         ,context
     )
+    res.set_cookie(key=cookie_name.NewestCookie.cfilter_str.name, value="")
+    return res
 
 @router.post("/groups/rename/", response_class=HTMLResponse)
 def read_users_groups_rename(request :Request,
