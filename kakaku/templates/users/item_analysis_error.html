@@ -8,6 +8,17 @@
 
 {% block body %}
     <h1>アイテム分析</h1>
+
+    <form method="get" action="">
+        対象期間 : <select name="{{ ANALYSIS_Q_NAME }}" onchange="submit(this.form)">
+            {%- for ap in analysisPeriodList %}
+            <option value="{{ ap.id }}" {{ ap.selected }}>
+                {{ ap.text }}
+            </option>
+            {%- endfor %}
+        </select>
+    </form>
+
     <p style="color:red;">{{ errmsg }}</p>
     <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
 {% endblock %}

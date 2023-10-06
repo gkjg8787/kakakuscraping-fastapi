@@ -745,6 +745,8 @@ class ItemAnalysisContext(BaseTemplateValue):
             self.item_id = int(anaq.itemid)
         if anaq.atid:
             self.analysis_term_id = int(anaq.atid)
+        
+        self.analysisPeriodList = self.create_analysis_period_list(self.analysis_term_id)
 
         result = database_analysis.get_log_analysis(db=db, atid=self.analysis_term_id)
         if result.is_error():
@@ -768,7 +770,7 @@ class ItemAnalysisContext(BaseTemplateValue):
 
         self.url_store_count_average = result.get_url_store_count_average()
 
-        self.analysisPeriodList = self.create_analysis_period_list(self.analysis_term_id)
+        
     
     @staticmethod
     def create_analysis_period_list(analysis_term_id :int):

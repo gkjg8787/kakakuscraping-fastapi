@@ -113,10 +113,16 @@ def test_get_item_price_analysis():
             start_data=period_end_log[keyName.PERIOD_LOG][keyName.START],
             end_data=period_end_log[keyName.PERIOD_LOG][keyName.END],
         )
-    assert result[keyName.START][keyName.INIT_PRICE_COUNT] == 0
-    assert result[keyName.END][keyName.INIT_PRICE_COUNT] == 0
+    assert len(result[keyName.START][keyName.INIT_PRICE]) == 0
+    assert len(result[keyName.END][keyName.INIT_PRICE]) == 0
     assert len(result[keyName.PRICE][keyName.UP]) == 2
     assert len(result[keyName.PRICE][keyName.DOWN]) == 2
     assert len(result[keyName.PRICE][keyName.NO_CHANGE]) == 0
+
+def test_LogAnalysis_2days():
+    data = test_data.get_two_days_data()
+    la = dbana.LogAnalysis(data)
+    print(f'LogAnalysis.result={la.result}')
+    assert not dbana.AnalysisKeyName.ERROR in la.result
     
     

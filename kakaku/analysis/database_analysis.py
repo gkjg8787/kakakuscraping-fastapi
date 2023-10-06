@@ -70,15 +70,16 @@ def get_log_analysis(db :Session, atid :int):
     if not_exist_datetime_in_dict(rd_list[0]):
         error_dict[AnalysisKeyName.ERROR] = LogAnalysisError.NO_EXIST_DATETIME
         return LogAnalysisResult(error_dict)
-    if rd_list[0][AnalysisKeyName.START] == rd_list[0][AnalysisKeyName.END]:
+    
+    period_start_jst = utcTolocaltime(rd_list[0][AnalysisKeyName.START])
+    period_end_jst = utcTolocaltime(rd_list[0][AnalysisKeyName.END])
+    if period_start_jst.date() == period_end_jst.date():
         error_dict[AnalysisKeyName.ERROR] = LogAnalysisError.NOT_ENOUGH_LOGS
         return LogAnalysisResult(error_dict)
     
-    one_week_ago_jst = utcTolocaltime(rd_list[0][AnalysisKeyName.START])
-    now_jst = utcTolocaltime(rd_list[0][AnalysisKeyName.END])
     result = AnalysisQuery.get_itemlog_by_period_date(db,
-                                                      start_jst=one_week_ago_jst.date(),
-                                                      end_jst=now_jst.date()
+                                                      start_jst=period_start_jst.date(),
+                                                      end_jst=period_end_jst.date()
                                                       )
     logana = LogAnalysis(result)
     return logana.get_analysis_data()
@@ -247,7 +248,6 @@ class ItemPriceResult(BaseModel):
             [up_count, down_count, no_change_count,
              to_in_stock_count, to_out_of_stock_count, no_stock_count]
             )
-        
         up_average = self.create_price_average(up_dict)
         up = PriceResult(all_count=all_count, count=up_count, average=up_average)
         down_average = self.create_price_average(down_dict)
@@ -272,6 +272,8 @@ class ItemPriceResult(BaseModel):
 
     
     def create_price_average(self, price_dict :dict):
+        if len(price_dict) == 0:
+            return 0
         return statistics.mean(list(price_dict.values()))
     
 
@@ -504,10 +506,12 @@ class LogAnalysis:
         if len(data) == 0:
             self.result[AnalysisKeyName.ERROR] = LogAnalysisError.DATA_IS_ZERO
             return
+        
         dict_list = sqlalchemy_result_all_to_dict_list(data)
         if len(dict_list) == 0:
             self.result[AnalysisKeyName.ERROR] = LogAnalysisError.DICT_IS_ZERO
             return
+        
         start_datetime, end_datetime = self.get_period_end_datetime(dict_list=dict_list)
         if not start_datetime or not end_datetime:
             self.result[AnalysisKeyName.ERROR] = LogAnalysisError.NO_EXIST_DATETIME
@@ -597,10 +601,9 @@ class LogAnalysis:
                         else:
                             result[key][AnalysisKeyName.STORE][storename] = 1
                         
-                        if id in result[key][AnalysisKeyName.STORE_PER_URL]:
-                            result[key][AnalysisKeyName.STORE_PER_URL][id].add(storename)
-                        else:
-                            result[key][AnalysisKeyName.STORE_PER_URL][id] = set(storename)
+                        if not id in result[key][AnalysisKeyName.STORE_PER_URL]:
+                            result[key][AnalysisKeyName.STORE_PER_URL][id] = set()
+                        result[key][AnalysisKeyName.STORE_PER_URL][id].add(storename)
             
             analyse_url_log(start_log_list, AnalysisKeyName.START)
             analyse_url_log(end_log_list, AnalysisKeyName.END)
