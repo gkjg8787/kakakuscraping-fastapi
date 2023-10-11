@@ -10,7 +10,7 @@
 
 ### 対応するサイトの更新について
 + 2023/10/11 駿河屋の一部のURLの変更
-  + URL階層：(product-other)から(product/other)へ変更
+  + URL階層：`product-other`から`product/other`へ変更
 + 2023/9/19 ブックオフのURLの変更
-  + ドメイン：(www.bookoffonline.co.jp)から(shopping.bookoff.co.jp)へ変更
-  + URL階層：(old)から(used)へ変更
+  + ドメイン：`www.bookoffonline.co.jp`から`shopping.bookoff.co.jp`へ変更
+  + URL階層：`old`から`used`へ変更
