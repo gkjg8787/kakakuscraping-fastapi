@@ -182,7 +182,8 @@ class SurugayaParse(htmlparse.ParseItems):
         self.__parse = self.createObj(self.soup, id, date, url)
 
     def createObj(self, soup, id, date, url):
-        if "product-other" in str(url):
+        if "product-other" in str(url)\
+            or "product/other" in str(url):
             return SurugayaProduct_Other(soup, id, date, url)
         else:
             return SurugayaProduct(soup, id, date, url)
