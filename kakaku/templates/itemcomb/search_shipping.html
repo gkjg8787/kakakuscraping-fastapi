@@ -35,7 +35,7 @@
         <li>店名：{{ r.shop_name }}</li>
         <li>
         {%- if r.url | isSupportDomain %}
-        URL：<a href="{{ r.url }}" target="_blank" rel="noopener noreferrer">{{ r.url }}</a>
+        URL：<a href="{{ r.url }}" target="_blank" rel="noopener noreferrer" class="plain-link">{{ r.url }}</a>
         {%- else %}  
         URL：{{ r.url }}
         {%- endif %}
