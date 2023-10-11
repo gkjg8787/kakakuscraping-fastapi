@@ -9,6 +9,7 @@ from common.filter_name import (
     FilterQueryName,
     ItemSortName,
     FilterOnOff,
+    UrlSortName,
 )
 from common.templates_string import HTMLOption
 
@@ -461,3 +462,36 @@ class AnalysisBaseQuery():
             self.itemid = itemid
         if is_valid_id(atid):
             self.atid = atid
+
+class UrlListFilterQuery:
+    act :str = ""
+    usort :str = ""
+
+    def __init__(self,
+                 act :str = "",
+                 usort :str = "",
+                 ):
+        if act and act.isdigit() and ActFilterName.hasValue(int(act)):
+            self.act = act
+        else:
+            self.act = str(ActFilterName.ACT.id)
+        
+        if usort and usort.isdigit() and UrlSortName.hasId(int(usort)):
+            self.usort = usort
+    
+    def get_filter_dict(self) -> dict:
+        results = {}
+        if self.act:
+            results[FilterQueryName.ACT.value] = self.act
+        if self.usort:
+            results[FilterQueryName.USORT.value] = self.usort
+        return results
+    
+def get_url_sort_list(f:Dict) -> List:
+    results = [TemplatesItemSort(name=i.qname, id=i.id, text=i.jname) for i in UrlSortName]
+    if not FilterQueryName.USORT.value in f:
+        return results         
+    for r in results:
+        if int(r.id) == int(f[FilterQueryName.USORT.value]):
+            r.selected = HTMLOption.SELECTED.value
+    return results

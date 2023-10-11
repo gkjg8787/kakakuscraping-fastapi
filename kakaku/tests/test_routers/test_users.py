@@ -642,4 +642,20 @@ def test_read_users_analysis(test_db):
     assert 'URL毎の平均店舗数の変動' in response.text
     drop_test_db()
 
+def test_read_users_urls_view_no_data(test_db):
+    response = client.get(f'{prefix}/urls/v/')
+    assert response.status_code == 200
+    is_html(response.text)
+    assert '登録URL一覧' in response.text
+    assert '0件' in response.text
+
+def test_read_users_urls_view_one_data(test_db):
+    add_item_name_and_url_success()
+    response = client.get(f'{prefix}/urls/v/')
+    assert response.status_code == 200
+    is_html(response.text)
+    assert '登録URL一覧' in response.text
+    assert '1件' in response.text
+    drop_test_db()
+
     

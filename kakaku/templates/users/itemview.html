@@ -29,7 +29,7 @@
     <td>{{ items['url_id'] }}</td>
     <td>
       {% if items['urlpath'] | isSupportDomain %}
-          <a href="{{ items['urlpath'] }}">{{ items['urlpath'] }}</a>
+          <a href="{{ items['urlpath'] }}" target="_blank" rel="noopener noreferrer">{{ items['urlpath'] }}</a>
       {% else %}    
           {{ items['urlpath'] }}
       {% endif %}
@@ -85,7 +85,7 @@
             <td>{{ row['url_id']}}</td>
             <td>
               {%if row['urlpath'] | isSupportDomain %}
-                    <a href="{{ row['urlpath']}}">{{ row['urlpath']}}</a>
+                    <a href="{{ row['urlpath']}}" target="_blank" rel="noopener noreferrer">{{ row['urlpath']}}</a>
                 {% else %}    
                     {{ row['urlpath'] }}
                 {% endif %}

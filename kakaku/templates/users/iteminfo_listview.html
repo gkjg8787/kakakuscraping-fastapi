@@ -66,6 +66,7 @@
         {%- else %}
         <p><button disabled>アイテムの分析</button></p>
         {%- endif %}
+        <p><a href="{{ url_for('read_users_urls_view') }}" class="like_button_link">URL一覧</a></p>
         <p><a href="{{ url_for('read_admin_dashboard') }}" class="like_button_link">管理画面</a></p>
         
         
@@ -132,7 +133,7 @@
             <td>{{ row['url_id'] }}</td>
             <td>
                 {%if row['urlpath'] | isSupportDomain %}
-                    <a href="{{ row['urlpath']}}">{{ row['urlpath']}}</a>
+                    <a href="{{ row['urlpath']}}" target="_blank" rel="noopener noreferrer">{{ row['urlpath']}}</a>
                 {% else %}    
                     {{ row['urlpath'] }}
                 {% endif %}

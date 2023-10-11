@@ -418,3 +418,16 @@ def read_users_groups_rename_result(request :Request,
         "users/rename_group.html"
         ,context
     )
+
+@router.get("/urls/v/", response_class=HTMLResponse)
+def read_users_urls_view(request: Request,
+                          ufq : ppi.UrlListFilterQuery = Depends(),
+                          db :Session = Depends(get_session)
+                          ):
+    ulc = template_value.item.UrlListContext(request=request, db=db, ufq=ufq)
+
+    context = dict(ulc)
+    return templates.TemplateResponse(
+        "users/url_list.html"
+        ,context
+        )

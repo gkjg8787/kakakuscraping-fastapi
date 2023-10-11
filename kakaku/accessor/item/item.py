@@ -20,6 +20,7 @@ from common.filter_name import (
     FilterQueryName as fqn,
     ActFilterName,
     ItemSortName,
+    UrlSortName,
 )
 from model.item import (
     Item,
@@ -1091,6 +1092,78 @@ class UrlQuery:
                 )
         db.execute(stmt)
         db.commit()
+    
+    @classmethod
+    def get_url_and_item_comb_list(cls, db :Session, filter :dict):
+        isactive = cls.get_act_filter(filter)
+
+        url_uniq = ( select(PriceLog.url_id,
+                            PriceLog.uniqname)
+                    )
+        if isactive:
+            url_uniq = ( url_uniq
+                        .join(UrlInItem,UrlInItem.url_id == PriceLog.url_id)
+                        .where(UrlInItem.active == isactive.value)
+                        )
+        url_uniq = url_uniq.group_by(PriceLog.url_id).cte('url_uniq')
+
+        stmt = ( select(Url.url_id,
+                        Url.urlpath,
+                        url_uniq.c.uniqname,
+                        Url.created_at,
+                        UrlInItem.item_id,
+                        Item.name.label('itemname'),
+                        UrlInItem.active)
+                .select_from(Url)
+                .join(UrlInItem, Url.url_id == UrlInItem.url_id, isouter=True)
+                .join(url_uniq, Url.url_id == url_uniq.c.url_id, isouter=True)
+                .join(Item, UrlInItem.item_id == Item.item_id, isouter=True)
+                )
+        if isactive:
+            stmt = stmt.where(UrlInItem.active == isactive.value)
+        stmt = cls.__set_urlsort_filter(filter, stmt)
+
+        return db.execute(stmt).all()
+    
+    @staticmethod
+    def get_act_filter(filter :dict) -> Optional[UrlActive]:
+        if not fqn.ACT.value in filter.keys() \
+            or int(filter[fqn.ACT.value]) == ActFilterName.ALL.id:
+            return None
+        if int(filter[fqn.ACT.value]) == ActFilterName.ACT.id:
+            return UrlActive.ACTIVE
+        if int(filter[fqn.ACT.value]) == ActFilterName.INACT.id:
+            return UrlActive.INACTIVE
+        return None
+    
+    @classmethod
+    def __set_urlsort_filter(cls, filter :dict, stmt):
+        if not fqn.USORT.value in filter.keys() \
+            or int(filter[fqn.USORT.value]) < 0:
+            return stmt
+        fnum = int(filter[fqn.USORT.value])
+        if fnum == UrlSortName.URLID_ASC.id:
+            stmt = (stmt
+                    .order_by(Url.url_id.asc())
+                    )
+            return stmt
+        if fnum == UrlSortName.URLID_DESC.id:
+            stmt = (stmt
+                    .order_by(Url.url_id.desc())
+                    )
+            return stmt
+        if fnum == UrlSortName.ITEMID_ASC.id:
+            stmt = (stmt
+                    .order_by(UrlInItem.item_id.asc())
+                    )
+            return stmt
+        if fnum == UrlSortName.ITEMID_DESC.id:
+            stmt = (stmt
+                    .order_by(UrlInItem.item_id.desc())
+                    )
+            return stmt
+    
+        return stmt
     
 class AnalysisQuery:
     @classmethod

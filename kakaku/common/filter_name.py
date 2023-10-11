@@ -20,6 +20,7 @@ class FilterQueryName(AutoLowerName):
     ZAIKO = auto()
     LISTVIEW = auto()
     PREF = auto()
+    USORT = auto()
 
 @unique
 class ActFilterName(Enum):
@@ -48,6 +49,25 @@ class ItemSortName(Enum):
     LOW_TRENDRATE = (7, "値下げ",)
     HIGH_TRENDRATE = (8, "値上げ",)
     NEW_UPDATE_TIME = (9, "更新が新しい")
+
+    def __init__(self, id:int, text:str):
+        self.id = id
+        self.qname = self.name.lower()
+        self.jname = text
+    
+    @classmethod
+    def hasId(cls, id:int) -> bool:
+        for isn in cls:
+            if isn.id == id:
+                return True
+        return False
+
+@unique
+class UrlSortName(Enum):
+    URLID_ASC = (1, "URL_ID昇順",)
+    URLID_DESC = (2, "URL_ID降順",)
+    ITEMID_ASC = (3, "ITEM_ID昇順",)
+    ITEMID_DESC = (4, "ITEM_ID降順",)
 
     def __init__(self, id:int, text:str):
         self.id = id

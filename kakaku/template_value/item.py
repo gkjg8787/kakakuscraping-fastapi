@@ -782,3 +782,24 @@ class ItemAnalysisContext(BaseTemplateValue):
             analysisPeriodList.append(iap)
         return analysisPeriodList
         
+class UrlListContext(BaseTemplateValue):
+    res : list
+    res_length :int = 0
+    ITEMACT_NAME :str = filter_name.FilterQueryName.ACT.value
+    actstslist :list
+    fquery :dict
+
+    URLSORT_NAME :str = filter_name.FilterQueryName.USORT.value
+    urlSortList :list
+
+    def __init__(self, request, db :Session, ufq :ppi.UrlListFilterQuery):
+        fd = ufq.get_filter_dict()
+        super().__init__(request=request
+                         ,res=UrlQuery.get_url_and_item_comb_list(db,filter=fd)
+                         ,actstslist = ppi.get_actstslist(fd)
+                         ,fquery=fd
+                         ,urlSortList = ppi.get_url_sort_list(fd)
+                         )
+        self.res_length = len(self.res)
+
+

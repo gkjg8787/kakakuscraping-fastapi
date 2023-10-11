@@ -5,6 +5,7 @@ from common.util import dbtimeTodatetime
 
 from accessor.item import (
     NewestQuery,
+    UrlQuery,
 )
 from tests.test_sqlalchemy import (
     delete_item_model,
@@ -265,4 +266,136 @@ def test_get_newest_data_no_data_filter_isort_new_update_time(test_db):
             assert uptime >= dbtimeTodatetime(dic["created_at"])
             uptime = dbtimeTodatetime(dic["created_at"])
             continue
+    delete_item_model(test_db)
+
+def test_get_url_and_item_comb_list_no_data_filter_none(test_db):
+    filter_dict = {}
+    results = UrlQuery.get_url_and_item_comb_list(test_db, filter=filter_dict)
+    assert len(results) == 0
+
+###############################
+# ACT Filter
+###############################
+def test_get_url_and_item_comb_list_no_data_filter_active(test_db):
+    filter_dict = {filter_name.FilterQueryName.ACT.value:filter_name.ActFilterName.ACT.id}
+    results = UrlQuery.get_url_and_item_comb_list(test_db, filter=filter_dict)
+    assert len(results) == 0
+
+
+def test_get_url_and_item_comb_list_no_data_filter_inactive(test_db):
+    filter_dict = {filter_name.FilterQueryName.ACT.value:filter_name.ActFilterName.INACT.id}
+    results = UrlQuery.get_url_and_item_comb_list(test_db, filter=filter_dict)
+    assert len(results) == 0
+
+
+def test_get_url_and_item_comb_list_no_data_filter_all(test_db):
+    filter_dict = {filter_name.FilterQueryName.ACT.value:filter_name.ActFilterName.ALL.id}
+    results = UrlQuery.get_url_and_item_comb_list(test_db, filter=filter_dict)
+    assert len(results) == 0
+
+
+def test_get_url_and_item_comb_list_exist_data_filter_active(test_db):
+    add_data_set_1(test_db)
+    filter_dict = {filter_name.FilterQueryName.ACT.value:filter_name.ActFilterName.ACT.id}
+    results = UrlQuery.get_url_and_item_comb_list(test_db, filter=filter_dict)
+    assert len(results) == 7
+    delete_item_model(test_db)
+
+def test_get_url_and_item_comb_list_exist_data_filter_inactive(test_db):
+    add_data_set_1(test_db)
+    filter_dict = {filter_name.FilterQueryName.ACT.value:filter_name.ActFilterName.INACT.id}
+    results = UrlQuery.get_url_and_item_comb_list(test_db, filter=filter_dict)
+    assert len(results) == 1
+    delete_item_model(test_db)
+
+def test_get_url_and_item_comb_list_exist_data_filter_all(test_db):
+    add_data_set_1(test_db)
+    filter_dict = {filter_name.FilterQueryName.ACT.value:filter_name.ActFilterName.ALL.id}
+    results = UrlQuery.get_url_and_item_comb_list(test_db, filter=filter_dict)
+    assert len(results) == 8
+    delete_item_model(test_db)
+
+###############################
+# UrlSort Filter
+###############################
+def test_get_url_and_item_comb_list_no_data_filter_usort_urlid_asc(test_db):
+    filter_dict = {filter_name.FilterQueryName.USORT.value:filter_name.UrlSortName.URLID_ASC.id}
+    results = UrlQuery.get_url_and_item_comb_list(test_db, filter=filter_dict)
+    assert len(results) == 0
+
+def test_get_url_and_item_comb_list_no_data_filter_usort_urlid_desc(test_db):
+    filter_dict = {filter_name.FilterQueryName.USORT.value:filter_name.UrlSortName.URLID_DESC.id}
+    results = UrlQuery.get_url_and_item_comb_list(test_db, filter=filter_dict)
+    assert len(results) == 0
+
+def test_get_url_and_item_comb_list_no_data_filter_usort_itemid_asc(test_db):
+    filter_dict = {filter_name.FilterQueryName.USORT.value:filter_name.UrlSortName.ITEMID_ASC.id}
+    results = UrlQuery.get_url_and_item_comb_list(test_db, filter=filter_dict)
+    assert len(results) == 0
+
+def test_get_url_and_item_comb_list_no_data_filter_usort_itemid_desc(test_db):
+    filter_dict = {filter_name.FilterQueryName.USORT.value:filter_name.UrlSortName.ITEMID_DESC.id}
+    results = UrlQuery.get_url_and_item_comb_list(test_db, filter=filter_dict)
+    assert len(results) == 0
+
+def test_get_url_and_item_comb_list_no_data_filter_usort_urlid_asc(test_db):
+    add_data_set_1(test_db)
+    filter_dict = {filter_name.FilterQueryName.USORT.value:filter_name.UrlSortName.URLID_ASC.id}
+    results = UrlQuery.get_url_and_item_comb_list(test_db, filter=filter_dict)
+    assert len(results) == 8
+    id = -1
+    for res in results:
+        dic = { k:y for k,y in res._mapping.items()}
+        assert id <= dic["url_id"]
+        id = dic["url_id"]
+        continue
+    
+    delete_item_model(test_db)
+
+def test_get_url_and_item_comb_list_no_data_filter_usort_urlid_desc(test_db):
+    add_data_set_1(test_db)
+    filter_dict = {filter_name.FilterQueryName.USORT.value:filter_name.UrlSortName.URLID_DESC.id}
+    results = UrlQuery.get_url_and_item_comb_list(test_db, filter=filter_dict)
+    assert len(results) == 8
+    id = None
+    for res in results:
+        dic = { k:y for k,y in res._mapping.items()}
+        if not id:
+            id = dic["url_id"]
+            continue
+        assert id >= dic["url_id"]
+        id = dic["url_id"]
+        continue
+    
+    delete_item_model(test_db)
+
+def test_get_url_and_item_comb_list_no_data_filter_usort_itemid_asc(test_db):
+    add_data_set_1(test_db)
+    filter_dict = {filter_name.FilterQueryName.USORT.value:filter_name.UrlSortName.ITEMID_ASC.id}
+    results = UrlQuery.get_url_and_item_comb_list(test_db, filter=filter_dict)
+    assert len(results) == 8
+    id = -1
+    for res in results:
+        dic = { k:y for k,y in res._mapping.items()}
+        assert id <= dic["item_id"]
+        id = dic["item_id"]
+        continue
+    
+    delete_item_model(test_db)
+
+def test_get_url_and_item_comb_list_no_data_filter_usort_itemid_desc(test_db):
+    add_data_set_1(test_db)
+    filter_dict = {filter_name.FilterQueryName.USORT.value:filter_name.UrlSortName.ITEMID_DESC.id}
+    results = UrlQuery.get_url_and_item_comb_list(test_db, filter=filter_dict)
+    assert len(results) == 8
+    id = None
+    for res in results:
+        dic = { k:y for k,y in res._mapping.items()}
+        if not id:
+            id = dic["item_id"]
+            continue
+        assert id >= dic["item_id"]
+        id = dic["item_id"]
+        continue
+    
     delete_item_model(test_db)
