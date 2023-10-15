@@ -176,6 +176,9 @@ def add_data_set_1(db):
 
 def add_data_set_1_plus_store(db):
     add_data_set_1(db)
+    add_data_store(db)
+
+def add_data_store(db):
     storename_list = [
         {"store_id":1, "storename":SURUGAYA},
         {"store_id":2, "storename":NETOFF},
@@ -304,3 +307,84 @@ def add_analysis_data_set_1(db):
     insert_pricelog_dict_list_sync(db, pldict_list=pricelog_list)
 
 
+def add_extract_store_data_set_1(db):
+    item_list = [
+        {"item_id":1, "name":"one_item"},
+        {"item_id":2, "name":"two_item"},
+        {"item_id":3, "name":"three_item"},
+    ]
+    url_list = [
+        {"url_id":1, "urlpath":SURUGAYA_OTHER_GEDOSENKI},
+        {"url_id":2, "urlpath":SURUGAYA_OTHER_RAPYUTA},
+        {"url_id":3, "urlpath":NETOFF_HAURU},
+        {"url_id":4, "urlpath":BOOKOFF_SENTOCHIHIRO},
+        {"url_id":5, "urlpath":SURUGAYA_OTHER_KOKURIKO},
+    ]
+    urlinitem_list = [
+        {"item_id":1, "url_id":1, "active":"True"},
+        {"item_id":1, "url_id":2, "active":"True"},
+        {"item_id":2, "url_id":3, "active":"False"},
+        {"item_id":2, "url_id":4, "active":"True"},
+        {"item_id":3, "url_id":5, "active":"False"},
+    ]
+    pricelog_list = [
+        {
+            "url_id": 1, "created_at":dbtimeTodatetime("2023-08-22 10:00:00"),
+            "uniqname":"one_item", "usedprice":1500, "newprice":-1,
+            "taxin":True, "onsale":False, "salename":None,
+            "issuccess":True, "trendrate":0, "storename":SURUGAYA,
+        },
+        {
+            "url_id": 2, "created_at":dbtimeTodatetime("2023-08-22 10:01:00"),
+            "uniqname":"two_item", "usedprice":1200, "newprice":-1,
+            "taxin":True, "onsale":False, "salename":None,
+            "issuccess":True, "trendrate":0.177, "storename":SURUGAYA,
+        },
+        {
+            "url_id": 3, "created_at":dbtimeTodatetime("2023-08-22 10:02:00"),
+            "uniqname":"three_item", "usedprice":3000, "newprice":-1,
+            "taxin":True, "onsale":False, "salename":None,
+            "issuccess":True, "trendrate":-0.07, "storename":SURUGAYA,
+        },
+        {
+            "url_id": 4, "created_at":dbtimeTodatetime("2023-08-22 10:03:00"),
+            "uniqname":"four_item", "usedprice":3300, "newprice":3400,
+            "taxin":True, "onsale":False, "salename":None,
+            "issuccess":True, "trendrate":0, "storename":SURUGAYA,
+        },
+        {
+            "url_id": 5, "created_at":dbtimeTodatetime("2023-08-22 10:04:00"),
+            "uniqname":"five_item", "usedprice":-1, "newprice":-1,
+            "taxin":True, "onsale":False, "salename":None,
+            "issuccess":True, "trendrate":0, "storename":SURUGAYA,
+        },
+    ]
+    newestitem_list = [
+        {
+            "item_id":1, "url_id": 1, "created_at":dbtimeTodatetime("2023-08-22 10:00:00"),
+            "newestprice":1500,
+            "taxin":True, "onsale":False, "salename":None,
+            "trendrate":0, "storename":SURUGAYA,
+            "lowestprice":1500,
+        },
+        {
+            "item_id":2, "url_id": 3, "created_at":dbtimeTodatetime("2023-08-22 10:01:00"),
+            "newestprice":1200,
+            "taxin":True, "onsale":False, "salename":None,
+            "trendrate":0.177, "storename":SURUGAYA,
+            "lowestprice":1000,
+        },
+        {
+            "item_id":3, "url_id": 5, "created_at":dbtimeTodatetime("2023-08-22 10:02:00"),
+            "newestprice":-1,
+            "taxin":True, "onsale":False, "salename":None,
+            "trendrate":0.0, "storename":SURUGAYA,
+            "lowestprice":2800,
+        },
+    ]
+    insert_item_dict_list(db, item_list=item_list)
+    insert_url_dict_list(db, url_list=url_list)
+    insert_urlinitem_dict_list(db, urlinitem_list=urlinitem_list)
+    insert_pricelog_dict_list_sync(db, pldict_list=pricelog_list)
+    insert_newestitem_dict_list(db, nidict_list=newestitem_list)
+    add_data_store(db)

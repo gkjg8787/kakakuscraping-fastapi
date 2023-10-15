@@ -1,0 +1,15 @@
+<form method="get" action="">
+    抽出する店舗 : <select name="{{ EXST_NAME }}" onchange="submit(this.form)">
+        <option hidden>店舗を選択してください</option>
+        {% for st in storelist %}
+        <option value="{{ st.id }}" {{ st.selected }}>
+            {{ st.name }}
+        </option>
+        {% endfor %}
+    </select>
+    {% for k, v in fquery.items() %}
+        {% if k != EXST_NAME and v != "" %}
+        <input type="hidden" name="{{ k }}" value="{{ v}}">
+        {% endif %}
+    {% endfor %}
+</form>

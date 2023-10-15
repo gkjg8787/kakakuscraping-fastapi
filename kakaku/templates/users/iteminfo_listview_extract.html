@@ -2,7 +2,7 @@
 
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
-    <title>アイテム価格一覧</title>
+    <title>アイテムを店舗名で抽出</title>
 {% endblock %}
 
 {% block body %}
@@ -26,22 +26,8 @@
                 btnstr.value = '＋';
             }
         }
-        window.onload = function () {
-            const itemid = '{{ topscrollid }}';
-            if (!itemid) {
-                return;
-            }
-            const itemidstr = 'item' + itemid;
-            const left = document.getElementById(itemidstr).getBoundingClientRect().left;
-            const top = document.getElementById(itemidstr).getBoundingClientRect().top;
-            window.scrollTo({
-                left: left,
-                top: top,
-                behavior: 'smooth'
-            });
-        }
     </script>
-    <h1>アイテム価格一覧</h1>
+    <h1>アイテムを店舗名で抽出</h1>
     <h2>操作メニュー <input id="ctrlmenubtn" class="displaybtn ctrlmenubtn" type="button" value="＋"
             onclick="displayOnOffClick('ctrlmenu');"></h2>
     <div id="ctrlmenu">
@@ -97,20 +83,22 @@
         {%- include "users/item_act_filter.html" %}
         {%- endwith %}
         <p>
-        {%- with ITEMSORT_NAME = ITEMSORT_NAME, itemSortList = itemSortList, fquery = fquery %}
+        {%- with ITEMSORT_NAME = ESSORT_NAME, itemSortList = esSortList, fquery = fquery %}
         {%- include "users/item_sort_filter.html" %}
         {%- endwith %}
         </p>
         <p>
-        {%- with EQST_NAME = EQST_NAME, storelist = storelist, fquery = fquery %}
-        {%- include "users/item_store_filter.html" %}
+        {%- with EXST_NAME = EXST_NAME, storelist = storelist, fquery = fquery %}
+        {%- include "users/extract_store_filter.html" %}
         {%- endwith %}
         </p>
         <p>
-            <form method="get" action="{{ url_for('read_users_extract') }}">
-                <button type="submit">店舗名で抽出</button>
+            <form method="get" action="{{ url_for('read_users') }}">
+                <button type="submit">アイテム一覧へ戻る</button>
                 {% for k, v in fquery.items() %}
+                    {% if k != EXST_NAME and k != ESSORT_NAME and v != "" %}
                     <input type="hidden" name="{{ k }}" value="{{ v}}">
+                    {% endif %}
                 {% endfor %}
             </form>
         </p>

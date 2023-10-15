@@ -14,7 +14,11 @@ from tests.test_sqlalchemy import (
 
 from tests.test_db import test_db
 
-from tests.test_accessor.db_test_data import add_data_set_1, add_data_set_1_plus_store
+from tests.test_accessor.db_test_data import (
+    add_data_set_1,
+    add_data_set_1_plus_store,
+    add_extract_store_data_set_1,
+)
 
 
 
@@ -399,3 +403,213 @@ def test_get_url_and_item_comb_list_no_data_filter_usort_itemid_desc(test_db):
         continue
     
     delete_item_model(test_db)
+
+
+def test_get_storename_newest_data_no_data(test_db):
+    store_id = 0
+    filter_dict = {filter_name.FilterQueryName.EX_STORE.value:store_id}
+    results = NewestQuery.get_storename_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 0
+
+def test_get_storename_newest_data_exist_data(test_db):
+    add_data_set_1_plus_store(test_db)
+    store_id = 1
+    filter_dict = {filter_name.FilterQueryName.EX_STORE.value:store_id}
+    results = NewestQuery.get_storename_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 4
+    delete_item_and_store_model(test_db)
+
+def test_get_storename_newest_data_exist_data_dup(test_db):
+    add_extract_store_data_set_1(test_db)
+    store_id = 1
+    filter_dict = {filter_name.FilterQueryName.EX_STORE.value:store_id}
+    results = NewestQuery.get_storename_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 5
+
+    delete_item_and_store_model(test_db)
+
+###############################
+# ACT Filter
+###############################
+
+def test_get_storename_newest_data_exist_data_dup_filter_act(test_db):
+    add_extract_store_data_set_1(test_db)
+    store_id = 1
+    filter_dict = {
+        filter_name.FilterQueryName.EX_STORE.value:store_id,
+        filter_name.FilterQueryName.ACT.value:filter_name.ActFilterName.ACT.id,
+        }
+    results = NewestQuery.get_storename_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 4
+
+    delete_item_and_store_model(test_db)
+
+def test_get_storename_newest_data_exist_data_dup_filter_inact(test_db):
+    add_extract_store_data_set_1(test_db)
+    store_id = 1
+    filter_dict = {
+        filter_name.FilterQueryName.EX_STORE.value:store_id,
+        filter_name.FilterQueryName.ACT.value:filter_name.ActFilterName.INACT.id,
+        }
+    results = NewestQuery.get_storename_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 1
+
+    delete_item_and_store_model(test_db)
+
+def test_get_storename_newest_data_exist_data_dup_filter_all(test_db):
+    add_extract_store_data_set_1(test_db)
+    store_id = 1
+    filter_dict = {
+        filter_name.FilterQueryName.EX_STORE.value:store_id,
+        filter_name.FilterQueryName.ACT.value:filter_name.ActFilterName.ALL.id,
+        }
+    results = NewestQuery.get_storename_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 5
+
+    delete_item_and_store_model(test_db)
+
+###############################
+# ExtractStoreSort Filter
+###############################
+def test_get_storename_newest_data_exist_data_dup_filter_essort_old_item(test_db):
+    add_extract_store_data_set_1(test_db)
+    store_id = 1
+    filter_dict = {
+        filter_name.FilterQueryName.EX_STORE.value:store_id,
+        filter_name.FilterQueryName.ESSORT.value:filter_name.ExtractStoreSortName.OLD_ITEM.id,
+        }
+    results = NewestQuery.get_storename_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 5
+    old_id = None
+    for res in results:
+        dic = { k:y for k,y in res._mapping.items()}
+        if not old_id:
+            old_id = int(dic["item_id"])
+            continue
+        if old_id:
+            assert old_id <= int(dic["item_id"])
+            old_id = int(dic["item_id"])
+            continue
+    delete_item_and_store_model(test_db)
+
+def test_get_storename_newest_data_exist_data_dup_filter_essort_new_item(test_db):
+    add_extract_store_data_set_1(test_db)
+    store_id = 1
+    filter_dict = {
+        filter_name.FilterQueryName.EX_STORE.value:store_id,
+        filter_name.FilterQueryName.ESSORT.value:filter_name.ExtractStoreSortName.NEW_ITEM.id,
+        }
+    results = NewestQuery.get_storename_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 5
+    new_id = None
+    for res in results:
+        dic = { k:y for k,y in res._mapping.items()}
+        if not new_id:
+            new_id = int(dic["item_id"])
+            continue
+        if new_id:
+            assert new_id >= int(dic["item_id"])
+            new_id = int(dic["item_id"])
+            continue
+    delete_item_and_store_model(test_db)
+
+def test_get_storename_newest_data_exist_data_dup_filter_essort_low_price(test_db):
+    add_extract_store_data_set_1(test_db)
+    store_id = 1
+    filter_dict = {
+        filter_name.FilterQueryName.EX_STORE.value:store_id,
+        filter_name.FilterQueryName.ESSORT.value:filter_name.ExtractStoreSortName.LOW_PRICE.id,
+        }
+    results = NewestQuery.get_storename_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 5
+    price = None
+    for res in results:
+        dic = { k:y for k,y in res._mapping.items()}
+        if not price:
+            price = int(dic["price"])
+            continue
+        if price:
+            assert price <= int(dic["price"])
+            price = int(dic["price"])
+            continue
+    delete_item_and_store_model(test_db)
+
+def test_get_storename_newest_data_exist_data_dup_filter_essort_high_price(test_db):
+    add_extract_store_data_set_1(test_db)
+    store_id = 1
+    filter_dict = {
+        filter_name.FilterQueryName.EX_STORE.value:store_id,
+        filter_name.FilterQueryName.ESSORT.value:filter_name.ExtractStoreSortName.HIGH_PRICE.id,
+        }
+    results = NewestQuery.get_storename_newest_data(test_db, filter=filter_dict)
+    price = None
+    for res in results:
+        dic = { k:y for k,y in res._mapping.items()}
+        if not price:
+            price = int(dic["price"])
+            continue
+        if price:
+            assert price >= int(dic["price"])
+            price = int(dic["price"])
+            continue
+    delete_item_and_store_model(test_db)
+
+def test_get_storename_newest_data_exist_data_dup_filter_essort_low_trendrate(test_db):
+    add_extract_store_data_set_1(test_db)
+    store_id = 1
+    filter_dict = {
+        filter_name.FilterQueryName.EX_STORE.value:store_id,
+        filter_name.FilterQueryName.ESSORT.value:filter_name.ExtractStoreSortName.LOW_TRENDRATE.id,
+        }
+    results = NewestQuery.get_storename_newest_data(test_db, filter=filter_dict)
+    rate = None
+    for res in results:
+        dic = { k:y for k,y in res._mapping.items()}
+        if not rate:
+            rate = float(dic["trendrate"])
+            continue
+        if rate:
+            assert rate <= float(dic["trendrate"])
+            rate = float(dic["trendrate"])
+            continue
+    delete_item_and_store_model(test_db)
+
+def test_get_storename_newest_data_exist_data_dup_filter_essort_high_trendrate(test_db):
+    add_extract_store_data_set_1(test_db)
+    store_id = 1
+    filter_dict = {
+        filter_name.FilterQueryName.EX_STORE.value:store_id,
+        filter_name.FilterQueryName.ESSORT.value:filter_name.ExtractStoreSortName.HIGH_TRENDRATE.id,
+        }
+    results = NewestQuery.get_storename_newest_data(test_db, filter=filter_dict)
+    rate = None
+    for res in results:
+        dic = { k:y for k,y in res._mapping.items()}
+        if not rate:
+            rate = float(dic["trendrate"])
+            continue
+        if rate:
+            assert rate >= float(dic["trendrate"])
+            rate = float(dic["trendrate"])
+            continue
+    delete_item_and_store_model(test_db)
+
+def test_get_storename_newest_data_exist_data_dup_filter_essort_new_updatetime(test_db):
+    add_extract_store_data_set_1(test_db)
+    store_id = 1
+    filter_dict = {
+        filter_name.FilterQueryName.EX_STORE.value:store_id,
+        filter_name.FilterQueryName.ESSORT.value:filter_name.ExtractStoreSortName.NEW_UPDATE_TIME.id,
+        }
+    results = NewestQuery.get_storename_newest_data(test_db, filter=filter_dict)
+    uptime = None
+    for res in results:
+        dic = { k:y for k,y in res._mapping.items()}
+        if not uptime:
+            uptime = dbtimeTodatetime(dic["created_at"])
+            continue
+        if uptime:
+            assert uptime >= dbtimeTodatetime(dic["created_at"])
+            uptime = dbtimeTodatetime(dic["created_at"])
+            continue
+    delete_item_and_store_model(test_db)

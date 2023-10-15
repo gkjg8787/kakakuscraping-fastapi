@@ -658,4 +658,11 @@ def test_read_users_urls_view_one_data(test_db):
     assert '1件' in response.text
     drop_test_db()
 
+def test_read_users_extract(test_db):
+    response = client.get(f'{prefix}/ex/')
+    assert response.status_code == 200
+    is_html(response.text)
+    assert 'アイテムを店舗名で抽出' in response.text
+    assert '0件' in response.text
+
     

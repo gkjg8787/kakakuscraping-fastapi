@@ -431,3 +431,17 @@ def read_users_urls_view(request: Request,
         "users/url_list.html"
         ,context
         )
+
+@router.get("/ex/", response_class=HTMLResponse)
+def read_users_extract(request: Request,
+               esfq: ppi.ExtractStoreFilterQuery = Depends(),
+               db :Session = Depends(get_session)
+               ):
+    
+    nil = template_value.item.ExtractStoreItemListContext(request=request, esfq=esfq, db=db)
+    context = dict(nil)
+    res = templates.TemplateResponse(
+        "users/iteminfo_listview_extract.html"
+        ,context
+        )
+    return res

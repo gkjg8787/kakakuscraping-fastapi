@@ -10,6 +10,7 @@ from common.filter_name import (
     ItemSortName,
     FilterOnOff,
     UrlSortName,
+    ExtractStoreSortName,
 )
 from common.templates_string import HTMLOption
 
@@ -130,6 +131,15 @@ def get_item_sort_list(f:Dict) -> List:
         return results         
     for r in results:
         if int(r.id) == int(f[FilterQueryName.ISORT.value]):
+            r.selected = HTMLOption.SELECTED.value
+    return results
+
+def get_extract_store_sort_list(f:Dict) -> List:
+    results = [TemplatesItemSort(name=i.qname, id=i.id, text=i.jname) for i in ExtractStoreSortName]
+    if not FilterQueryName.ESSORT.value in f:
+        return results         
+    for r in results:
+        if int(r.id) == int(f[FilterQueryName.ESSORT.value]):
             r.selected = HTMLOption.SELECTED.value
     return results
 
@@ -495,3 +505,43 @@ def get_url_sort_list(f:Dict) -> List:
         if int(r.id) == int(f[FilterQueryName.USORT.value]):
             r.selected = HTMLOption.SELECTED.value
     return results
+
+class ExtractStoreFilterQuery:
+    gid :str = ""
+    act :str = ""
+    ex_store :str = ""
+    essort :str = ""
+
+    def __init__(self,
+                 gid :str = "",
+                 act :str = "",
+                 ex_store :str = "",
+                 store :str = "",
+                 essort :str = "",
+                 ):
+        
+        if is_valid_id(gid):
+            self.gid = gid
+        if act and act.isdigit() and ActFilterName.hasValue(int(act)):
+            self.act = act
+        else:
+            self.act = str(ActFilterName.ACT.id)
+        if ex_store and ex_store.isdigit():
+           self.ex_store = ex_store
+        if not ex_store and store and store.isdigit():
+            self.ex_store = store
+        if essort and essort.isdigit() and ExtractStoreSortName.hasId(int(essort)):
+            self.essort = essort
+
+    
+    def get_filter_dict(self) -> Dict:
+        results = {}
+        if self.gid:
+            results[FilterQueryName.GID.value] = self.gid
+        if self.act:
+            results[FilterQueryName.ACT.value] = self.act
+        if self.ex_store:
+            results[FilterQueryName.EX_STORE.value] = self.ex_store
+        if self.essort:
+            results[FilterQueryName.ESSORT.value] = self.essort
+        return results

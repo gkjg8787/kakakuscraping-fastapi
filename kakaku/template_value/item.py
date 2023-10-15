@@ -27,6 +27,8 @@ from proc import get_sys_status, system_status
 
 from analysis import database_analysis
 
+from accessor.util import sqlalchemy_result_all_to_dict_list
+
 
 def is_update_process_alive(db :Session):
     syssts = get_sys_status.getSystemStatus(db)
@@ -802,4 +804,72 @@ class UrlListContext(BaseTemplateValue):
                          )
         self.res_length = len(self.res)
 
+class ExtractStoreItemListContext(BaseTemplateValue):
+    res : List
+    res_length: int = 0
+    actstslist: List
+    esSortList :List
+    groups: List
+    storelist: List
+    fquery: Dict
+    GROUPID_NAME: str = filter_name.FilterQueryName.GID.value
+    ITEMACT_NAME: str =  filter_name.FilterQueryName.ACT.value
+    EXST_NAME: str = filter_name.FilterQueryName.EX_STORE.value
+    ITEMID_Q_NAME : str = filter_name.ItemDetailQueryName.ITEMID.value
+    ESSORT_NAME: str = filter_name.FilterQueryName.ESSORT.value
+    POST_ITEM_ID : str = filter_name.TemplatePostName.ITEM_ID.value
+    POST_GROUP_ID :str = filter_name.TemplatePostName.GROUP_ID.value
+    POST_ITEM_ALL_UPDATE :str = filter_name.TemplatePostName.ITEM_ALL_UPDATE.value
+    item_all_update_value :str = filter_name.ItemUpdateValue.ITEM_ALL_UPDATE
+    POST_RETURN_USER :str = filter_name.TemplatePostName.RETURN_USER.value
+    return_user :str = filter_name.FilterOnOff.ON
 
+    def __init__(self, request, esfq :ppi.ExtractStoreFilterQuery, db :Session):
+        fd = esfq.get_filter_dict()
+        super().__init__(
+                request=request
+                ,res=self.get_extract_storename_newest_data(db, filter=fd)
+                ,actstslist = ppi.get_actstslist(fd)
+                ,esSortList = ppi.get_extract_store_sort_list(fd)
+                ,groups = ppi.get_groups(db, f=fd)
+                ,storelist = []
+                ,fquery=fd
+                )
+        
+        self.res_length = len(self.res)
+        self.storelist = pps.get_stores_for_extract_store(db, filter=self.fquery)
+    
+        if filter_name.FilterQueryName.GID.value in self.fquery:
+            gid = int(self.fquery[filter_name.FilterQueryName.GID.value])
+            def get_exist_gid(gid):
+                for g in self.groups:
+                    if g.group_id == gid:
+                        return gid
+                return filter_name.FilterDefault.GID
+            
+            self.fquery[filter_name.FilterQueryName.GID.value] = get_exist_gid(gid)
+
+    @staticmethod
+    def get_extract_storename_newest_data(db :Session, filter :dict):
+        results = []
+        db_res = NewestQuery.get_storename_newest_data(db, filter=filter)
+        item_grp = {}
+        for row in db_res:
+            dic = dict(row._mapping.items())
+            if dic["item_id"] in item_grp:
+                item_grp[dic["item_id"]].append(dic)
+            else:
+                item_grp[dic["item_id"]] = [dic]
+
+        for item_list in item_grp.values():
+            lowest = None
+            for item in item_list:
+                if not lowest:
+                    lowest = item
+                    continue
+                if item["price"] < lowest["price"]:
+                    lowest = item
+                    continue
+            if lowest:
+                results.append(lowest)
+        return results

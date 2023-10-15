@@ -21,6 +21,8 @@ class FilterQueryName(AutoLowerName):
     LISTVIEW = auto()
     PREF = auto()
     USORT = auto()
+    EX_STORE = auto()
+    ESSORT = auto()
 
 @unique
 class ActFilterName(Enum):
@@ -46,6 +48,29 @@ class ItemSortName(Enum):
     HIGH_PRICE = (4, "値段が高い",)
     ITEM_NAME = (5, "アイテム名",)
     STORE_NAME = (6, "店名",)
+    LOW_TRENDRATE = (7, "値下げ",)
+    HIGH_TRENDRATE = (8, "値上げ",)
+    NEW_UPDATE_TIME = (9, "更新が新しい")
+
+    def __init__(self, id:int, text:str):
+        self.id = id
+        self.qname = self.name.lower()
+        self.jname = text
+    
+    @classmethod
+    def hasId(cls, id:int) -> bool:
+        for isn in cls:
+            if isn.id == id:
+                return True
+        return False
+
+@unique
+class ExtractStoreSortName(Enum):
+    OLD_ITEM = (1, "登録が古い",)
+    NEW_ITEM = (2, "登録が新しい",)
+    LOW_PRICE = (3, "値段が安い",)
+    HIGH_PRICE = (4, "値段が高い",)
+    ITEM_NAME = (5, "アイテム名",)
     LOW_TRENDRATE = (7, "値下げ",)
     HIGH_TRENDRATE = (8, "値上げ",)
     NEW_UPDATE_TIME = (9, "更新が新しい")

@@ -21,6 +21,7 @@ from common.filter_name import (
     ActFilterName,
     ItemSortName,
     UrlSortName,
+    ExtractStoreSortName,
 )
 from model.item import (
     Item,
@@ -78,7 +79,6 @@ class NewestQuery:
         .cte('inact_t')
     )
     actcheck = (
-        #union(act_t, inact_t).subquery("actcheck")
         select(act_t).union(inact_t.select()).cte('actcheck')
     )
     base_select = (
@@ -332,7 +332,159 @@ class NewestQuery:
                 .group_by(NewestItem.storename)
                 )
         return db.execute(stmt).all()
+
+    @classmethod
+    def get_storename_newest_data(cls, db :Session, filter :dict):
+        unionprice = cls.get_unionprice_for_storename_newest_data(filter=filter)
+        stmt = cls.get_storename_newest_data_base(filter=filter, unionprice=unionprice)
+        stmt = cls.__set_group_filter(filter, stmt)
+        stmt = cls.__set_act_filter(filter, stmt)
+        stmt = cls.__set_extract_sort_filter(filter=filter,
+                                             stmt=stmt,
+                                             unionprice=unionprice
+                                            )
+        return db.execute(stmt).all()
     
+    @classmethod
+    def get_storename_newest_data_base(cls, filter :dict, unionprice):
+        base = (
+            select(
+                Item.item_id,
+                Item.name,
+                unionprice.c.url_id,
+                Url.urlpath,
+                utc_to_jst_datetime_for_query(unionprice.c.created_at).label("created_at"),
+                unionprice.c.price.label("price"),
+                unionprice.c.salename,
+                unionprice.c.trendrate,
+                unionprice.c.storename,
+                NewestItem.lowestprice,
+                cls.actcheck.c.act,
+            )
+            .select_from(unionprice)
+            .join(UrlInItem,
+                  unionprice.c.url_id == UrlInItem.url_id,
+                  )
+            .join(Item,
+                Item.item_id == UrlInItem.item_id
+                )
+            .join(Url,
+                unionprice.c.url_id == Url.url_id,
+                )
+            .join(NewestItem,
+                  NewestItem.item_id == Item.item_id
+                  )
+            .join(cls.actcheck,
+                cls.actcheck.c.item_id == Item.item_id,
+                )
+        )
+        return base
+
+    @classmethod
+    def get_unionprice_for_storename_newest_data(cls, filter :dict):
+        storename = cls.get_extract_storename_in_filter(filter)
+        
+        newest = ( select(
+                    func.max(utc_to_jst_date_for_query(PriceLog.created_at))
+                    )
+                    .where(PriceLog.storename == storename)
+                    .scalar_subquery()
+                )
+        newest_data = ( select(PriceLog)
+                .where(utc_to_jst_date_for_query(PriceLog.created_at) == newest)
+                .where(PriceLog.storename == storename)
+                .cte("newest_data")
+                )
+        used = ( select(newest_data.c.log_id,
+                        newest_data.c.url_id,
+                        newest_data.c.usedprice.label("price"),
+                        newest_data.c.storename,
+                        newest_data.c.salename,
+                        newest_data.c.trendrate,
+                        newest_data.c.created_at,
+                        )
+                .order_by(newest_data.c.usedprice.asc())
+                .cte("used")
+                )
+        new = ( select( newest_data.c.log_id,
+                        newest_data.c.url_id,
+                        newest_data.c.newprice.label("price"),
+                        newest_data.c.storename,
+                        newest_data.c.salename,
+                        newest_data.c.trendrate,
+                        newest_data.c.created_at,
+                        )
+               .where(newest_data.c.log_id.notin_(
+                    select(used.c.log_id)   
+               ))
+               .order_by(newest_data.c.newprice.asc())
+               .cte("new")
+               )
+        unionprice = (
+            select(used).union(new.select()).cte('unionprice')
+        )
+
+        return unionprice
+
+    @classmethod
+    def get_extract_storename_in_filter(cls, filter :dict):
+        if not fqn.EX_STORE.value in filter.keys()\
+            or int(filter[fqn.EX_STORE.value]) < 0:
+            return ""
+        
+        stmt = ( select(Store.storename)
+                .where(Store.store_id == int(filter[fqn.EX_STORE.value]))
+                .scalar_subquery()
+                )
+        return stmt
+    
+    @classmethod
+    def __set_extract_sort_filter(cls, filter:Dict, stmt, unionprice):
+        if not fqn.ESSORT.value in filter.keys() \
+            or int(filter[fqn.ESSORT.value]) < 0:
+            return stmt
+        fnum = int(filter[fqn.ESSORT.value])
+        if fnum == ExtractStoreSortName.OLD_ITEM.id:
+            stmt = (stmt
+                    .order_by(Item.item_id.asc())
+                    )
+            return stmt
+        if fnum == ExtractStoreSortName.NEW_ITEM.id:
+            stmt = (stmt
+                    .order_by(Item.item_id.desc())
+                    )
+            return stmt
+        if fnum == ExtractStoreSortName.LOW_PRICE.id:
+            stmt = (stmt
+                    .order_by(unionprice.c.price.label("price").asc())
+                    )
+            return stmt
+        if fnum == ExtractStoreSortName.HIGH_PRICE.id:
+            stmt = (stmt
+                    .order_by(unionprice.c.price.label("price").desc())
+                    )
+            return stmt
+        if fnum == ExtractStoreSortName.ITEM_NAME.id:
+            stmt = (stmt
+                    .order_by(Item.name.asc())
+                    )
+            return stmt
+        if fnum == ExtractStoreSortName.LOW_TRENDRATE.id:
+            stmt = (stmt
+                    .order_by(text_to_decimal(unionprice.c.trendrate).asc())
+                    )
+            return stmt
+        if fnum == ExtractStoreSortName.HIGH_TRENDRATE.id:
+            stmt = (stmt
+                    .order_by(text_to_decimal(unionprice.c.trendrate).desc())
+                    )
+            return stmt
+        if fnum == ExtractStoreSortName.NEW_UPDATE_TIME.id:
+            stmt = (stmt
+                    .order_by(unionprice.c.created_at.desc())
+                    )
+            return stmt
+        return stmt
 
 class GroupQuery:
 
@@ -455,10 +607,6 @@ class ItemQuery:
         db.commit()
         db.refresh(i)
         return i.item_id
-        #stmt = insert(Item).values(name=name)
-        #res = ses.execute(stmt)
-        #ses.commit()
-        #return res.inserted_primary_key # taple
     
     @classmethod
     def get_item(cls, db :Session, item_id :int) -> Item:
@@ -832,6 +980,22 @@ class ItemQuery:
         db.execute(newest_del)
         db.execute(item_del)
         db.commit()
+    
+    @classmethod
+    def get_newest_storenames(cls, db :Session):
+        max_date = (
+            select(
+                func.max(
+                    utc_to_jst_date_for_query(PriceLog.created_at)
+                    )
+                )
+                .scalar_subquery()
+        )
+        stmt = ( select(PriceLog.storename)
+                .where(utc_to_jst_date_for_query(PriceLog.created_at) == max_date)
+                .group_by(PriceLog.storename)
+                )
+        return db.execute(stmt).all()
     
  
 class OrganizerQuery:
