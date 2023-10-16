@@ -44,6 +44,8 @@ def get_selected_store_list(db :Session, filter :Dict, filter_key_name :str, tar
     newest_store_list = __get_newest_store_list(target_store_result)
     results = [r for r in store_all if r.name in newest_store_list ]
 
+    results = sorted(results, key=lambda r:r.name)
+
     if not filter_key_name in filter \
         or not filter[filter_key_name] \
         or int(filter[filter_key_name]) < 0:
