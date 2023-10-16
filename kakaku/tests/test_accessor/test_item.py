@@ -85,6 +85,32 @@ def test_get_newest_data_exist_data_filter_all(test_db):
     delete_item_model(test_db)
 
 ###############################
+# ZAIKO Filter
+###############################
+
+def test_get_newest_data_exist_data_filter_zaiko_on(test_db):
+    add_data_set_1(test_db)
+    filter_dict = {filter_name.FilterQueryName.ZAIKO.value:filter_name.FilterOnOff.ON}
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 7
+    delete_item_model(test_db)
+
+def test_get_newest_data_exist_data_filter_zaiko_off(test_db):
+    add_data_set_1(test_db)
+    filter_dict = {filter_name.FilterQueryName.ZAIKO.value:filter_name.FilterOnOff.OFF}
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 8
+    delete_item_model(test_db)
+
+def test_get_newest_data_exist_data_filter_zaiko_other(test_db):
+    add_data_set_1(test_db)
+    other_value = 8
+    filter_dict = {filter_name.FilterQueryName.ZAIKO.value: other_value}
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 8
+    delete_item_model(test_db)
+
+###############################
 # STORENAME Filter
 ###############################
 def test_get_newest_data_no_data_filter_storename(test_db):
@@ -612,4 +638,30 @@ def test_get_storename_newest_data_exist_data_dup_filter_essort_new_updatetime(t
             assert uptime >= dbtimeTodatetime(dic["created_at"])
             uptime = dbtimeTodatetime(dic["created_at"])
             continue
+    delete_item_and_store_model(test_db)
+
+###############################
+# ZAIKO Filter
+###############################
+
+def test_get_storename_newest_data_exist_data_filter_zaiko_on(test_db):
+    add_extract_store_data_set_1(test_db)
+    store_id = 1
+    filter_dict = {
+        filter_name.FilterQueryName.EX_STORE.value:store_id,
+        filter_name.FilterQueryName.ZAIKO.value:filter_name.FilterOnOff.ON
+        }
+    results = NewestQuery.get_storename_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 4
+    delete_item_and_store_model(test_db)
+
+def test_get_storename_newest_data_exist_data_filter_zaiko_off(test_db):
+    add_extract_store_data_set_1(test_db)
+    store_id = 1
+    filter_dict = {
+        filter_name.FilterQueryName.EX_STORE.value:store_id,
+        filter_name.FilterQueryName.ZAIKO.value:filter_name.FilterOnOff.OFF
+        }
+    results = NewestQuery.get_storename_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 5
     delete_item_and_store_model(test_db)

@@ -25,6 +25,7 @@ class NewestFilterQuery():
     act :str = ""
     store :str = ""
     isort :str = ""
+    zaiko :str = ""
     cfilter_str :str = ""
 
     is_c_able :bool = False
@@ -34,23 +35,27 @@ class NewestFilterQuery():
                  act :str = "",
                  store :str = "",
                  isort :str = "",
+                 zaiko :str = "",
                  cfilter_str :Optional[str] = Cookie(None),
                  ):
         if (not gid 
             and not act
             and not store
             and not isort
+            and not zaiko
             ) \
             and cfilter_str:
                 self.set_cookie_query(cfilter_str)
         else:
-            self.set_query(gid, act, store, isort)
+            self.set_query(gid, act, store, isort, zaiko)
         
     def set_query(self,
                   gid :str="",
                   act :str="",
                   store :str="",
-                  isort :str=""):
+                  isort :str="",
+                  zaiko :str=""
+                  ):
         if is_valid_id(gid):
             self.gid = gid
         if act and act.isdigit() and ActFilterName.hasValue(int(act)):
@@ -61,6 +66,8 @@ class NewestFilterQuery():
            self.store = store
         if isort and isort.isdigit() and ItemSortName.hasId(int(isort)):
             self.isort = isort
+        if zaiko and zaiko.isdigit() and int(zaiko) == FilterOnOff.ON:
+            self.zaiko = zaiko
     
     def set_cookie_query(self, cfilter_str:str):
         dic = self.queryToDict(cfilter_str)
@@ -109,6 +116,8 @@ class NewestFilterQuery():
             results[FilterQueryName.STORE.value] = self.store
         if self.isort:
             results[FilterQueryName.ISORT.value] = self.isort
+        if self.zaiko:
+            results[FilterQueryName.ZAIKO.value] = self.zaiko
         return results
 
 class ItemDetailQuery():
@@ -511,6 +520,7 @@ class ExtractStoreFilterQuery:
     act :str = ""
     ex_store :str = ""
     essort :str = ""
+    zaiko :str = ""
 
     def __init__(self,
                  gid :str = "",
@@ -518,6 +528,7 @@ class ExtractStoreFilterQuery:
                  ex_store :str = "",
                  store :str = "",
                  essort :str = "",
+                 zaiko :str = ""
                  ):
         
         if is_valid_id(gid):
@@ -532,6 +543,8 @@ class ExtractStoreFilterQuery:
             self.ex_store = store
         if essort and essort.isdigit() and ExtractStoreSortName.hasId(int(essort)):
             self.essort = essort
+        if zaiko and zaiko.isdigit() and int(zaiko) == FilterOnOff.ON:
+            self.zaiko = zaiko
 
     
     def get_filter_dict(self) -> Dict:
@@ -544,4 +557,12 @@ class ExtractStoreFilterQuery:
             results[FilterQueryName.EX_STORE.value] = self.ex_store
         if self.essort:
             results[FilterQueryName.ESSORT.value] = self.essort
+        if self.zaiko:
+            results[FilterQueryName.ZAIKO.value] = self.zaiko
         return results
+
+def get_in_stock_filter_checked(f :dict) -> str:
+    if FilterQueryName.ZAIKO.value in f\
+        and int(f[FilterQueryName.ZAIKO.value]) == FilterOnOff.ON:
+        return HTMLOption.CHECKED.value
+    return ""

@@ -22,6 +22,7 @@ from common.filter_name import (
     ItemSortName,
     UrlSortName,
     ExtractStoreSortName,
+    FilterOnOff,
 )
 from model.item import (
     Item,
@@ -118,6 +119,7 @@ class NewestQuery:
     def get_newest_data_for_edit_group(cls, db :Session, filter:Dict):
         stmt = cls.get_base_select()
         stmt = cls.__set_act_filter(filter, stmt)
+        stmt = cls.__set_in_stock_filter(filter, stmt)
         stmt = cls.__set_eq_storename(filter, stmt)
         stmt = cls.__set_itemsort_filter(filter, stmt)
         return db.execute(stmt).all()
@@ -133,6 +135,7 @@ class NewestQuery:
         stmt = cls.get_base_select()
         stmt = cls.__set_group_filter(filter, stmt)
         stmt = cls.__set_act_filter(filter, stmt)
+        stmt = cls.__set_in_stock_filter(filter, stmt)
         stmt = cls.__set_eq_storename(filter, stmt)
         stmt = cls.__set_itemsort_filter(filter, stmt)
         return stmt
@@ -149,6 +152,13 @@ class NewestQuery:
         return stmt
     
     @classmethod
+    def __set_in_stock_filter(cls, filter:Dict, stmt):
+        if not fqn.ZAIKO.value in filter.keys() \
+            or int(filter[fqn.ZAIKO.value]) != FilterOnOff.ON:
+            return stmt
+        return stmt.where(NewestItem.newestprice > const_value.INIT_PRICE)
+    
+    @classmethod
     def __set_group_filter(cls, filter:Dict, stmt):
         if not fqn.GID.value in filter.keys() \
             or int(filter[fqn.GID.value]) < 0:
@@ -163,6 +173,9 @@ class NewestQuery:
     def __set_itemsort_filter(cls, filter:Dict, stmt):
         if not fqn.ISORT.value in filter.keys() \
             or int(filter[fqn.ISORT.value]) < 0:
+            stmt = (stmt
+                    .order_by(Item.item_id.asc())
+                    )
             return stmt
         fnum = int(filter[fqn.ISORT.value])
         if fnum == ItemSortName.OLD_ITEM.id:
@@ -336,9 +349,13 @@ class NewestQuery:
     @classmethod
     def get_storename_newest_data(cls, db :Session, filter :dict):
         unionprice = cls.get_unionprice_for_storename_newest_data(filter=filter)
-        stmt = cls.get_storename_newest_data_base(filter=filter, unionprice=unionprice)
+        stmt = cls.get_storename_newest_data_base(unionprice=unionprice)
         stmt = cls.__set_group_filter(filter, stmt)
         stmt = cls.__set_act_filter(filter, stmt)
+        stmt = cls.__set_in_stock_filter_for_storename_newest(filter=filter,
+                                                              stmt=stmt,
+                                                              unionprice=unionprice
+                                                              )
         stmt = cls.__set_extract_sort_filter(filter=filter,
                                              stmt=stmt,
                                              unionprice=unionprice
@@ -346,7 +363,7 @@ class NewestQuery:
         return db.execute(stmt).all()
     
     @classmethod
-    def get_storename_newest_data_base(cls, filter :dict, unionprice):
+    def get_storename_newest_data_base(cls, unionprice):
         base = (
             select(
                 Item.item_id,
@@ -485,6 +502,12 @@ class NewestQuery:
                     )
             return stmt
         return stmt
+    @classmethod
+    def __set_in_stock_filter_for_storename_newest(cls, filter:Dict, stmt, unionprice):
+        if not fqn.ZAIKO.value in filter.keys() \
+            or int(filter[fqn.ZAIKO.value]) != FilterOnOff.ON:
+            return stmt
+        return stmt.where(unionprice.c.price > const_value.INIT_PRICE)
 
 class GroupQuery:
 
@@ -1261,7 +1284,7 @@ class UrlQuery:
     def get_url_and_item_comb_list(cls, db :Session, filter :dict):
         isactive = cls.get_act_filter(filter)
 
-        url_uniq = ( select(PriceLog.url_id,
+        url_uniq = ( select(PriceLog.url_id.distinct().label('url_id'),
                             PriceLog.uniqname)
                     )
         if isactive:
@@ -1269,7 +1292,7 @@ class UrlQuery:
                         .join(UrlInItem,UrlInItem.url_id == PriceLog.url_id)
                         .where(UrlInItem.active == isactive.value)
                         )
-        url_uniq = url_uniq.group_by(PriceLog.url_id).cte('url_uniq')
+        url_uniq = url_uniq.cte('url_uniq')
 
         stmt = ( select(Url.url_id,
                         Url.urlpath,
@@ -1304,6 +1327,9 @@ class UrlQuery:
     def __set_urlsort_filter(cls, filter :dict, stmt):
         if not fqn.USORT.value in filter.keys() \
             or int(filter[fqn.USORT.value]) < 0:
+            stmt = (stmt
+                    .order_by(Url.url_id.asc())
+                    )
             return stmt
         fnum = int(filter[fqn.USORT.value])
         if fnum == UrlSortName.URLID_ASC.id:

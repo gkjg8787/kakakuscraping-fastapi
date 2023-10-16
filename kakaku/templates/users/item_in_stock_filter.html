@@ -1,0 +1,12 @@
+<form method="get" action="">
+    在庫ありのみ表示<input type="checkbox"
+                    onchange="submit(this.form)"
+                    name="{{ STOCK_NAME }}"
+                    value="{{ STOCK_VALUE }}"
+                    {{ ZAIKO_CHECKED }} />
+    {% for k, v in fquery.items() %}
+        {% if k != STOCK_NAME and v != "" %}
+        <input type="hidden" name="{{ k }}" value="{{ v}}">
+        {% endif %}
+    {% endfor %}
+</form>

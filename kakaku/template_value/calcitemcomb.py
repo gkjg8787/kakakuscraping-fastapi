@@ -39,12 +39,15 @@ class ItemSelectionContext(BaseTemplateValue):
     groups :List
     storelist :List
     fquery :Dict
+    ZAIKO_CHECKED : str = ""
     GROUPID_NAME :str = filter_name.FilterQueryName.GID.value
     ITEMACT_NAME :str =  filter_name.FilterQueryName.ACT.value
     ITEMSORT_NAME :str = filter_name.FilterQueryName.ISORT.value
     EQST_NAME :str = filter_name.FilterQueryName.STORE.value
     ITEMID_Q_NAME :str = filter_name.ItemDetailQueryName.ITEMID.value
     ITEM_LIMIT :int = 0
+    STOCK_NAME :str = filter_name.FilterQueryName.ZAIKO.value
+    STOCK_VALUE :int = filter_name.FilterOnOff.ON
 
     def __init__(self, request, nfq :ppi.NewestFilterQuery, db :Session):
         fd = nfq.get_filter_dict()
@@ -55,6 +58,7 @@ class ItemSelectionContext(BaseTemplateValue):
                         ,groups = ppi.get_groups(db, f=fd)
                         ,storelist = []
                         ,fquery=fd
+                        ,ZAIKO_CHECKED=ppi.get_in_stock_filter_checked(fd)
                          )
         item_limit = read_config.get_itemcomb_select_limit()
         if item_limit and str(item_limit).isdigit() and int(item_limit) > 0:

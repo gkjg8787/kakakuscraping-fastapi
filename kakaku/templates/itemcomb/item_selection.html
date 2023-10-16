@@ -31,6 +31,11 @@
     {%- endwith %}
     </p>
     <p>
+    {%- with STOCK_NAME = STOCK_NAME, STOCK_VALUE = STOCK_VALUE, ZAIKO_CHECKED = ZAIKO_CHECKED, fquery = fquery %}
+    {%- include "users/item_in_stock_filter.html" %}
+    {%- endwith %}
+    </p>
+    <p>
     {%- with ITEMSORT_NAME = ITEMSORT_NAME, itemSortList = itemSortList, fquery = fquery %}
     {%- include "users/item_sort_filter.html" %}
     {%- endwith %}

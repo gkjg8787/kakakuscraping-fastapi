@@ -52,6 +52,7 @@ class NewestItemList(BaseTemplateValue):
     groups: List
     storelist: List
     fquery: Dict
+    ZAIKO_CHECKED : str = ""
     GROUPID_NAME: str = filter_name.FilterQueryName.GID.value
     ITEMACT_NAME: str =  filter_name.FilterQueryName.ACT.value
     ITEMSORT_NAME: str = filter_name.FilterQueryName.ISORT.value
@@ -63,6 +64,8 @@ class NewestItemList(BaseTemplateValue):
     item_all_update_value :str = filter_name.ItemUpdateValue.ITEM_ALL_UPDATE
     POST_RETURN_USER :str = filter_name.TemplatePostName.RETURN_USER.value
     return_user :str = filter_name.FilterOnOff.ON
+    STOCK_NAME :str = filter_name.FilterQueryName.ZAIKO.value
+    STOCK_VALUE :int = filter_name.FilterOnOff.ON
 
     def __init__(self, request, nfq :ppi.NewestFilterQuery, db :Session):
         fd = nfq.get_filter_dict()
@@ -75,6 +78,7 @@ class NewestItemList(BaseTemplateValue):
                 ,groups = ppi.get_groups(db, f=fd)
                 ,storelist = []
                 ,fquery=fd
+                ,ZAIKO_CHECKED=ppi.get_in_stock_filter_checked(fd)
                 )
         
         self.res_length = len(self.res)
@@ -551,11 +555,14 @@ class EditGroupContext(BaseTemplateValue):
     actstslist: List
     itemSortList: List
     fquery: Dict
+    ZAIKO_CHECKED : str = ""
     GROUPID_NAME: str = filter_name.FilterQueryName.GID.value
     ITEMACT_NAME: str =  filter_name.FilterQueryName.ACT.value    
     ITEMSORT_NAME: str = filter_name.FilterQueryName.ISORT.value
     POST_GROUP_ID : str = filter_name.TemplatePostName.GROUP_ID.value
     POST_GROUP_ITEM_LIST : str = filter_name.TemplatePostName.GROUP_ITEM_LIST.value
+    STOCK_NAME :str = filter_name.FilterQueryName.ZAIKO.value
+    STOCK_VALUE :int = filter_name.FilterOnOff.ON
 
     def __init__(self, request, nfqg :ppi.NewestFilterQueryForGroup, db :Session):
         fd = nfqg.get_filter_dict()
@@ -565,6 +572,7 @@ class EditGroupContext(BaseTemplateValue):
                 ,itemSortList = ppi.get_item_sort_list(fd)
                 ,groups = ppi.get_groups(db, f=fd)
                 ,fquery=fd
+                ,ZAIKO_CHECKED=ppi.get_in_stock_filter_checked(fd)
                 )
     
         if filter_name.FilterQueryName.GID.value in self.fquery:
@@ -812,6 +820,7 @@ class ExtractStoreItemListContext(BaseTemplateValue):
     groups: List
     storelist: List
     fquery: Dict
+    ZAIKO_CHECKED : str = ""
     GROUPID_NAME: str = filter_name.FilterQueryName.GID.value
     ITEMACT_NAME: str =  filter_name.FilterQueryName.ACT.value
     EXST_NAME: str = filter_name.FilterQueryName.EX_STORE.value
@@ -823,6 +832,8 @@ class ExtractStoreItemListContext(BaseTemplateValue):
     item_all_update_value :str = filter_name.ItemUpdateValue.ITEM_ALL_UPDATE
     POST_RETURN_USER :str = filter_name.TemplatePostName.RETURN_USER.value
     return_user :str = filter_name.FilterOnOff.ON
+    STOCK_NAME :str = filter_name.FilterQueryName.ZAIKO.value
+    STOCK_VALUE :int = filter_name.FilterOnOff.ON
 
     def __init__(self, request, esfq :ppi.ExtractStoreFilterQuery, db :Session):
         fd = esfq.get_filter_dict()
@@ -834,6 +845,7 @@ class ExtractStoreItemListContext(BaseTemplateValue):
                 ,groups = ppi.get_groups(db, f=fd)
                 ,storelist = []
                 ,fquery=fd
+                ,ZAIKO_CHECKED=ppi.get_in_stock_filter_checked(fd)
                 )
         
         self.res_length = len(self.res)

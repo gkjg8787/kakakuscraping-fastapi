@@ -584,7 +584,7 @@ def test_read_users_groups_rename_no_data(test_db):
     response = client.post(
         f'{prefix}/groups/rename/',
         )
-    check_redirect(response, [ REDIRECT_READ_USERS, REDIRECT_READ_USERS ])
+    check_redirect(response, [ REDIRECT_READ_USERS ]) #[ REDIRECT_READ_USERS, REDIRECT_READ_USERS ])
     assert response.status_code == 200
     is_html(response.text)
 

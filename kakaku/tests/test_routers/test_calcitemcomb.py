@@ -154,7 +154,7 @@ def test_read_input_search_shop_shipping_no_word(test_db):
     assert "検索ワードが指定されていません" in response.text
 
 def test_read_input_search_shop_shipping_search_store(test_db):
-    storename = "静岡本店"
+    storename = "秋葉原本館"
     params = {filter_name.FilterQueryName.WORD.value:storename}
     response = client.get(
         f'{prefix}/shipping/search/',
