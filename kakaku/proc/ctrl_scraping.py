@@ -4,6 +4,8 @@ import time
 
 from sqlalchemy.orm import Session
 
+import psutil
+
 from common.filter_name import AutoLowerName
 
 from proc.scrapingmanage import (
@@ -25,6 +27,29 @@ class ScrapingProcAction(AutoLowerName):
 WAIT_PROC_EXIT_TIME=0.5
 TRY_WAIT_PROC_EXIT_TIME=12
 
+PROC_DEFAULT_ATTRS = ['pid', 'name', 'cmdline']
+START_PROCESS_NAME = "proc_manage.py"
+
+def get_proc_info_all(attrs :list = PROC_DEFAULT_ATTRS) -> list:
+    return [ proc.info for proc in psutil.process_iter(attrs) ]
+
+def is_run_process(procname :str, self_ignore :bool=True) -> bool:
+    if not procname:
+        raise ValueError
+    if len(procname) == 0:
+        return False
+    pl = get_proc_info_all()
+    if self_ignore:
+        self_pid = psutil.Process().as_dict(attrs=['pid'])
+    for p in pl:
+        for cmd in p['cmdline']:
+            if procname in cmd:
+                if self_ignore and self_pid and p['pid'] == self_pid['pid']:
+                    continue
+                return True
+    return False
+
+
 def parse_paramter(argv):
     parser = argparse.ArgumentParser(description='scraping process cntrol')
     parser.add_argument('cmdorder', type=lambda x: x.lower(), choices=[v.value for v in ScrapingProcAction])
@@ -40,12 +65,24 @@ def end_scrapingmanager():
 
 def proc_action(db :Session, cmdname :str):
     if cmdname == ScrapingProcAction.START.value:
-        start_scrapingmanager()
+        if is_run_process(START_PROCESS_NAME, self_ignore=True):
+            return
+        sts_name = getSystemStatus(db)
+        if sts_name == SystemStatus.STOP.name:
+            start_scrapingmanager()
         return
+    
+    if not is_run_process(START_PROCESS_NAME, self_ignore=True):
+        return
+
     if cmdname == ScrapingProcAction.END.value:
         end_scrapingmanager()
         return
     if cmdname == ScrapingProcAction.RESTART.value:
+        sts_name = getSystemStatus(db)
+        if sts_name == SystemStatus.DURING_STARTUP.name\
+            or sts_name == SystemStatus.STOP.name:
+            return
         end_scrapingmanager()
         cnt :int = 0
         while cnt < TRY_WAIT_PROC_EXIT_TIME:

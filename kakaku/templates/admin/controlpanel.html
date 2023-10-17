@@ -13,7 +13,7 @@
         <p>{{ updatemsg }}</p>
     {% endif %}
     <p><a href="{{ url_for('read_admin_dashboard') }}" class="plain-link">画面更新</a></p>
-    <form method="post" action="{{ url_for('read_admin_dashboard_post') }}">
+    <form method="post" action="{{ url_for('read_admin_dashboard_svchg') }}">
         {% if sysstop %}
         <button type="submit" name="{{ system_ctrl_btn_name }}" value="{{ STARTUP }}">起動</button>
         {% endif %}

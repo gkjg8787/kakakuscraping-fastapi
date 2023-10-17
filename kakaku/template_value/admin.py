@@ -1,9 +1,13 @@
 
-from template_value.item import BaseTemplateValue
+from pathlib import Path
+import subprocess
 
 from sqlalchemy.orm import Session
 
+from template_value.item import BaseTemplateValue
+
 from proc.system_status import SystemStatus, SystemStatusToJName
+from parameter_parser.admin import ProcCtrlForm
 from proc import get_sys_status
 from common.filter_name import (
     SystemCtrlBtnName,
@@ -25,4 +29,26 @@ class DashBoardTemplate(BaseTemplateValue):
             self.sysstop = True
         else:
             self.sysstop = False
+
+class BackServerCtrl:
+    CMD_NAME = "proc_manage.py"
+    cmd_msg :str = ""
+
+    def __init__(self, pcf :ProcCtrlForm):
+        self.cmd_msg = pcf.proc_action
+
+    def action(self):
+        base_path = Path(__file__).resolve().parent.parent
+        cmd = ["python3", str(Path(base_path, self.CMD_NAME))]
+        if self.cmd_msg == SystemCtrlBtnName.STARTUP.value:
+            cmd.append("start")
+        if self.cmd_msg == SystemCtrlBtnName.STOP.value:
+            cmd.append("end")
+        if self.cmd_msg == SystemCtrlBtnName.RESTART.value:
+            cmd.append("restart")
+        subprocess.run(cmd)
+
+    
+
+
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, status, Depends
+from fastapi import APIRouter, Request, status, Depends, BackgroundTasks
 from fastapi.responses import RedirectResponse, HTMLResponse
 
 from sqlalchemy.orm import Session
@@ -7,11 +7,10 @@ from accessor.read_sqlalchemy import get_session
 
 from common import read_templates
 
-from template_value.admin import DashBoardTemplate, SystemCtrlBtnName
+from template_value.admin import DashBoardTemplate, BackServerCtrl
 from parameter_parser.admin import ProcCtrlForm
 
-from pathlib import Path
-import subprocess
+
 
 
 router = APIRouter(
@@ -29,20 +28,15 @@ def read_admin_dashboard(request: Request, db :Session = Depends(get_session)):
         ,dict(dbt)
         )
 
-@router.post("/dashboard/post/")
-def read_admin_dashboard_post(request: Request, pcf :ProcCtrlForm = Depends()):
-    """ server change action """
-    proc_act(pcf.proc_action)
-    return RedirectResponse(url=request.url_for("read_admin_dashboard")
-                            ,status_code=status.HTTP_302_FOUND)
-
-def proc_act(action):
-    base_path = Path(__file__).resolve().parent.parent
-    cmd = ["python3", str(Path(base_path, "proc_manage.py"))]
-    if action == SystemCtrlBtnName.STARTUP.value:
-        cmd.append("start")
-    if action == SystemCtrlBtnName.STOP.value:
-        cmd.append("end")
-    if action == SystemCtrlBtnName.RESTART.value:
-        cmd.append("restart")
-    subprocess.run(cmd)
+@router.post("/dashboard/svchg/")
+def read_admin_dashboard_svchg(request: Request, background_tasks: BackgroundTasks, pcf :ProcCtrlForm = Depends()):
+    bsc = BackServerCtrl(pcf)
+    background_tasks.add_task(bsc.action)
+    context = {
+        "request":request,
+        "errmsg":""
+        }
+    return templates.TemplateResponse(
+        "admin/svchg.html"
+        ,context
+    )
