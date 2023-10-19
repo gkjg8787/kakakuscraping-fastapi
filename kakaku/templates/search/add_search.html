@@ -3,20 +3,30 @@
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
     <title>検索アイテム追加</title>
+    <script type="text/javascript" src="{{ url_for('static', path='/js/searchitem.js') }}"></script>
 {% endblock %}
 
 {% block body %}
     <h1>検索アイテム追加</h1>
+    アイテム名：<input type="text" name="search_word" id="search-word" value=""/>
+    <input type="button" value="検索" id="search-button"/>
     <form action="" method="post">
-        <select name="{{ POST_ITEM_ID }}" onchange="submit(this.form)">
+        <div id="search-result">
+        </div>
+        <input type="hidden" name="{{ POST_ITEM_NAME }}" value="{{ add_item_name }}">
+        <input type="hidden" name="{{ POST_URL_PATH }}" value="{{ add_url_path }}">
+        <input type="hidden" name="{{ POST_SEARCH_QUERY }}" value="{{ search_query }}">
+    </form>
+    <form action="" method="post">
+        <select name="{{ POST_ITEM_ID }}" id="item-select" onchange="submit(this.form)">
             <option value="-1">新規追加</option>
             {%- for item in itemlist %}
                 <option value="{{ item.item_id }}" {{ item.selected }}>{{ item.name }}({{ item.item_id }})</option>
             {%- endfor %}
-            <input type="hidden" name="{{ POST_ITEM_NAME }}" value="{{ add_item_name }}">
-            <input type="hidden" name="{{ POST_URL_PATH }}" value="{{ add_url_path }}">
-            <input type="hidden" name="{{ POST_SEARCH_QUERY }}" value="{{ search_query }}">
         </select>
+        <input type="hidden" name="{{ POST_ITEM_NAME }}" value="{{ add_item_name }}">
+        <input type="hidden" name="{{ POST_URL_PATH }}" value="{{ add_url_path }}">
+        <input type="hidden" name="{{ POST_SEARCH_QUERY }}" value="{{ search_query }}">
     </form>
     {%- if add_item_id | int == -1 %}
     <form action="{{ url_for('read_users_items_add_post') }}" method="post">
