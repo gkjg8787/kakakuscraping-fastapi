@@ -4,7 +4,7 @@ import subprocess
 
 from sqlalchemy.orm import Session
 
-from template_value.item import BaseTemplateValue
+from template_value import BaseTemplateValue
 
 from proc.system_status import SystemStatus, SystemStatusToJName
 from parameter_parser.admin import ProcCtrlForm

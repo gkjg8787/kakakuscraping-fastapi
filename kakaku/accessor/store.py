@@ -12,9 +12,11 @@ from model.store import (
 from sqlalchemy import (
     select,
     delete,
+    update,
 )
 from accessor.util import (
     utc_to_jst_date_for_query,
+    utc_to_jst_datetime_for_query,    
     get_jst_date_for_query,
 )
 
@@ -46,6 +48,14 @@ class StoreQuery:
         db.commit()
         for store in add_list:
             db.refresh(store)
+    
+    @classmethod
+    def delete_store_by_store_id(cls, db :Session, store_id :int) -> None:
+        stmt = ( delete(Store)
+                .where(Store.store_id == store_id)
+                )
+        db.execute(stmt)
+        db.commit()
     
     @classmethod
     def get_store_by_storename(cls, db :Session, storename :str) -> Store:
@@ -80,6 +90,33 @@ class StoreQuery:
                 .where(StorePostage.store_id.in_(store_id_list))
                 )
         db.execute(stmt)
+        db.commit()
+    
+    @classmethod
+    def delete_storepostage_by_list(cls, db :Session, delete_list :list[StorePostage]) -> None:
+        base = ( delete(StorePostage)
+                )
+        for sps in delete_list:
+            stmt = (base
+                    .where(sps.store_id == StorePostage.store_id)
+                    .where(sps.terms_id == StorePostage.terms_id)
+                    )
+            db.execute(stmt)
+        db.commit()
+    
+    @classmethod
+    def update_storepostage_by_list(cls, db :Session, update_list :list[StorePostage]) -> None:
+        base = ( update(StorePostage)
+                )
+        for sps in update_list:
+            stmt = (base
+                    .where(sps.store_id == StorePostage.store_id)
+                    .where(sps.terms_id == StorePostage.terms_id)
+                    .values(boundary=sps.boundary,
+                            postage=sps.postage
+                            )
+                    )
+            db.execute(stmt)
         db.commit()
 
     @classmethod
@@ -122,9 +159,49 @@ class StoreQuery:
                    StorePostage.terms_id,
                    StorePostage.boundary,
                    StorePostage.postage,
-                   StorePostage.created_at)
-                .join(StorePostage, Store.store_id == StorePostage.store_id, isouter=True)
+                   utc_to_jst_datetime_for_query(StorePostage.created_at).label("created_at"))
+                .join(StorePostage,
+                      Store.store_id == StorePostage.store_id,
+                      isouter=True
+                      )
                 .subquery()
             )
         stmt = select(j).where(j.c.storename.in_(storenames))
         return db.execute(stmt).all()
+    
+    @classmethod
+    def get_store_and_postage_stmt(cls):
+        stmt = ( select(Store.store_id,
+                   Store.storename,
+                   utc_to_jst_datetime_for_query(Store.created_at).label("created_at"),
+                   StorePostage.terms_id,
+                   StorePostage.boundary,
+                   StorePostage.postage,
+                   utc_to_jst_datetime_for_query(StorePostage.created_at).label("terms_created_at")
+                   )
+                .join(StorePostage,
+                      Store.store_id == StorePostage.store_id,
+                      isouter=True
+                      )
+            )
+        return stmt
+
+    @classmethod
+    def get_store_and_postage_all(cls, db :Session):
+        stmt = cls.get_store_and_postage_stmt()
+        return db.execute(stmt).all()
+    
+    @classmethod
+    def get_store_and_postage_by_item_id(cls, db :Session, item_id :int):
+        stmt = cls.get_store_and_postage_stmt()
+        stmt = (stmt
+                .where(Store.store_id == item_id)
+                )
+        return db.execute(stmt).all()
+    
+    @classmethod
+    def get_storename_by_store_id(cls, db :Session, store_id :int):
+        stmt = (select(Store.storename)
+                .where(Store.store_id == store_id)
+                )
+        return db.scalar(stmt)

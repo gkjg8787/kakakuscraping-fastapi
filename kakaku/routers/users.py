@@ -445,3 +445,76 @@ def read_users_extract(request: Request,
         ,context
         )
     return res
+
+
+@router.get("/stores/", response_class=HTMLResponse)
+def read_users_stores(request: Request,
+                      db :Session = Depends(get_session)
+                      ):
+    ulc = template_value.item.StoreListContext(request=request, db=db)
+
+    context = dict(ulc)
+    return templates.TemplateResponse(
+        "users/store_list.html"
+        ,context
+        )
+
+@router.get("/stores/postage/edit/", response_class=HTMLResponse)
+def read_users_stores_postage_edit(request: Request,
+                      db :Session = Depends(get_session)
+                      ):
+    ulc = template_value.item.EditShippingConditionContext(request=request, db=db)
+
+    context = dict(ulc)
+    return templates.TemplateResponse(
+        "users/edit_shipping_condition.html"
+        ,context
+        )
+
+@router.post("/stores/postage/edit/result/", response_class=HTMLResponse)
+async def read_users_stores_postage_edit_result(request: Request,
+                                                escf :ppi.EditShippingConditionForm = Depends(),
+                                                db :Session = Depends(get_session)
+                                            ):
+    stores = []
+    async with request.form() as fm:
+        for k, v in fm._dict.items():
+            if 'item_id' in k:
+                continue
+            for s in fm.getlist(k):
+                store = f"{k}={s}"
+                stores.append(store)
+    escf.set_store_list(stores)
+    ulc = template_value.item.EditShippingConditionResult(request=request, db=db, escf=escf)
+
+    context = dict(ulc)
+    return templates.TemplateResponse(
+        "users/edit_shipping_condition_result.html"
+        ,context
+        )
+
+@router.post("/stores/delete/", response_class=HTMLResponse)
+def read_users_store_delete(request: Request,
+                            dsf :ppi.DeleteStoreForm = Depends(),
+                            db :Session = Depends(get_session)
+                            ):
+    ulc = template_value.item.DeleteStoreInitContext(request=request, db=db, dsf=dsf)
+
+    context = dict(ulc)
+    return templates.TemplateResponse(
+        "users/del_shipping_condition.html"
+        ,context
+        )
+
+@router.post("/stores/delete/result/", response_class=HTMLResponse)
+def read_users_store_delete_result(request: Request,
+                                   dsf :ppi.DeleteStoreForm = Depends(),
+                                   db :Session = Depends(get_session)
+                                  ):
+    ulc = template_value.item.DeleteStoreContext(request=request, db=db, dsf=dsf)
+
+    context = dict(ulc)
+    return templates.TemplateResponse(
+        "users/del_shipping_condition.html"
+        ,context
+        )

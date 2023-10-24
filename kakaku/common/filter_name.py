@@ -118,6 +118,7 @@ class TemplatePostName(AutoLowerName):
     ITEM_ALL_UPDATE = auto()
     RETURN_USER = auto()
     STORE_NAME = auto()
+    STORE_ID = auto()
 
 class ItemDetailQueryName(AutoLowerName):
     ITEMID = auto()

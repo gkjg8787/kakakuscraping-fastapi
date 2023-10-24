@@ -11,6 +11,7 @@ from tests.test_sqlalchemy import (
     insert_pricelog_dict_list_sync,
     insert_urlinitem_dict_list,
     insert_store_dict_list,
+    insert_store_postage_dict_list,
 )
 
 SURUGAYA_OTHER_GEDOSENKI = "https://www.suruga-ya.jp/product-other/128022745"
@@ -186,6 +187,15 @@ def add_data_store(db):
         {"store_id":4, "storename":GEO},
     ]
     insert_store_dict_list(db, storename_dict_list=storename_list)
+
+def add_data_store_postage(db):
+    store_pos_list = [
+        {"store_id":1, "terms_id":1, "boundary":"1000>", "postage":500},
+        {"store_id":1, "terms_id":2, "boundary":"1500>:1000<=", "postage":440},
+        {"store_id":2, "terms_id":1, "boundary":"1500>", "postage":440},
+        {"store_id":4, "terms_id":1, "boundary":"2000>", "postage":600},
+    ]
+    insert_store_postage_dict_list(db, store_pos_dict_list=store_pos_list)
 
 def add_analysis_data_set_1(db):
     item_list = [

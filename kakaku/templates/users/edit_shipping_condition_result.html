@@ -1,0 +1,40 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
+    <title>送料条件の更新結果</title>
+{% endblock %}
+
+{% block body %}
+    <h1>送料条件の更新結果</h1>
+    {%- if errmsg %}
+    <p style="color:red;">{{ errmsg }}</p>
+    {%- endif %}
+    <p>更新しました。</p>
+    <h3>追加</h3>
+    <p>
+        件数
+        {{ insert_length }}件
+    </p>
+    {%- with store_list = insert_list %}
+    {% include "users/store_list_table.html" %}
+    {%- endwith %}
+    <h3>更新</h3>
+    <p>
+        件数
+        {{ update_length }}件
+    </p>
+    {%- with store_list = update_list %}
+    {% include "users/store_list_table.html" %}
+    {%- endwith %}
+    <h3>削除</h3>
+    <p>
+        件数
+        {{ delete_length }}件
+    </p>
+    {%- with store_list = delete_list %}
+    {% include "users/store_list_table.html" %}
+    {%- endwith %}
+    <p><a href="{{ url_for('read_users_stores') }}" class="plain-link">店舗一覧へ戻る</a></p>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
+{% endblock %}

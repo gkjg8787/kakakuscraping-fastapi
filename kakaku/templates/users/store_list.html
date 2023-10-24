@@ -1,0 +1,71 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
+    <title>登録店舗一覧</title>
+{% endblock %}
+
+{% block body %}
+    <h1>登録店舗一覧</h1>
+    <h2>操作メニュー</h2>
+    <div>
+        {%- if res_length > 0 %}
+        <p><a href="{{ url_for('read_users_stores_postage_edit') }}" class="like_button_link">送料条件の編集</a></p>
+        {%- else %}
+        <button disabled>送料条件の編集</button>
+        {%- endif %}
+    </div>
+    <p>
+        件数
+        {{ res_length }}件
+    </p>
+    <table class="store_list_table">
+        <tr>
+            <th>store_id</th>
+            <th>店舗名</th>
+            <th>登録日</th>
+            <th>送料条件</th>
+            <th>送料</th>
+            <th>条件作成日</th>
+        </tr>
+        {%- for row in res %}
+        <tr>
+            {%- if row.terms_num > 0 %}
+            <td rowspan="{{ row.terms_num }}">{{ row.store_id }}</td>
+            <td rowspan="{{ row.terms_num }}">{{ row.storename }}</td>
+            <td rowspan="{{ row.terms_num }}">{{ row.created_at }}</td>
+            <td>{{ row.terms_list[0].temrs_text }}</td>
+            <td>{{ row.terms_list[0].postage }}</td>
+            <td>{{ row.terms_list[0].created_at }}</td>
+            {%- else %}
+            <td>{{ row.store_id }}</td>
+            <td>{{ row.storename }}</td>
+            <td>{{ row.created_at }}</td>
+            <td>None</td>
+            <td>None</td>
+            <td>None</td>
+            {%- endif %}
+            {%- if row.terms_num > 0 %}
+            <td  rowspan="{{ row.terms_num }}" class="noborder">
+            {%- else %}
+            <td class="noborder">
+            {%- endif %}
+                <form action="{{ url_for('read_users_store_delete') }}" method="post">
+                    <input type="hidden" name="{{ POST_STORE_ID }}" value="{{ row.store_id }}">
+                    <button type="submit" class="t_b2s">削除</button>
+                </form>
+            </td>
+        </tr>
+        {%- if row.terms_num > 1 %}
+        {%- for terms in row.terms_list[1:] %}
+        <tr>
+            <td>{{ terms.temrs_text }}</td>
+            <td>{{ terms.postage }}</td>
+            <td>{{ terms.created_at }}</td>
+        </tr>
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+    </table>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
+    <title>店舗情報の削除</title>
+    {% if delSuccess %}
+    <meta http-equiv="refresh" content=" 3; url={{ url_for('read_users_stores') }}">
+    {% endif %}
+{% endblock %}
+
+{% block body %}
+    <h1>店舗情報の削除</h1>
+    {% if not delSuccess %}
+    <form action="{{ url_for('read_users_store_delete_result') }}" method="post">
+        <input type="hidden" name="{{ POST_STORE_ID }}" value="{{ store_id }}">
+        <p style="color:red;">{{ errmsg }}</p>
+        {%- with store_list = delete_list %}
+        {%- include "users/store_list_table.html" %}
+        {%- endwith %}
+        <p>本当に{{ storename }}の情報を削除しますか？
+        <p><input type="submit" value="削除"></p>
+    </form>
+    {% else %}
+    <p>店舗名 : {{ storename }}</p>
+    <p>削除しました。<br>3秒後、戻ります。</p>
+    {% endif %}
+    <p><a href="{{ url_for('read_users_stores') }}" class="plain-link">店舗一覧へ戻る</a>
+{% endblock %}

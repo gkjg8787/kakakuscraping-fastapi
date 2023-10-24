@@ -13,6 +13,7 @@ from tests.test_routers.test_common import (
 from tests.test_sqlalchemy import (
     insert_pricelog_sync,
 )
+
 from tests.test_accessor import db_test_data
 from analysis.database_analysis import LogAnalysisError
 
@@ -665,4 +666,127 @@ def test_read_users_extract(test_db):
     assert 'アイテムを店舗名で抽出' in response.text
     assert '0件' in response.text
 
-    
+def test_read_users_stores(test_db):
+    response = client.get(f'{prefix}/stores/')
+    assert response.status_code == 200
+    is_html(response.text)
+    assert '登録店舗一覧' in response.text
+    assert '0件' in response.text
+
+
+def test_read_users_stores_postage_edit(test_db):
+    response = client.get(f'{prefix}/stores/postage/edit/')
+    assert response.status_code == 200
+    is_html(response.text)
+    assert '送料条件の編集' in response.text
+
+def create_post_data_for_store_condition(store_id :int,
+                                         terms_index :int,
+                                         storename : str,
+                                         boundary_val :int,
+                                         b_ope_val :str,
+                                         postage_val :int,
+                                         ):
+    POST_STORE_NAME = filter_name.ItemCombPostKey.STORENAME
+    BOUNDARY = filter_name.ItemCombPostKey.BOUNDARY
+    B_OPE = filter_name.ItemCombPostKey.OPE
+    POSTAGE = filter_name.ItemCombPostKey.POSTAGE
+    results = {
+        filter_name.TemplatePostName.ITEM_ID.value:1,
+        f"stores[{store_id}][{POST_STORE_NAME}]":storename,
+        f"stores[{store_id}][terms][{terms_index}][{BOUNDARY}][]":boundary_val,
+        f"stores[{store_id}][terms][{terms_index}][{B_OPE}][]":b_ope_val,
+        f"stores[{store_id}][terms][{terms_index}][{POSTAGE}][]":postage_val,
+    }
+
+    return results
+
+def create_postage_data_1():
+    return create_post_data_for_store_condition(
+            store_id=1,
+            terms_index=1,
+            storename="駿河屋",
+            boundary_val=0,
+            b_ope_val="ge",
+            postage_val=0,
+        )
+
+def test_read_users_stores_postage_edit_result_update_delete(test_db):
+    db_test_data.add_data_store(test_db)
+    db_test_data.add_data_store_postage(test_db)
+    response = client.post(
+        f'{prefix}/stores/postage/edit/result/',
+        data=create_postage_data_1(),
+        )
+    assert response.status_code == 200
+    is_html(response.text)
+    assert '送料条件の更新結果' in response.text
+    no_space_text = response.text.translate(str.maketrans({'\n':'', ' ':''}))
+    assert '<h3>更新</h3><p>件数1件</p>' in no_space_text
+    assert '<h3>削除</h3><p>件数3件</p>' in no_space_text
+
+    drop_test_db()
+
+def create_postage_data_2():
+    return create_post_data_for_store_condition(
+            store_id=3,
+            terms_index=1,
+            storename="ブックオフ",
+            boundary_val=300,
+            b_ope_val="ge",
+            postage_val=440,
+        )
+
+def test_read_users_stores_postage_edit_result_insert_delete(test_db):
+    db_test_data.add_data_store(test_db)
+    db_test_data.add_data_store_postage(test_db)
+    response = client.post(
+        f'{prefix}/stores/postage/edit/result/',
+        data=create_postage_data_2(),
+        )
+    assert response.status_code == 200
+    is_html(response.text)
+    assert '送料条件の更新結果' in response.text
+    no_space_text = response.text.translate(str.maketrans({'\n':'', ' ':''}))
+    assert '<h3>追加</h3><p>件数1件</p>' in no_space_text
+    ''' 削除の件数は店舗数 '''
+    assert '<h3>削除</h3><p>件数3件</p>' in no_space_text
+
+    drop_test_db()
+
+def test_read_users_store_delete_no_store(test_db):
+    response = client.post(
+        f'{prefix}/stores/delete/',
+        data={filter_name.TemplatePostName.STORE_ID.value:1}
+        )
+    assert response.status_code == 200
+    is_html(response.text)
+    assert "店舗情報の削除" in response.text
+
+
+def test_read_users_store_delete(test_db):
+    db_test_data.add_data_store(test_db)
+    db_test_data.add_data_store_postage(test_db)
+    response = client.post(
+        f'{prefix}/stores/delete/',
+        data={filter_name.TemplatePostName.STORE_ID.value:1}
+        )
+    assert response.status_code == 200
+    is_html(response.text)
+    assert "店舗情報の削除" in response.text
+    storename = "駿河屋"
+    assert f"本当に{storename}の情報を削除しますか" in response.text
+    drop_test_db()
+
+def test_read_users_store_delete_result(test_db):
+    db_test_data.add_data_store(test_db)
+    db_test_data.add_data_store_postage(test_db)
+    response = client.post(
+        f'{prefix}/stores/delete/result/',
+        data={filter_name.TemplatePostName.STORE_ID.value:1}
+        )
+    assert response.status_code == 200
+    is_html(response.text)
+    assert "店舗情報の削除" in response.text
+    assert "削除しました。" in response.text
+    drop_test_db()

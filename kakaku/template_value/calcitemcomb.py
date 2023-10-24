@@ -13,7 +13,7 @@ from common import (
     templates_string,
     read_config,
 )
-from template_value.item import BaseTemplateValue
+from template_value import BaseTemplateValue
 import parameter_parser.item as ppi
 import parameter_parser.store as pps
 import parameter_parser.calcitemcomb as ppc 
@@ -214,7 +214,7 @@ class ShippingConditionContext(BaseTemplateValue):
                 results[res['storename']] = sst
                 sst.add_terms(t)
                 continue
-        return [ v for v in results.values()]
+        return [a for a in results.values()]
 
 
 class ResultItem(BaseModel):
@@ -306,7 +306,8 @@ class ItemCombCalcResultContext(BaseTemplateValue):
                 self.item_count += 1
         self.itemnames = '、'.join(items)
 
-    def update_shippingterms_data(self, db :Session, icrf : ppc.ItemCombinationResultForm):
+    @staticmethod
+    def update_shippingterms_data(db :Session, icrf : ppc.ItemCombinationResultForm):
         store_id_list :List[int] = []
         storepostage_list :List[mstore.StorePostage] = []
         for store in icrf.store_list:

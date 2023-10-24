@@ -13,7 +13,7 @@ from common import (
     templates_string,
     read_config,
 )
-from template_value.item import BaseTemplateValue
+from template_value import BaseTemplateValue
 from parameter_parser.search import (
     SearchFilterQuery,
     SearchToAddForm,

@@ -1,0 +1,74 @@
+<p>
+    <a href="{{ url_for('read_input_search_shop_shipping') }}" target="_blank" rel="noopener noreferrer" class="plain-link">送料検索ツールを別のタブで開く</a>
+</p>
+<form action="{{ post_url }}" method="post" accept-charset="utf-8">
+    {%- for item_id in item_id_list %}
+    <input type="hidden" name="{{ POST_ITEM_ID }}" value="{{ item_id }}">
+    {%- endfor %}
+    <div class="storeterms_table_header">
+        <span class="columnname storename_title">店名</span>
+        <span class="columnname terms_title">条件</span>
+        <span class="columnname postage_title">送料</span>
+        <span class="columnname created_at_title">更新日</span>
+        <span class="columnname button_title">操作</span>
+    </div>
+    <div class="stores">
+        {%- for store in store_list %}
+        <div class="flex_box store">
+            <div class="storename">{{ store.storename }}</div>
+            <input type="hidden" name="stores[{{ store.store_id }}][{{ POST_STORENAME }}]" class="input_storename" value="{{ store.storename }}">
+            <div class="storeterms_box">
+                {%- for terms in store.terms_list %}
+                <div class="shippingterms">
+                    <span class="shippingterms_boundary">
+                        <span class="terms_name">条件{{ terms.terms_num }}</span>
+                        <span class="input_title boundary_input_title">合計</span>
+                        <input type="number" name="stores[{{ store.store_id }}][terms][{{ terms.terms_index }}][boundary][]" class="boundary1" value="{{ terms.boundary1 }}">
+                        <span class="boundary_unit">円</span>
+                        <select name="stores[{{ store.store_id }}][terms][{{ terms.terms_index }}][b_ope][]" class="b_operator1" title="範囲不等号">
+                            {%- with selected = terms.ope[0] %}
+                            {% include "itemcomb/terms_operator.html" %}
+                            {%- endwith %}
+                        </select>
+                        {%- if not terms.boundary2 %}
+                        <input type="button" value="→" class="change_range_button" title="条件を範囲にする">
+                        {%- else %}
+                        <span class="range_and">かつ</span>
+                        <input type="number" name="stores[{{ store.store_id }}][terms][{{ terms.terms_index }}][boundary][]" class="boundary2" value="{{ terms.boundary2 }}">
+                        <select name="stores[{{ store.store_id }}][terms][{{ terms.terms_index }}][b_ope][]" class="b_operator2" title="範囲不等号">
+                            {%- with selected = terms.ope[1] %}
+                            {% include "itemcomb/terms_operator.html" %}
+                            {%- endwith %}
+                        </select>
+                        <input type="button" value="←" class="change_single_button" title="条件を単一にする">
+                        {%- endif %}
+                    </span>
+                    <span class="if_connect_text">なら</span>
+                    <span class="shippingterms_postage">
+                        <span class="input_title">送料</span>
+                        <input type="number" name="stores[{{ store.store_id }}][terms][{{ terms.terms_index }}][postage]" value="{{ terms.postage }}"/>
+                        <span class="postage_unit">円</span>
+                        <span class="shippingterms_created_at">
+                            <span class="created_at">{{ terms.created_at }}</span>
+                        </span>
+                    </span>
+                    <span class="shippingterms_button">
+                        <input type="button" class="delete_terms_button" value="削除">
+                    </span>
+                </div>
+                {%- endfor %}
+                <div class="shippingterms_add_button_d">
+                    <input type="button" name="add_terms" class="shippingterms_add_button" value="条件追加" />
+                </div>
+            </div>
+        </div>
+        {%- endfor %}
+    </div>
+    <div class="footer">
+        {%- if store_list %}
+        <input type="submit" value="{{ post_button_text }}">
+        {%- endif %}
+    </div>
+</form>
+<p><a href="{{ back_url }}" class="plain-link">{{ back_url_text }}</a></p>
+

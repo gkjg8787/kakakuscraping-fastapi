@@ -1,14 +1,24 @@
 from typing import List, Dict, Optional
+from datetime import datetime
+import re
+import copy
 
 from fastapi import Request
 from pydantic import BaseModel
 
 from sqlalchemy.orm import Session
 
+from template_value import BaseTemplateValue
+from template_value.calcitemcomb import (
+    StoreShippingTerms as CIC_StoreShippingTerms,
+    Terms as CIC_Terms,
+)
+
 from common import (
     filter_name,
     const_value,
     templates_string,
+    util as cm_util,
 )
 from accessor.item import (
     NewestQuery,
@@ -17,6 +27,8 @@ from accessor.item import (
     UrlActive,
     GroupQuery,
 )
+from accessor import store as ac_store
+from model import store as m_store
 import parameter_parser.item as ppi
 import parameter_parser.store as pps
 
@@ -27,7 +39,6 @@ from proc import get_sys_status, system_status
 
 from analysis import database_analysis
 
-from accessor.util import sqlalchemy_result_all_to_dict_list
 
 
 def is_update_process_alive(db :Session):
@@ -38,10 +49,7 @@ def is_update_process_alive(db :Session):
         return False
     return True
 
-class BaseTemplateValue(BaseModel):
-    request: Request = None
-    class Config:
-        arbitrary_types_allowed = True
+
 
 class NewestItemList(BaseTemplateValue):
     topscrollid: str
@@ -885,3 +893,337 @@ class ExtractStoreItemListContext(BaseTemplateValue):
             if lowest:
                 results.append(lowest)
         return results
+
+class TermsForListContext(BaseModel):
+    terms_id :int = const_value.NONE_ID
+    temrs_text :str
+    postage : int = 0
+    created_at : Optional[datetime]
+
+class StoreForListContext(BaseModel):
+    store_id : int = const_value.NONE_ID
+    storename :str
+    created_at :datetime
+    terms_list :list[TermsForListContext]
+    terms_num :int
+
+    def __init__(self,
+                 store_id :int,
+                 storename :str,
+                 created_at :datetime
+                 ):
+        super().__init__(store_id=store_id,
+                         storename=storename,
+                         created_at=created_at,
+                         terms_list=[],
+                         terms_num=0,
+                         )
+    
+    def add_terms(self, terms :TermsForListContext):
+        self.terms_list.append(terms)
+        self.terms_num = len(self.terms_list)
+
+class BoundaryConverter:
+    CONVEERT_TABLE = {"<=":"以上",
+                      ">=":"以下",
+                      "<":"より大きい",
+                      ">":"より小さい",
+                      ":":" かつ "
+                     }
+    @classmethod
+    def convert_boundary_to_text(cls, boundary :str):
+        target = boundary
+        for bef, aft in cls.CONVEERT_TABLE.items():
+            target = re.sub(bef, aft, target)
+        return target
+
+class StoreListContext(BaseTemplateValue):
+    res : list[StoreForListContext] = []
+    res_length :int = 0
+    POST_STORE_ID :str = filter_name.TemplatePostName.STORE_ID.value
+
+    def __init__(self, request, db :Session):
+        super().__init__(request=request)
+        results = ac_store.StoreQuery.get_store_and_postage_all(db)
+        self.res = self.convert_to_StoreForListContext(results)
+        if not self.res:
+            return
+        self.res_length = len(self.res)
+    
+    @staticmethod
+    def convert_to_StoreForListContext(res :list):
+        results :dict[int, StoreForListContext] = {}
+        for r in res:
+            dic = dict(r._mapping.items())
+            if not dic["store_id"] in results.keys():
+                results[dic["store_id"]] = StoreForListContext(store_id=dic["store_id"],
+                                                               storename=dic["storename"],
+                                                               created_at=dic["created_at"]
+                                                               )
+            if "terms_id" in dic and str(dic["terms_id"]).isdigit():
+                terms_id = int(dic["terms_id"])
+                boundary = BoundaryConverter.convert_boundary_to_text(dic["boundary"])
+                postage = int(dic["postage"])
+                terms = TermsForListContext(terms_id=terms_id,
+                                            temrs_text=boundary,
+                                            postage=postage,
+                                            created_at=dic["terms_created_at"]
+                                            )
+                results[dic["store_id"]].add_terms(terms)
+        return [a for a in results.values()]
+
+class EditShippingConditionContext(BaseTemplateValue):
+    item_id_list :List[int] = []
+    store_list :List = []
+    errmsg :str = ""
+    POST_ITEM_ID :str = filter_name.TemplatePostName.ITEM_ID.value
+    POST_STORENAME :str = filter_name.TemplatePostName.STORE_NAME.value
+
+    def __init__(self, request, db :Session):
+        super().__init__(request=request)
+
+        results = ac_store.StoreQuery.get_store_and_postage_all(db)
+        if not results or len(results) == 0:
+            self.errmsg = "店舗がありません"
+            return
+        self.store_list = self.convert_to_store_list(results)
+    
+    @staticmethod
+    def convert_to_store_list(res_list :List[Dict]) -> List[CIC_StoreShippingTerms]:
+        results :Dict[str, CIC_StoreShippingTerms]= {}
+        for row in res_list:
+            res = dict(row._mapping.items())
+            t = CIC_Terms(terms_index=res['terms_id'],
+                                boundary=res['boundary'],
+                                postage=res['postage'],
+                                created_at=res['terms_created_at'],)
+            if res['storename'] in results:
+                results[res['storename']].add_terms(t)
+                continue
+            else:
+                sst = CIC_StoreShippingTerms(store_id=res['store_id'],
+                                        storename=res['storename'],)
+                results[res['storename']] = sst
+                sst.add_terms(t)
+                continue
+        return [a for a in results.values()]
+
+class EditShippingConditionResult(BaseTemplateValue):
+    update_list :list[StoreForListContext] = []
+    delete_list :list[StoreForListContext] = []
+    insert_list :list[StoreForListContext] = []
+    update_length :int = 0
+    delete_length :int = 0
+    insert_length :int = 0
+    errmsg :str = ""
+
+    def __init__(self, request, db :Session, escf :ppi.EditShippingConditionForm):
+        super().__init__(request=request)
+        results = ac_store.StoreQuery.get_store_and_postage_all(db)
+        self.update_shippingterms_data(db, escf=escf, db_res=results)
+
+    def update_shippingterms_data(self, db :Session, escf : ppi.EditShippingConditionForm, db_res :list):
+        if len(escf.store_list) == 0:
+            self.errmsg = "更新対象がありません"
+            return
+        
+        storepostage_dict :dict[int, list[m_store.StorePostage]] = {}
+        for store in escf.store_list:
+            sps_list = store.toStorePostages()
+            if len(sps_list) > 0:
+                if store.store_id in storepostage_dict:
+                    storepostage_dict[store.store_id].extend(sps_list)
+                else:
+                    storepostage_dict[store.store_id] = sps_list
+        
+        non_appear_dest_dict = copy.deepcopy(storepostage_dict)
+        update_list :list = []
+        delete_list :list = []
+        insert_list :list = []
+        store_id_to_name :dict[int, str] = {}
+        store_id_to_created_at :dict[int, datetime] = {}
+
+        for row in db_res:
+            res = dict(row._mapping.items())
+            store_id = int(res['store_id'])
+            if not store_id in store_id_to_name.keys():
+                store_id_to_name[store_id] = res['storename']
+                store_id_to_created_at[store_id] = res['created_at']
+            if not "terms_id" in res\
+                or not res['terms_id']:
+                continue
+            if store_id in storepostage_dict.keys():
+                src_appear = False
+                for pos in storepostage_dict[store_id]:
+                    if self.is_update_storepostage(pos, res):
+                        update_list.append(pos)
+                        self.pop_dict(non_appear_dest_dict, store_id, pos.terms_id)
+                        src_appear = True
+                        continue
+                    if self.equal_storepostage(pos, res):
+                        self.pop_dict(non_appear_dest_dict, store_id, pos.terms_id)
+                        src_appear = True
+                        continue
+                if src_appear:
+                    continue
+                sps = self.convert_db_res_to_storepostage(res)
+                delete_list.append(sps)
+                continue
+            sps = self.convert_db_res_to_storepostage(res)
+            delete_list.append(sps)
+            continue
+        insert_list = [ sps for spslist in non_appear_dest_dict.values() for sps in spslist]
+
+        self.insert_list = self.convert_storepostage_to_StoreForListContext(insert_list,
+                                                                            store_id_to_name,
+                                                                            store_id_to_created_at
+                                                                            )
+        self.insert_length = len(self.insert_list)
+        self.update_list = self.convert_storepostage_to_StoreForListContext(update_list,
+                                                                            store_id_to_name,
+                                                                            store_id_to_created_at
+                                                                            )
+        self.update_length = len(self.update_list)
+        self.delete_list = self.convert_storepostage_to_StoreForListContext(delete_list,
+                                                                            store_id_to_name,
+                                                                            store_id_to_created_at
+                                                                            )
+        self.delete_length = len(self.delete_list)
+        
+        if len(delete_list) > 0:
+            ac_store.StoreQuery.delete_storepostage_by_list(db, delete_list=delete_list)
+        if len(update_list) > 0:
+            ac_store.StoreQuery.update_storepostage_by_list(db, update_list=update_list)
+        if len(insert_list) > 0:
+            ac_store.StoreQuery.insert_storepostage_list(db, storepostage_list=insert_list)
+
+    @staticmethod
+    def is_update_storepostage(sps :m_store.StorePostage, res :dict):
+        if int(res['terms_id']) == int(sps.terms_id):
+            if not res['boundary'] and sps.boundary\
+                or res['boundary'] and not sps.boundary:
+                return True
+            if not res['postage'] and sps.postage\
+                or res['postage'] and not sps.boundary:
+                return True
+            if str(res['boundary']) != sps.boundary\
+                or int(res['postage']) != int(sps.postage):
+                return True
+        return False
+    @staticmethod
+    def equal_storepostage(sps :m_store.StorePostage, res :dict):
+        if int(res['terms_id']) == int(sps.terms_id):
+            if not res['boundary'] and sps.boundary\
+                or res['boundary'] and not sps.boundary\
+                or str(res['boundary']) != sps.boundary:
+                return False
+            if not res['postage'] and sps.postage\
+                or res['postage'] and not sps.boundary\
+                or int(res['postage']) != int(sps.postage):
+                return False
+            return True
+        return False
+    
+    @staticmethod
+    def pop_dict(target :dict[int, list[m_store.StorePostage]],
+                    store_id :int,
+                    terms_id :int
+                    ):
+        if not store_id in target.keys():
+            return
+        for idx in reversed(range(len(target[store_id]))):
+            if terms_id == int(target[store_id][idx].terms_id):
+                target[store_id].pop(idx)
+                if len(target[store_id]) == 0:
+                    target.pop(store_id)
+                    break
+            continue
+
+    @staticmethod
+    def convert_db_res_to_storepostage(res):
+            return m_store.StorePostage(store_id=int(res['store_id']),
+                                     terms_id=int(res['terms_id']),
+                                     boundary=res['boundary'],
+                                     postage=int(res['postage']),
+                                     created_at=res['terms_created_at'],
+                                     )
+    
+    @staticmethod
+    def convert_storepostage_to_StoreForListContext(res :list[m_store.StorePostage],
+                                                    store_id_to_name :dict[int, str],
+                                                    store_id_to_created_at :dict[int,datetime]
+                                                    ):
+        results :dict[int, StoreForListContext] = {}
+        for sps in res:
+            if not sps.store_id in results.keys():
+                results[sps.store_id] = StoreForListContext(store_id=sps.store_id,
+                                                            storename=store_id_to_name[sps.store_id],
+                                                            created_at=store_id_to_created_at[sps.store_id]
+                                                            )
+            if int(sps.terms_id) >= const_value.INIT_TERMS_ID\
+                and sps.postage\
+                and sps.boundary:
+                boundary = BoundaryConverter.convert_boundary_to_text(sps.boundary)
+                created_at = sps.created_at
+                if not created_at:
+                    created_at = cm_util.utcTolocaltime(datetime.utcnow())
+                terms = TermsForListContext(terms_id=sps.terms_id,
+                                            temrs_text=boundary,
+                                            postage=sps.postage,
+                                            created_at=created_at
+                                            )
+                results[sps.store_id].add_terms(terms)
+        return [a for a in results.values()]
+
+class DeleteStoreInitContext(BaseTemplateValue):
+    store_id :int = const_value.NONE_ID
+    storename :str = ""
+    errmsg :str = ""
+    delete_list :list[StoreForListContext] = []
+    POST_STORE_ID :str = filter_name.TemplatePostName.STORE_ID.value
+
+    def __init__(self, request, db :Session, dsf :ppi.DeleteStoreForm):
+        super().__init__(request=request)
+        if not dsf.is_valid():
+            self.errmsg = dsf.errmsg
+            return
+        self.store_id = dsf.store_id
+
+        results = ac_store.StoreQuery.get_store_and_postage_by_item_id(db=db, item_id=self.store_id)
+        self.delete_list = StoreListContext.convert_to_StoreForListContext(results)
+        self.storename = self.get_storename_in_results(results)
+
+    @staticmethod
+    def get_storename_in_results(res :list):
+        for r in res:
+            dic = dict(r._mapping.items())
+            if "storename" in dic.keys()\
+                and dic["storename"]\
+                and len(dic["storename"]) > 0:
+                return dic["storename"]
+        return ""
+
+class DeleteStoreContext(BaseTemplateValue):
+    storename :str = ""
+    errmsg :str = ""
+    delSuccess :bool = False
+
+    def __init__(self, request, db :Session, dsf :ppi.DeleteStoreForm):
+        super().__init__(request=request)
+        if not dsf.is_valid():
+            self.errmsg = dsf.errmsg
+            return
+        self.storename = ac_store.StoreQuery.get_storename_by_store_id(db=db,
+                                                                       store_id=dsf.store_id
+                                                                       )
+        self.delete_store_and_postage(db=db, store_id=dsf.store_id)
+        self.delSuccess = True
+    
+    @classmethod
+    def delete_store_and_postage(cls, db :Session, store_id :int):
+        ac_store.StoreQuery.delete_storepostage_by_store_id_list(db=db,
+                                                                 store_id_list=[store_id]
+                                                                 )
+        ac_store.StoreQuery.delete_store_by_store_id(db=db,
+                                                     store_id=store_id
+                                                     ) 

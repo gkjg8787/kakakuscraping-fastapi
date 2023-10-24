@@ -19,6 +19,10 @@ from accessor.item import GroupQuery
 from sqlalchemy.orm import Session
 
 from parameter_parser.util import is_suppoer_url, is_valid_id
+from parameter_parser.calcitemcomb import (
+    ItemCombinationResultForm,
+    ItemCombStore,
+)
 
 class NewestFilterQuery():
     gid :str = ""
@@ -566,3 +570,31 @@ def get_in_stock_filter_checked(f :dict) -> str:
         and int(f[FilterQueryName.ZAIKO.value]) == FilterOnOff.ON:
         return HTMLOption.CHECKED.value
     return ""
+
+class EditShippingConditionForm:
+    errmsg :str = ""
+    store_list :List[ItemCombStore] = []
+
+    def __init__(self,
+                 ):
+        pass
+    
+    def set_store_list(self, stores):
+        if stores:
+            self.store_list = ItemCombinationResultForm.parse_stores(stores=stores)
+
+class DeleteStoreForm:
+    store_id :int = const_value.NONE_ID
+    errmsg :str = ""
+
+    def __init__(self,
+                 store_id :Optional[str] = Form(None),
+                 ):
+        if is_valid_id(store_id):
+            self.store_id = store_id
+    
+    def is_valid(self):
+        if self.store_id == const_value.NONE_ID:
+            self.errmsg = "店舗が不明です"
+            return False
+        return True

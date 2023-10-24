@@ -127,6 +127,13 @@ def insert_store_dict_list(db, storename_dict_list :list[dict]):
     db.execute(stmt)
     db.commit()
 
+def insert_store_postage_dict_list(db, store_pos_dict_list :list[dict]):
+    stmt = ( insert(StorePostage)
+            .values(store_pos_dict_list)
+            )
+    db.execute(stmt)
+    db.commit()
+
 def delete_item_model(db):
     __delete_item_model(db)
     db.commit()

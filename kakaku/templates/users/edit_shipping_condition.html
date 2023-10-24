@@ -3,13 +3,13 @@
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
     <link rel="stylesheet" href="{{ url_for('static', path='/css/storepos.css') }}" type="text/css">
-    <title>送料条件の入力</title>
+    <title>送料条件の編集</title>
     <script type="text/javascript" src="{{ url_for('static', path='/js/storepos.js') }}"></script>
 {% endblock %}
 
 {% block body %}
-    <h1>送料条件の入力</h1>
-    <p>各店舗の送料条件を入力してください。<br>条件なしで送料無料の場合は記載しなくてもかまいません。</p>
+    <h1>送料条件の編集</h1>
+    <p>各店舗の送料条件を変更してください。<br>条件なしで送料無料の場合は記載しなくてもかまいません。</p>
     {%- if errmsg %}
     <p style="color:red;">{{ errmsg }}</p>
     {%- endif %}
@@ -18,10 +18,10 @@
         store_list = store_list,
         POST_ITEM_ID = POST_ITEM_ID,
         POST_STORENAME = POST_STORENAME,
-        post_url = url_for('read_item_price_combination_result'),
-        post_button_text = "結果",
-        back_url = url_for('read_select_item_price_combination'),
-        back_url_text = "選択へ戻る"
+        post_url = url_for('read_users_stores_postage_edit_result'),
+        post_button_text = "変更",
+        back_url = url_for('read_users_stores'),
+        back_url_text = "店舗一覧へ戻る"
     %}
     {%- include "itemcomb/input_shipping_condition.html" %}
     {%- endwith %}
