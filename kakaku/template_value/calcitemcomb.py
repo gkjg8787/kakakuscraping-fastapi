@@ -190,6 +190,12 @@ class ShippingConditionContext(BaseTemplateValue):
         if not scq.is_valid():
             self.errmsg = scq.errmsg
             return
+        conf_item_limit = read_config.get_itemcomb_select_limit()
+        if conf_item_limit and str(conf_item_limit).isdigit() and int(conf_item_limit) > 0:
+            item_limit = int(conf_item_limit)
+            if len(scq.item_id_list) > item_limit:
+                self.errmsg = f"選択したアイテム数が上限を超えています（上限：{item_limit}）"
+                return 
         self.item_id_list = scq.item_id_list
         results = getAndRegistShippingTermsByItemId(db, itemids=self.item_id_list)
         if StorePostageResultName.ERROR in results:
