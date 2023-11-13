@@ -9,6 +9,7 @@ from template_value import BaseTemplateValue
 from proc.system_status import SystemStatus, SystemStatusToJName
 from parameter_parser.admin import ProcCtrlForm
 from proc import get_sys_status
+from common.read_config import get_srcdir
 from common.filter_name import (
     SystemCtrlBtnName,
     DashBoardPostName,
@@ -38,7 +39,7 @@ class BackServerCtrl:
         self.cmd_msg = pcf.proc_action
 
     def action(self):
-        base_path = Path(__file__).resolve().parent.parent
+        base_path = str(get_srcdir())
         cmd = ["python3", str(Path(base_path, self.CMD_NAME))]
         if self.cmd_msg == SystemCtrlBtnName.STARTUP.value:
             cmd.append("start")

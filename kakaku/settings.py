@@ -1,6 +1,7 @@
 
 from pathlib import Path
 
+SRC_DIR = Path(__file__).resolve().parent
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATABASES = {
     "default":{
@@ -32,7 +33,7 @@ DATABASES = {
 HTMLTEMP=f"{BASE_DIR}/tempdata/html/"
 LOGTEMP=f"{BASE_DIR}/tempdata/log/"
 
-SEARCHOPTION=f"/{Path(__file__).resolve().parent}/url_search/"
+SEARCHOPTION=f"/{SRC_DIR}/url_search/"
 ITEMCOMBOPTION="/scraping/ctrl/itemcomb/"
 
 AUTO_DEL_DLFILE=True
@@ -54,3 +55,4 @@ SCRAPING_BACK_SERVER = {
     "port":"5000",
 }
 PROC_QUEUE_TIMEOUT = 5
+EXE_ITEMCOMB = "bin"

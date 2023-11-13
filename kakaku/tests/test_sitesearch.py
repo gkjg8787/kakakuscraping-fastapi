@@ -66,7 +66,7 @@ def test_get_search_for_inner_cate_netoff():
     print(resdic['result'])
 
 def test_get_search_for_inner_cate_geo():
-    sword = "となりのトトロ"
+    sword = "ジブリ"
     query_opt = {
         FilterQueryName.PAGE.value: 1,
         FilterQueryName.STORE.value:[4],

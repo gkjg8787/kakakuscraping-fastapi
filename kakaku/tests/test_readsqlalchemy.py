@@ -1,4 +1,4 @@
-from kakakuscraping_fastapi.accessor import read_sqlalchemy as rsql
+from accessor import read_sqlalchemy as rsql
 
 print(f"dbconf={rsql.dbconf}")
 print(f"url_obj={rsql.url_obj}")

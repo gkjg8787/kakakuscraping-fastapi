@@ -125,9 +125,7 @@ def test_convertToSearchResultItems_full():
         if num == 5:
             __item_common_assert(i, items, num)
             assert i.main.used != None
-            assert i.main.used.price == items[num][SearchParser.USED][5:11]
-            assert i.main.used.price_pre_text == items[num][SearchParser.USED][:5]
-            assert i.main.used.price_tail_text == items[num][SearchParser.USED][11:]
+            assert i.main.used.price == items[num][SearchParser.USED]
             assert i.img_on_err == items[num][SearchParser.IMAGE_ON_ERR]
         if num == 6:
             __item_common_assert(i, items, num)

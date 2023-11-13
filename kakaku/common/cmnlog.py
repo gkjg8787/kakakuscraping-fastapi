@@ -47,3 +47,4 @@ class LogName:
     PARSE ="htmlparse"
     SEARCH = "search"
     DB_ORGANIZE = "db_organize"
+    ITEMCOMB = "itemcomb"

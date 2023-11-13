@@ -1,19 +1,37 @@
 import operator
 from functools import partial
 
+class SelectItem:
+    name :str
+    storename :str
+    price :int
+    def __init__(self, name, storename, price):
+        self.name = name
+        self.storename = storename
+        self.price = int(price)
+
+    def getName(self):
+        return self.name
+
+    def getStoreName(self):
+        return self.storename
+
+    def getPrice(self):
+        return self.price
+
 class SumItem:
-    def __init__(self, storecatalog):
-        self.items = []
-        self.stores = []
-        self.storecatalog = storecatalog
+    def __init__(self, storecatalog :list):
+        self.items :list[SelectItem] = []
+        self.stores :list[Store] = []
+        self.storecatalog :list[Store] = storecatalog
         self.sums = {}
 
-    def addItem(self, sitem):
+    def addItem(self, sitem :SelectItem):
         self.items.append(sitem)
         if not self.existStore(sitem.getStoreName()):
             self.stores.append(self.getStore(sitem.getStoreName()))
 
-    def existStore(self, storename):
+    def existStore(self, storename :str):
         for store in self.stores:
             if store.getName() == storename:
                 return True
@@ -67,7 +85,7 @@ class SumItem:
         result['sum_postage'] = sum_postage
         return result
 
-    def getStore(self, storename):
+    def getStore(self, storename :str):
         for store in self.storecatalog:
             if store.getName() == storename:
                 return store
@@ -141,18 +159,5 @@ class StoreOperator:
         
         
 
-class SelectItem:
-    def __init__(self, name, storename, price):
-        self.name = name
-        self.storename = storename
-        self.price = price
 
-    def getName(self):
-        return self.name
-
-    def getStoreName(self):
-        return self.storename
-
-    def getPrice(self):
-        return self.price
 

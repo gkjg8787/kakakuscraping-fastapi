@@ -1,5 +1,9 @@
 import settings
 
+
+def get_srcdir():
+    return settings.SRC_DIR
+
 def get_databases():
     return settings.DATABASES
 
@@ -38,3 +42,6 @@ def get_search_option_path():
 
 def get_itemcomb_select_limit():
     return settings.ITEMCOMB_SELECT_LIMIT
+
+def get_exec_itemcomb():
+    return settings.EXE_ITEMCOMB

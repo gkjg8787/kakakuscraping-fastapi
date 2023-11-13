@@ -5,7 +5,7 @@ import argparse
 import sys
 
 def createStoreCatalog(storeconf):
-    storecatalog = []
+    storecatalog :list[Store] = []
     pattern = r'([0-9]*)([<|>]=?)'
     comp = re.compile(pattern)
     for store in storeconf.keys():
@@ -106,7 +106,7 @@ def createItemPtn(itemlist):
      
 #@stop_watch
 def createBulkBuy(itemlist, storeconf):
-    bulk = []
+    bulk :list[SumItem] = []
     #ws = wantItemSet(itemlist)
     stca = createStoreCatalog(storeconf)
     itemptn = createItemPtn(itemlist)

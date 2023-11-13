@@ -27,5 +27,6 @@ EXPOSE 8000
 
 WORKDIR /app/kakaku
 
+RUN python3 dl_itemcomb_bin.py
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--root-path=/kakaku", "--proxy-headers"]
