@@ -181,11 +181,9 @@
             {{ row['created_at'] }}</td>
             <td>{{ row['lowestprice'] }}円</td>
             <td>{{ row['act'] }}</td>
-            <td class="noborder">
-                <form action="{{ url_for('read_users_items_view') }}" method="get">
-                    <input type="hidden" name="{{ ITEMID_Q_NAME }}" value="{{ row['item_id'] }}">
-                    <button type="submit" class="t_b2s">詳細</button>
-                </form>
+            <td class="noborder nobreak">
+                <a href="{{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ row['item_id'] }}"
+                 target="_blank" rel="noopener noreferrer" class="like_button_link">詳細</a>
             </td>
             <td class="noborder">
             <form action="{{ url_for('read_users_items_update') }}" method="post">

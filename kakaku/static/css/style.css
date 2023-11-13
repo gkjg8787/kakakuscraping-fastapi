@@ -33,6 +33,9 @@ td.noborder {
     border: none;
     border-top: solid 1px;
 }
+.nobreak {
+    white-space: nowrap;
+}
 .url_input {
     width: 60%;
 }
