@@ -22,9 +22,13 @@ from common.read_config import (
     get_back_server_config,
     get_back_server_queue_timeout,
 )
+
+from proc.auto_update import UpdateTimer
+
 server_conf = get_back_server_config()
 server_addr = server_conf['addr'] #'127.0.0.1'
 server_port = int(server_conf['port']) #5000
+server_pswd = b'ggacbq'
 
 QUEUE_TIMEOUT = int(get_back_server_queue_timeout()) #5
 
@@ -60,22 +64,14 @@ def startQueue():
     with next(get_session()) as db:
         writeProcStart(db=db)
 
-    # タスクを受け取るキュー
     task_queue = queue.Queue()
-    # 結果を通知するキュー
     result_queue = queue.Queue()
 
-    # 2つのキューをAPIとして登録する
-    # Windowsの場合はAPI登録にlambdaが使えないので、素直に関数を定義してください
     QueueManager.register('get_task_queue', callable=lambda: task_queue)
     QueueManager.register('get_result_queue', callable=lambda: result_queue)
 
-    # ポート5000を使い、認証暗号を'abc'にする
-    # Windowsの場合はアドレスを明記する必要がある（127.0.0.1）
-    manager = QueueManager(address=('', server_port), authkey=b'ggacbq')
-    # 起動する
+    manager = QueueManager(address=('', server_port), authkey=server_pswd)
     manager.start()
-    # ネット経由でキューオブジェクトを取得
     task = manager.get_task_queue()
     result = manager.get_result_queue()
 
@@ -83,7 +79,6 @@ def startQueue():
     with next(get_session()) as db:
         waitTask(task=task, result=result, db=db)
 
-    # 終了
     endSubProc()
     with next(get_session()) as db:
         writeAllProcStop(db=db)
@@ -133,6 +128,7 @@ def waitTask(task, result, db :Session):
     manager_util.writeProcActive(db, psa=psa)
     check_db_organize(db)
     manager_util.writeProcWaiting(db, psa=psa)
+    uptimer = UpdateTimer(logger=logger)
     while True:
         try:
             t = task.get(timeout=QUEUE_TIMEOUT)
@@ -150,6 +146,7 @@ def waitTask(task, result, db :Session):
         except queue.Empty:
             if not psa.getStatus() == ProcStatusAccess.WAITING:
                 manager_util.writeProcWaiting(db, psa=psa)
+            uptimer.run(db=db)
             time.sleep(0.1)
 
 def createSubProc():
@@ -168,15 +165,10 @@ def createScrapingManager():
     child_pid = os.fork()
     if child_pid == 0 :
         os.setsid()
-        #print('child process')
         if os.fork():
             sys.exit()
         startQueue()
-        
     else:
-        #print('parent process')
-        #print('cmd end')
-        #sys.exit()
         pass
 
 def sendTask(cmdstr, url='', id=''):
@@ -185,11 +177,8 @@ def sendTask(cmdstr, url='', id=''):
     QueueManager.register('get_task_queue')
     QueueManager.register('get_result_queue')
 
-    # サーバーに接続する
     logger.info(get_filename() + ' Connect to server {}...'.format(server_addr))
-    # 同じポートと認証暗号を設定する
-    m = QueueManager(address=(server_addr, server_port), authkey=b'ggacbq')
-    # 接続
+    m = QueueManager(address=(server_addr, server_port), authkey=server_pswd)
     try:
         m.connect()
     except ConnectionRefusedError:
@@ -197,9 +186,8 @@ def sendTask(cmdstr, url='', id=''):
         logger.error(get_filename() + "ConnectionRefusedError")
         return
 
-    # それぞれのキューを取得
     task = m.get_task_queue()
-    result = m.get_result_queue()
+    #result = m.get_result_queue()
 
     cmd = sendcmd.SendCmd(cmdstr, url, id)
     logger.info('{} sendTask {}'.format(get_filename(), cmdstr))

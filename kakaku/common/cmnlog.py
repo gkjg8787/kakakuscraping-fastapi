@@ -3,7 +3,7 @@ import logging
 import os
 from common.read_config import get_log_dir
 
-LOGGING_LEVEL = logging.DEBUG
+LOGGING_LEVEL = logging.INFO
 # initLogger使用後の呼び出し
 def getLogger(fn):
     return logging.getLogger(fn)

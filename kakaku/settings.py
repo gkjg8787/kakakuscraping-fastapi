@@ -34,7 +34,6 @@ HTMLTEMP=f"{BASE_DIR}/tempdata/html/"
 LOGTEMP=f"{BASE_DIR}/tempdata/log/"
 
 SEARCHOPTION=f"/{SRC_DIR}/url_search/"
-ITEMCOMBOPTION="/scraping/ctrl/itemcomb/"
 
 AUTO_DEL_DLFILE=True
 NO_VERIFY_DOMAIN="" #"www.netoff.co.jp"
@@ -56,3 +55,5 @@ SCRAPING_BACK_SERVER = {
 }
 PROC_QUEUE_TIMEOUT = 5
 EXE_ITEMCOMB = "bin"
+AUTO_UPDATE_ITEM = False
+AUTO_UPDATE_TIME = ["16:16"]

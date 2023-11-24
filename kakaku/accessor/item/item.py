@@ -1,6 +1,6 @@
 from typing import List, Dict, Optional
 from enum import Enum
-from datetime import date
+from datetime import date, datetime
 
 from sqlalchemy import (
     select,
@@ -9,6 +9,7 @@ from sqlalchemy import (
     update,
     union,
     func,
+    between,
 )
 #from sqlalchemy.dialects.sqlite import insert as lite_insert
 
@@ -1396,3 +1397,13 @@ class AnalysisQuery:
                 .where(utc_to_jst_date_for_query(PriceLog.created_at).in_(date_list))
                 )
         return db.execute(stmt).all()
+
+class AutoUpdateItem:
+    @classmethod
+    def get_pricelog_2days_count_by_date_range(cls, db :Session, start :datetime, end :datetime):
+        start_n = start.replace(tzinfo=None)
+        end_n = end.replace(tzinfo=None)
+        stmt = ( select(func.count(PriceLog_2days.log_id))
+                .where(between(utc_to_jst_datetime_for_query(PriceLog_2days.created_at), start_n, end_n))
+                )
+        return db.scalar(stmt)
