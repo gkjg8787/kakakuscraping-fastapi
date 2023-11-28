@@ -37,12 +37,12 @@
                     <input type="checkbox" id="open_search_checkbox">
                     <div class="search_opt_show flex_box">
                         <div class="option_box">
-                            <input type="checkbox" name="{{ SAFE_SEARCH_NAME }}" form="search_inputform" id="safe_search_checkbox" value="0" {{ safes_off_checked }}>
-                            <label for="safe_search_checkbox">SafeSearch OFF</label>
-                        </div>
-                        <div class="option_box">
                             <input type="checkbox" name="{{ STOCK_NAME }}" form="search_inputform" id="zaiko_checkbox" value="1" {{ zaiko_checked }}>
                             <label for="zaiko_checkbox">在庫ありのみ表示</label>
+                        </div>
+                        <div class="option_box">
+                            <input type="checkbox" name="{{ SAFE_SEARCH_NAME }}" form="search_inputform" id="safe_search_checkbox" value="0" {{ safes_off_checked }}>
+                            <label for="safe_search_checkbox">SafeSearch OFF</label>
                         </div>
                         <div class="option_box">
                             <input type="checkbox" name="{{ LIST_VIEW_NAME }}" form="search_inputform" id="listview_checkbox" value="1" {{ listview_checked }}>
