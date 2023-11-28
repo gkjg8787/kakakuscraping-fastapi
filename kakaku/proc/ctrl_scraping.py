@@ -8,10 +8,9 @@ import psutil
 
 from common.filter_name import AutoLowerName
 
-from proc.scrapingmanage import (
-    createScrapingManager,
-    sendTask
-)
+from proc.scrapingmanage import sendTask
+from proc.scrapingmanage.scrapingmanage import createScrapingManager
+
 from proc.sendcmd import ScrOrder
 
 from proc.get_sys_status import getSystemStatus

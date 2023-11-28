@@ -9,11 +9,15 @@ from template_value import BaseTemplateValue
 from proc.system_status import SystemStatus, SystemStatusToJName
 from parameter_parser.admin import ProcCtrlForm
 from proc import get_sys_status
-from common.read_config import get_srcdir
+from common.read_config import get_srcdir, is_auto_update_item
 from common.filter_name import (
     SystemCtrlBtnName,
     DashBoardPostName,
 )
+from proc.auto_update import AutoUpdateOnOff
+from model.server import AutoUpdateSchedule
+from accessor.server import AutoUpdateScheduleQuery
+
 class DashBoardTemplate(BaseTemplateValue):
     system_ctrl_btn_name :str = DashBoardPostName.SYSTEM_CTRL_BTN.value
     STARTUP:str = SystemCtrlBtnName.STARTUP.value
@@ -21,6 +25,8 @@ class DashBoardTemplate(BaseTemplateValue):
     RESTART :str = SystemCtrlBtnName.RESTART.value
     syssts :str = SystemStatus.NONE.name
     sysstop :bool = True
+    autoupdate :str = AutoUpdateOnOff.OFF.jname
+    autoupdate_schedule :list[AutoUpdateSchedule] = []
 
     def __init__(self, request, db :Session):
         super().__init__(request=request)
@@ -30,6 +36,10 @@ class DashBoardTemplate(BaseTemplateValue):
             self.sysstop = True
         else:
             self.sysstop = False
+
+        if is_auto_update_item():
+            self.autoupdate = AutoUpdateOnOff.ON.jname
+            self.autoupdate_schedule = AutoUpdateScheduleQuery.get_schedules(db)
 
 class BackServerCtrl:
     CMD_NAME = "proc_manage.py"

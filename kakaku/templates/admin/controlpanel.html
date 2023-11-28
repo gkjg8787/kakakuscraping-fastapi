@@ -8,6 +8,14 @@
 {% block body %}
     <h1>管理画面</h1>
     <div class="system_status">ステータス：{{ syssts }}</div>
+    <div class="auto_update_status">自動更新：{{ autoupdate }}</div>
+    {% if not sysstop %}
+    <div class="auto_update_schedule">
+        {% for sch in autoupdate_schedule %}
+        <div class="auto_update_schedule_value">{{ sch.requirement }}({{ sch.status }})</div>
+        {% endfor %}
+    </div>
+    {% endif %}
     <h2>操作</h2>
     {% if updatemsg %}
         <p>{{ updatemsg }}</p>

@@ -52,3 +52,21 @@ class OrganizeLog(Base):
 
     def __repr__(self) -> str:
         return ( f"OrganizeLog(log_id={self.log_id!r}, name={self.name!r}, status={self.status!r}, created_at={self.created_at!r}")
+
+class AutoUpdateSchedule(Base):
+    __tablename__ = "autoupdateschedule"
+
+    id :Mapped[int] = mapped_column(primary_key=True)
+    requirement :Mapped[str]
+    status :Mapped[str]
+    updated_at :Mapped[datetime] = mapped_column(server_default=func.CURRENT_TIMESTAMP())
+    created_at :Mapped[datetime] = mapped_column(
+        server_default=func.CURRENT_TIMESTAMP()
+        ,onupdate=func.CURRENT_TIMESTAMP()
+        ,server_onupdate=func.CURRENT_TIMESTAMP()
+        )
+    
+    def __repr__(self) -> str:
+        return ( f"AutoUpdateSchedule(id~{self.id!r}, requirement={self.requirement!r}, status={self.status!r}"
+                 f", updated_at={self.updated_at!r}, created_at={self.created_at!r}"
+                 ")")

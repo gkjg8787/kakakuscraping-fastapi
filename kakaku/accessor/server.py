@@ -5,6 +5,7 @@ from model.server import (
     ProcStatus,
     ProcStatusLog,
     OrganizeLog,
+    AutoUpdateSchedule,
 )
 from sqlalchemy import (
     select,
@@ -73,3 +74,36 @@ class OrganizeLogQuery:
                 )
         return db.scalar(stmt)
 
+class AutoUpdateScheduleQuery:
+    @classmethod
+    def init_schedules(cls, db :Session, requirements :list[AutoUpdateSchedule]):
+        cls.delete_schedules(db)
+        if len(requirements) == 0:
+            return
+        db.add_all(requirements)
+        db.commit()
+    
+    @classmethod
+    def update_status(cls, db :Session, requirements :list[AutoUpdateSchedule]):
+        if len(requirements) == 0:
+            return
+        for req in requirements:
+            stmt = ( update(AutoUpdateSchedule)
+                    .where(AutoUpdateSchedule.requirement == req.requirement)
+                    .values(status=req.status)
+                    )
+            db.execute(stmt)
+        db.commit()
+        
+    @staticmethod
+    def get_schedules(db :Session):
+        stmt = ( select(AutoUpdateSchedule)
+                .order_by(AutoUpdateSchedule.requirement.asc())
+                )
+        return db.scalars(stmt).all()
+    
+    @staticmethod
+    def delete_schedules(db :Session):
+        stmt = ( delete(AutoUpdateSchedule) )
+        db.execute(stmt)
+        db.commit()

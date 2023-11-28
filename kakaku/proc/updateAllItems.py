@@ -14,4 +14,4 @@ def updateAllitems(db :Session, dlproc):
     logger.info('{} ACT ITEMS NUM={}'.format(logheader, len(items)))
     for item in items:
         dlproc.putDlTask(item['urlpath'], item['item_id'])
-    logger.info(logheader + ' put end UPDATE_ACT_ALL')
+    logger.debug(logheader + ' put end UPDATE_ACT_ALL')

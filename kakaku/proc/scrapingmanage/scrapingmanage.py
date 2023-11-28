@@ -2,7 +2,6 @@ import os
 import time
 import sys
 import queue
-from multiprocessing.managers import BaseManager
 
 from typing import Optional
 
@@ -19,24 +18,23 @@ from sqlalchemy.orm import Session
 from accessor.read_sqlalchemy import get_session
 
 from common.read_config import (
-    get_back_server_config,
     get_back_server_queue_timeout,
 )
 
 from proc.auto_update import UpdateTimer
 
-server_conf = get_back_server_config()
-server_addr = server_conf['addr'] #'127.0.0.1'
-server_port = int(server_conf['port']) #5000
-server_pswd = b'ggacbq'
+from .queuemanager import (
+    QueueManager,
+    server_port,
+    server_pswd,
+)
 
 QUEUE_TIMEOUT = int(get_back_server_queue_timeout()) #5
+
 
 dlproc :Optional[DlProc] = None
 parseproc :Optional[ParseProc] = None
 
-class QueueManager(BaseManager):
-    pass
 
 def getProcStatusAccess():
     return ProcStatusAccess(name=ProcName.MANAGER)
@@ -128,11 +126,11 @@ def waitTask(task, result, db :Session):
     manager_util.writeProcActive(db, psa=psa)
     check_db_organize(db)
     manager_util.writeProcWaiting(db, psa=psa)
-    uptimer = UpdateTimer(logger=logger)
+    uptimer = UpdateTimer(db=db, logger=logger)
     while True:
         try:
             t = task.get(timeout=QUEUE_TIMEOUT)
-            logger.info(get_filename() + ' get task')
+            logger.debug(get_filename() + ' get task')
             if not psa.getStatus() == ProcStatusAccess.ACTIVE:
                 manager_util.writeProcActive(db, psa=psa)
 
@@ -171,27 +169,4 @@ def createScrapingManager():
     else:
         pass
 
-def sendTask(cmdstr, url='', id=''):
-    logger = cmnlog.createLogger(cmnlog.LogName.CLIENT)
-    logger.info(get_filename() + ' sendTask start')
-    QueueManager.register('get_task_queue')
-    QueueManager.register('get_result_queue')
 
-    logger.info(get_filename() + ' Connect to server {}...'.format(server_addr))
-    m = QueueManager(address=(server_addr, server_port), authkey=server_pswd)
-    try:
-        m.connect()
-    except ConnectionRefusedError:
-        print("ConnectionRefusedError")
-        logger.error(get_filename() + "ConnectionRefusedError")
-        return
-
-    task = m.get_task_queue()
-    #result = m.get_result_queue()
-
-    cmd = sendcmd.SendCmd(cmdstr, url, id)
-    logger.info('{} sendTask {}'.format(get_filename(), cmdstr))
-
-    task.put(cmd)
-
-    logger.info(get_filename() + ' sendTask end')
