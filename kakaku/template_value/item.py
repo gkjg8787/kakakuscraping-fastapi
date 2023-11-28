@@ -34,6 +34,7 @@ import parameter_parser.store as pps
 
 from proc.scrapingmanage import sendTask
 from proc.sendcmd import ScrOrder
+from proc.system_status import SystemStatusAccess, SystemStatus
 
 from proc import get_sys_status, system_status
 
@@ -764,6 +765,10 @@ class ItemAnalysisContext(BaseTemplateValue):
         if anaq.atid:
             self.analysis_term_id = int(anaq.atid)
         
+        if self.isUpdateSystemStatus(db):
+            self.errmsg = database_analysis.LogAnalysisError.DATA_IS_BEING_UPDATED.value
+            return
+
         self.analysisPeriodList = self.create_analysis_period_list(self.analysis_term_id)
 
         result = database_analysis.get_log_analysis(db=db, atid=self.analysis_term_id)
@@ -788,7 +793,12 @@ class ItemAnalysisContext(BaseTemplateValue):
 
         self.url_store_count_average = result.get_url_store_count_average()
 
-        
+    def isUpdateSystemStatus(self, db :Session) -> bool:
+        syssts = SystemStatusAccess()
+        syssts.update(db=db)
+        if SystemStatus.DATA_UPDATE == syssts.getStatus():
+            return True
+        return False
     
     @staticmethod
     def create_analysis_period_list(analysis_term_id :int):

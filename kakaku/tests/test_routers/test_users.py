@@ -16,6 +16,7 @@ from tests.test_sqlalchemy import (
 
 from tests.test_accessor import db_test_data
 from analysis.database_analysis import LogAnalysisError
+from proc import system_status
 
 client = TestClient(app)
 prefix = '/users'
@@ -634,6 +635,13 @@ def test_read_users_analysis_no_log(test_db):
     is_html(response.text)
     assert LogAnalysisError.DICT_IS_ZERO.value in response.text
     drop_test_db()
+
+def test_read_users_analysis_data_update(mocker):
+    m = mocker.patch("proc.system_status.SystemStatusAccess.getStatus", return_value=system_status.SystemStatus.DATA_UPDATE)
+    response = client.get(f'{prefix}/items/analysis/')
+    assert response.status_code == 200
+    is_html(response.text)
+    assert LogAnalysisError.DATA_IS_BEING_UPDATED.value in response.text
 
 def test_read_users_analysis(test_db):
     db_test_data.add_analysis_data_set_1(test_db)

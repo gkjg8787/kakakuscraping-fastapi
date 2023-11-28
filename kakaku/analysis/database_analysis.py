@@ -51,6 +51,7 @@ class AnalysisKeyName:
     STORE_PER_URL = "store_per_url"
 
 class LogAnalysisError(Enum):
+    DATA_IS_BEING_UPDATED = "データが更新中です"
     DATA_IS_ZERO = "分析対象のログが存在しません"
     DICT_IS_ZERO = "分析対象のログが存在しません"
     NO_EXIST_DATETIME = "対象期間のログが取得できません"
