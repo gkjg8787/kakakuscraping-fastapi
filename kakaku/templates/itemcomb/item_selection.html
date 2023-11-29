@@ -2,10 +2,40 @@
 
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/selectitem.css') }}" type="text/css">
     <title>価格計算の対象アイテムの選択</title>
 {% endblock %}
 
 {% block body %}
+    <script type="text/javascript">
+        const checkMax = Number('{{ ITEM_LIMIT }}');
+        const checkBoxes = document.getElementsByName('{{ ITEMID_Q_NAME }}');
+        let checkcountview = document.getElementsByClassName('select_item_count')
+
+        function checkCount(target) {
+            let checkCount = 0;
+            checkBoxes.forEach(checkBox => {
+                if (checkBox.checked) {
+                checkCount++;
+                }
+            });
+            if (checkCount > checkMax) {
+                alert(`最大${checkMax}つまで`);
+                target.checked = false;
+                checkCount--;
+            }
+            checkcountview[0].innerText = `${checkCount}/${checkMax}`
+        }
+
+        
+        window.onload = function () {
+            checkBoxes.forEach(checkBox => {
+                checkBox.addEventListener('change', () => {
+                    checkCount(checkBox);
+                })
+            });
+        }
+    </script>
     <h1>価格計算の対象アイテムの選択</h1>
     <p>
         選択したアイテムから最適な店での購入の組み合わせを作成します。
@@ -45,6 +75,7 @@
     {%- include "users/item_store_filter.html" %}
     {%- endwith %}
     </p>
+    <div class="select_item_count">0/{{ ITEM_LIMIT }}</div>
     <form method="get" action="{{ url_for('read_input_shop_shipping_condition') }}">
         <table class='recent_table'>
         <tr>

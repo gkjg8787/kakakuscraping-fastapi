@@ -1,0 +1,10 @@
+.select_item_count {
+    position: fixed;
+    bottom: 0;
+    right: 20px;
+    margin: 10px;
+    background-color: #000;
+    opacity: .5;
+    font-size: 21px;
+    width: auto;
+}
