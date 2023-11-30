@@ -23,6 +23,8 @@ class FilterQueryName(AutoLowerName):
     USORT = auto()
     EX_STORE = auto()
     ESSORT = auto()
+    PRMIN = auto()
+    PRMAX = auto()
 
 @unique
 class ActFilterName(Enum):

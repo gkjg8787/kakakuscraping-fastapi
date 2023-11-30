@@ -1,4 +1,4 @@
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Optional
 import re
 from enum import Enum
 import json
@@ -48,6 +48,10 @@ class ItemSelectionContext(BaseTemplateValue):
     ITEM_LIMIT :int = 0
     STOCK_NAME :str = filter_name.FilterQueryName.ZAIKO.value
     STOCK_VALUE :int = filter_name.FilterOnOff.ON
+    MIN_PRICE_RANGE_NAME :str = filter_name.FilterQueryName.PRMIN.value
+    MAX_PRICE_RANGE_NAME :str = filter_name.FilterQueryName.PRMAX.value
+    MIN_PRICE_RANGE :Optional[int] = None
+    MAX_PRICE_RANGE :Optional[int] = None
 
     def __init__(self, request, nfq :ppi.NewestFilterQuery, db :Session):
         fd = nfq.get_filter_dict()
@@ -75,6 +79,11 @@ class ItemSelectionContext(BaseTemplateValue):
                 return filter_name.FilterDefault.GID
             
             self.fquery[filter_name.FilterQueryName.GID.value] = get_exist_gid(gid)
+
+        if filter_name.FilterQueryName.PRMIN.value in self.fquery:
+            self.MIN_PRICE_RANGE = int(self.fquery[filter_name.FilterQueryName.PRMIN.value])
+        if filter_name.FilterQueryName.PRMAX.value in self.fquery:
+            self.MAX_PRICE_RANGE = int(self.fquery[filter_name.FilterQueryName.PRMAX.value])
 
 class OperatorName(Enum):
     GT = ("gt", "<")

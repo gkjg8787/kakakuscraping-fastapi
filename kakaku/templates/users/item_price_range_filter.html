@@ -1,0 +1,11 @@
+<form method="get" action="">
+    <div class="item_price_range_filter_box">
+    価格の範囲 : <input type="number" name="{{ MIN_PRICE_RANGE_NAME }}" value="{{ MIN_PRICE_RANGE }}"> ～ <input type="number" name="{{ MAX_PRICE_RANGE_NAME }}" value="{{ MAX_PRICE_RANGE }}">
+    <button type="submit">価格範囲で抽出</button>
+    </div>
+    {% for k, v in fquery.items() %}
+        {% if k != MIN_PRICE_RANGE_NAME and k != MAX_PRICE_RANGE_NAME and v != "" %}
+        <input type="hidden" name="{{ k }}" value="{{ v}}">
+        {% endif %}
+    {% endfor %}
+</form>

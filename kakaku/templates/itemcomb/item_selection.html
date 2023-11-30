@@ -75,6 +75,19 @@
     {%- include "users/item_store_filter.html" %}
     {%- endwith %}
     </p>
+    <p>
+    {%- with
+        MIN_PRICE_RANGE_NAME = MIN_PRICE_RANGE_NAME,
+        MIN_PRICE_RANGE = MIN_PRICE_RANGE,
+        MAX_PRICE_RANGE_NAME = MAX_PRICE_RANGE_NAME,
+        MAX_PRICE_RANGE = MAX_PRICE_RANGE,
+        storelist = storelist,
+        fquery = fquery
+    %}
+    {%- include "users/item_price_range_filter.html" %}
+    {%- endwith %} 
+    </p>
+    <p>
     <div class="select_item_count">0/{{ ITEM_LIMIT }}</div>
     <form method="get" action="{{ url_for('read_input_shop_shipping_condition') }}">
         <table class='recent_table'>

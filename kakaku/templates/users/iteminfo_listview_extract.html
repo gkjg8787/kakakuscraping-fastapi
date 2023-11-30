@@ -100,6 +100,18 @@
         {%- endwith %}
         </p>
         <p>
+            {%- with
+                MIN_PRICE_RANGE_NAME = MIN_PRICE_RANGE_NAME,
+                MIN_PRICE_RANGE = MIN_PRICE_RANGE,
+                MAX_PRICE_RANGE_NAME = MAX_PRICE_RANGE_NAME,
+                MAX_PRICE_RANGE = MAX_PRICE_RANGE,
+                storelist = storelist,
+                fquery = fquery
+            %}
+            {%- include "users/item_price_range_filter.html" %}
+            {%- endwith %} 
+            </p>
+        <p>
             <form method="get" action="{{ url_for('read_users') }}">
                 <button type="submit">アイテム一覧へ戻る</button>
                 {% for k, v in fquery.items() %}

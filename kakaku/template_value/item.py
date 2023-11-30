@@ -75,6 +75,10 @@ class NewestItemList(BaseTemplateValue):
     return_user :str = filter_name.FilterOnOff.ON
     STOCK_NAME :str = filter_name.FilterQueryName.ZAIKO.value
     STOCK_VALUE :int = filter_name.FilterOnOff.ON
+    MIN_PRICE_RANGE_NAME :str = filter_name.FilterQueryName.PRMIN.value
+    MAX_PRICE_RANGE_NAME :str = filter_name.FilterQueryName.PRMAX.value
+    MIN_PRICE_RANGE :Optional[int] = None
+    MAX_PRICE_RANGE :Optional[int] = None
 
     def __init__(self, request, nfq :ppi.NewestFilterQuery, db :Session):
         fd = nfq.get_filter_dict()
@@ -102,6 +106,11 @@ class NewestItemList(BaseTemplateValue):
                 return filter_name.FilterDefault.GID
             
             self.fquery[filter_name.FilterQueryName.GID.value] = get_exist_gid(gid)
+
+        if filter_name.FilterQueryName.PRMIN.value in self.fquery:
+            self.MIN_PRICE_RANGE = int(self.fquery[filter_name.FilterQueryName.PRMIN.value])
+        if filter_name.FilterQueryName.PRMAX.value in self.fquery:
+            self.MAX_PRICE_RANGE = int(self.fquery[filter_name.FilterQueryName.PRMAX.value])
 
 class UpdateAllItemUrlPostContext(BaseTemplateValue):
     updateSuccess :bool = False
@@ -572,6 +581,10 @@ class EditGroupContext(BaseTemplateValue):
     POST_GROUP_ITEM_LIST : str = filter_name.TemplatePostName.GROUP_ITEM_LIST.value
     STOCK_NAME :str = filter_name.FilterQueryName.ZAIKO.value
     STOCK_VALUE :int = filter_name.FilterOnOff.ON
+    MIN_PRICE_RANGE_NAME :str = filter_name.FilterQueryName.PRMIN.value
+    MAX_PRICE_RANGE_NAME :str = filter_name.FilterQueryName.PRMAX.value
+    MIN_PRICE_RANGE :Optional[int] = None
+    MAX_PRICE_RANGE :Optional[int] = None
 
     def __init__(self, request, nfqg :ppi.NewestFilterQueryForGroup, db :Session):
         fd = nfqg.get_filter_dict()
@@ -596,6 +609,11 @@ class EditGroupContext(BaseTemplateValue):
             self.gfid = self.fquery[filter_name.FilterQueryName.GID.value]
             newest_list = NewestQuery.get_newest_data_for_edit_group(db, filter=fd)
             self.res = self.get_newest_list_add_seleted(db, newest_list=newest_list, group_id=self.gfid)
+        
+        if filter_name.FilterQueryName.PRMIN.value in self.fquery:
+            self.MIN_PRICE_RANGE = int(self.fquery[filter_name.FilterQueryName.PRMIN.value])
+        if filter_name.FilterQueryName.PRMAX.value in self.fquery:
+            self.MAX_PRICE_RANGE = int(self.fquery[filter_name.FilterQueryName.PRMAX.value])
 
     def get_newest_list_add_seleted(self, db :Session, newest_list, group_id :int):
         gi_list = GroupQuery.get_group_item_by_group_id(db, group_id=group_id)
@@ -852,6 +870,10 @@ class ExtractStoreItemListContext(BaseTemplateValue):
     return_user :str = filter_name.FilterOnOff.ON
     STOCK_NAME :str = filter_name.FilterQueryName.ZAIKO.value
     STOCK_VALUE :int = filter_name.FilterOnOff.ON
+    MIN_PRICE_RANGE_NAME :str = filter_name.FilterQueryName.PRMIN.value
+    MAX_PRICE_RANGE_NAME :str = filter_name.FilterQueryName.PRMAX.value
+    MIN_PRICE_RANGE :Optional[int] = None
+    MAX_PRICE_RANGE :Optional[int] = None
 
     def __init__(self, request, esfq :ppi.ExtractStoreFilterQuery, db :Session):
         fd = esfq.get_filter_dict()
@@ -878,6 +900,11 @@ class ExtractStoreItemListContext(BaseTemplateValue):
                 return filter_name.FilterDefault.GID
             
             self.fquery[filter_name.FilterQueryName.GID.value] = get_exist_gid(gid)
+        
+        if filter_name.FilterQueryName.PRMIN.value in self.fquery:
+            self.MIN_PRICE_RANGE = int(self.fquery[filter_name.FilterQueryName.PRMIN.value])
+        if filter_name.FilterQueryName.PRMAX.value in self.fquery:
+            self.MAX_PRICE_RANGE = int(self.fquery[filter_name.FilterQueryName.PRMAX.value])
 
     @staticmethod
     def get_extract_storename_newest_data(db :Session, filter :dict):

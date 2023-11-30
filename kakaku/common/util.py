@@ -27,3 +27,10 @@ def isToday(targettime :datetime) -> bool:
     if targettime.date() == today:
         return True
     return False
+
+def is_num(val :str) -> bool:
+    try:
+        float(val)
+    except ValueError:
+        return False
+    return True

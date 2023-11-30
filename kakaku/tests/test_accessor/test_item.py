@@ -259,7 +259,7 @@ def test_get_newest_data_no_data_filter_isort_high_trendrate(test_db):
     results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
     assert len(results) == 0
 
-def test_get_newest_data_no_data_filter_isort_high_trendrate(test_db):
+def test_get_newest_data_exist_data_filter_isort_high_trendrate(test_db):
     add_data_set_1(test_db)
     filter_dict = {filter_name.FilterQueryName.ISORT.value:filter_name.ItemSortName.HIGH_TRENDRATE.id}
     results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
@@ -281,7 +281,7 @@ def test_get_newest_data_no_data_filter_isort_new_update_time(test_db):
     results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
     assert len(results) == 0
 
-def test_get_newest_data_no_data_filter_isort_new_update_time(test_db):
+def test_get_newest_data_exist_data_filter_isort_new_update_time(test_db):
     add_data_set_1(test_db)
     filter_dict = {filter_name.FilterQueryName.ISORT.value:filter_name.ItemSortName.NEW_UPDATE_TIME.id}
     results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
@@ -298,6 +298,108 @@ def test_get_newest_data_no_data_filter_isort_new_update_time(test_db):
             continue
     delete_item_model(test_db)
 
+###############################
+# Item Price Range Filter
+###############################
+def test_get_newest_data_no_data_filter_item_price_range_min(test_db):
+    val = 0
+    filter_dict = {filter_name.FilterQueryName.PRMIN.value: val}
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 0
+
+def test_get_newest_data_exist_data_filter_item_price_range_min(test_db):
+    add_data_set_1(test_db)
+    val = 0
+    filter_dict = {filter_name.FilterQueryName.PRMIN.value: val}
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 7
+    delete_item_model(test_db)
+
+def test_get_newest_data_exist_data_filter_item_price_range_min_bad_value(test_db):
+    add_data_set_1(test_db)
+    val = -2
+    filter_dict = {filter_name.FilterQueryName.PRMIN.value: val}
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 8
+    delete_item_model(test_db)
+
+def test_get_newest_data_no_data_filter_item_price_range_max(test_db):
+    val = 0
+    filter_dict = {filter_name.FilterQueryName.PRMAX.value: val}
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 0
+
+def test_get_newest_data_exist_data_filter_item_price_range_max(test_db):
+    add_data_set_1(test_db)
+    val = 3000
+    filter_dict = {filter_name.FilterQueryName.PRMAX.value: val}
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 6
+    delete_item_model(test_db)
+
+def test_get_newest_data_no_data_filter_item_price_range_min_and_max(test_db):
+    minv = 0
+    maxv = 1
+    filter_dict = {
+        filter_name.FilterQueryName.PRMIN.value: minv,
+        filter_name.FilterQueryName.PRMAX.value: maxv,
+        }
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 0
+
+def test_get_newest_data_exist_data_filter_item_price_range_min_and_max_eq(test_db):
+    add_data_set_1(test_db)
+    minv = 1500
+    maxv = 1500
+    filter_dict = {
+        filter_name.FilterQueryName.PRMIN.value: minv,
+        filter_name.FilterQueryName.PRMAX.value: maxv,
+        }
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 1
+    delete_item_model(test_db)
+
+def test_get_newest_data_exist_data_filter_item_price_range_min_and_max_range(test_db):
+    add_data_set_1(test_db)
+    minv = 1000
+    maxv = 2000
+    filter_dict = {
+        filter_name.FilterQueryName.PRMIN.value: minv,
+        filter_name.FilterQueryName.PRMAX.value: maxv,
+        }
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 4
+    delete_item_model(test_db)
+
+def test_get_newest_data_exist_data_filter_item_price_range_min_and_max_range_ng(test_db):
+    add_data_set_1(test_db)
+    minv = 1000
+    maxv = 900
+    filter_dict = {
+        filter_name.FilterQueryName.PRMIN.value: minv,
+        filter_name.FilterQueryName.PRMAX.value: maxv,
+        }
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 8
+    delete_item_model(test_db)
+
+def test_get_newest_data_exist_data_filter_item_price_range_min_and_max_min_ng(test_db):
+    add_data_set_1(test_db)
+    minv = -2
+    maxv = 2000
+    filter_dict = {
+        filter_name.FilterQueryName.PRMIN.value: minv,
+        filter_name.FilterQueryName.PRMAX.value: maxv,
+        }
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 5
+    delete_item_model(test_db)
+
+
+
+###############################
+# Item Comb list
+###############################
 def test_get_url_and_item_comb_list_no_data_filter_none(test_db):
     filter_dict = {}
     results = UrlQuery.get_url_and_item_comb_list(test_db, filter=filter_dict)

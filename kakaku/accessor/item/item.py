@@ -122,6 +122,7 @@ class NewestQuery:
         stmt = cls.__set_act_filter(filter, stmt)
         stmt = cls.__set_in_stock_filter(filter, stmt)
         stmt = cls.__set_eq_storename(filter, stmt)
+        stmt = cls.__set_price_range_filter(filter, stmt)
         stmt = cls.__set_itemsort_filter(filter, stmt)
         return db.execute(stmt).all()
     
@@ -138,6 +139,7 @@ class NewestQuery:
         stmt = cls.__set_act_filter(filter, stmt)
         stmt = cls.__set_in_stock_filter(filter, stmt)
         stmt = cls.__set_eq_storename(filter, stmt)
+        stmt = cls.__set_price_range_filter(filter, stmt)
         stmt = cls.__set_itemsort_filter(filter, stmt)
         return stmt
 
@@ -237,6 +239,31 @@ class NewestQuery:
                 )
         return stmt
     
+    @classmethod
+    def __set_price_range_filter(cls, filter:dict, stmt):
+        if fqn.PRMIN.value in filter.keys() \
+            and fqn.PRMAX.value in filter.keys():
+            min = int(filter[fqn.PRMIN.value])
+            max = int(filter[fqn.PRMAX.value])
+            if min == max:
+                stmt = (stmt.where(NewestItem.newestprice == min))
+                return stmt
+            if min > max:
+                return stmt
+            stmt = (stmt
+                    .where(NewestItem.newestprice >= min)
+                    .where(NewestItem.newestprice <= max)
+                    )
+            return stmt
+        if fqn.PRMIN.value in filter.keys():
+            stmt = (stmt.where(NewestItem.newestprice >= int(filter[fqn.PRMIN.value])))
+            return stmt
+        if fqn.PRMAX.value in filter.keys():
+            stmt = (stmt.where(NewestItem.newestprice <= int(filter[fqn.PRMAX.value])))
+            return stmt
+        return stmt
+
+
     @classmethod
     def add_item(cls,
                  item_name :str,
@@ -357,6 +384,10 @@ class NewestQuery:
                                                               stmt=stmt,
                                                               unionprice=unionprice
                                                               )
+        stmt = cls.__set_price_range_filter_for_storename_newest(filter=filter,
+                                                                      stmt=stmt,
+                                                                      unionprice=unionprice
+                                                                      )
         stmt = cls.__set_extract_sort_filter(filter=filter,
                                              stmt=stmt,
                                              unionprice=unionprice
@@ -509,7 +540,31 @@ class NewestQuery:
             or int(filter[fqn.ZAIKO.value]) != FilterOnOff.ON:
             return stmt
         return stmt.where(unionprice.c.price > const_value.INIT_PRICE)
-
+    
+    @classmethod
+    def __set_price_range_filter_for_storename_newest(cls, filter:dict, stmt, unionprice):
+        if fqn.PRMIN.value in filter.keys() \
+            and fqn.PRMAX.value in filter.keys():
+            min = int(filter[fqn.PRMIN.value])
+            max = int(filter[fqn.PRMAX.value])
+            if min == max:
+                stmt = (stmt.where(unionprice.c.price == min))
+                return stmt
+            if min > max:
+                return stmt
+            stmt = (stmt
+                    .where(unionprice.c.price >= min)
+                    .where(unionprice.c.price <= max)
+                    )
+            return stmt
+        if fqn.PRMIN.value in filter.keys():
+            stmt = (stmt.where(unionprice.c.price >= int(filter[fqn.PRMIN.value])))
+            return stmt
+        if fqn.PRMAX.value in filter.keys():
+            stmt = (stmt.where(unionprice.c.price <= int(filter[fqn.PRMAX.value])))
+            return stmt
+        return stmt
+    
 class GroupQuery:
 
     @classmethod

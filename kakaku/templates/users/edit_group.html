@@ -52,6 +52,19 @@
     {%- include "users/item_sort_filter.html" %}
     {%- endwith %}
     </p>
+    <p>
+    {%- with
+        MIN_PRICE_RANGE_NAME = MIN_PRICE_RANGE_NAME,
+        MIN_PRICE_RANGE = MIN_PRICE_RANGE,
+        MAX_PRICE_RANGE_NAME = MAX_PRICE_RANGE_NAME,
+        MAX_PRICE_RANGE = MAX_PRICE_RANGE,
+        storelist = storelist,
+        fquery = fquery
+    %}
+    {%- include "users/item_price_range_filter.html" %}
+    {%- endwith %} 
+    </p>
+    <p>
     <form method="post" action="{{ url_for('read_users_groups_edit_update') }}">
         <table class='recent_table'>
         <tr>

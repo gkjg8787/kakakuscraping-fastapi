@@ -636,7 +636,7 @@ def test_read_users_analysis_no_log(test_db):
     assert LogAnalysisError.DICT_IS_ZERO.value in response.text
     drop_test_db()
 
-def test_read_users_analysis_data_update(mocker):
+def test_read_users_analysis_data_update(test_db, mocker):
     m = mocker.patch("proc.system_status.SystemStatusAccess.getStatus", return_value=system_status.SystemStatus.DATA_UPDATE)
     response = client.get(f'{prefix}/items/analysis/')
     assert response.status_code == 200

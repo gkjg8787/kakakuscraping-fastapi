@@ -15,6 +15,7 @@ from common.filter_name import (
 from common.templates_string import HTMLOption
 
 from common import const_value
+from common.util import is_num
 from accessor.item import GroupQuery
 from sqlalchemy.orm import Session
 
@@ -30,6 +31,8 @@ class NewestFilterQuery():
     store :str = ""
     isort :str = ""
     zaiko :str = ""
+    prmin :str = ""
+    prmax :str = ""
     cfilter_str :str = ""
 
     is_c_able :bool = False
@@ -40,6 +43,8 @@ class NewestFilterQuery():
                  store :str = "",
                  isort :str = "",
                  zaiko :str = "",
+                 prmin :str = "",
+                 prmax :str = "",
                  cfilter_str :Optional[str] = Cookie(None),
                  ):
         if (not gid 
@@ -47,18 +52,28 @@ class NewestFilterQuery():
             and not store
             and not isort
             and not zaiko
+            and not prmin
+            and not prmax
             ) \
             and cfilter_str:
                 self.set_cookie_query(cfilter_str)
         else:
-            self.set_query(gid, act, store, isort, zaiko)
+            self.set_query(gid=gid,
+                           act=act,
+                           store=store,
+                           isort=isort,
+                           zaiko=zaiko,
+                           prmin=prmin,
+                           prmax=prmax)
         
     def set_query(self,
                   gid :str="",
                   act :str="",
                   store :str="",
                   isort :str="",
-                  zaiko :str=""
+                  zaiko :str="",
+                  prmin :str="",
+                  prmax :str="",
                   ):
         if is_valid_id(gid):
             self.gid = gid
@@ -72,6 +87,14 @@ class NewestFilterQuery():
             self.isort = isort
         if zaiko and zaiko.isdigit() and int(zaiko) == FilterOnOff.ON:
             self.zaiko = zaiko
+        if prmin and is_num(prmin) and int(prmin) >= const_value.INIT_PRICE:
+            self.prmin = prmin
+        if prmax and is_num(prmax) and int(prmax) >= const_value.INIT_PRICE:
+            while True:
+                if self.prmin and int(self.prmin) > int(prmax):
+                    break
+                self.prmax = prmax
+                break
     
     def set_cookie_query(self, cfilter_str:str):
         dic = self.queryToDict(cfilter_str)
@@ -122,6 +145,10 @@ class NewestFilterQuery():
             results[FilterQueryName.ISORT.value] = self.isort
         if self.zaiko:
             results[FilterQueryName.ZAIKO.value] = self.zaiko
+        if self.prmin:
+            results[FilterQueryName.PRMIN.value] = self.prmin
+        if self.prmax:
+            results[FilterQueryName.PRMAX.value] = self.prmax
         return results
 
 class ItemDetailQuery():
@@ -525,6 +552,8 @@ class ExtractStoreFilterQuery:
     ex_store :str = ""
     essort :str = ""
     zaiko :str = ""
+    prmin :str = ""
+    prmax :str = ""
 
     def __init__(self,
                  gid :str = "",
@@ -532,7 +561,9 @@ class ExtractStoreFilterQuery:
                  ex_store :str = "",
                  store :str = "",
                  essort :str = "",
-                 zaiko :str = ""
+                 zaiko :str = "",
+                 prmin :str = "",
+                 prmax :str = "",
                  ):
         
         if is_valid_id(gid):
@@ -549,6 +580,14 @@ class ExtractStoreFilterQuery:
             self.essort = essort
         if zaiko and zaiko.isdigit() and int(zaiko) == FilterOnOff.ON:
             self.zaiko = zaiko
+        if prmin and is_num(prmin) and int(prmin) >= const_value.INIT_PRICE:
+            self.prmin = prmin
+        if prmax and is_num(prmax) and int(prmax) >= const_value.INIT_PRICE:
+            while True:
+                if self.prmin and int(self.prmin) > int(prmax):
+                    break
+                self.prmax = prmax
+                break
 
     
     def get_filter_dict(self) -> Dict:
@@ -563,6 +602,10 @@ class ExtractStoreFilterQuery:
             results[FilterQueryName.ESSORT.value] = self.essort
         if self.zaiko:
             results[FilterQueryName.ZAIKO.value] = self.zaiko
+        if self.prmin:
+            results[FilterQueryName.PRMIN.value] = self.prmin
+        if self.prmax:
+            results[FilterQueryName.PRMAX.value] = self.prmax
         return results
 
 def get_in_stock_filter_checked(f :dict) -> str:
