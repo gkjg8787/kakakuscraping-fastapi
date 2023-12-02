@@ -1,0 +1,17 @@
+textarea.system_status_log {
+    resize: none;
+    min-width: 150px;
+    max-width: 350px;
+    width: 100%;
+    min-height: 150px;
+    max-height: 250px;
+    height: 40%;
+    overflow: auto; 
+}
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    textarea.system_status_log {
+        background-color: black;
+        color: white;
+    }
+  }

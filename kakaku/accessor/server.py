@@ -1,16 +1,18 @@
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 
 from model.server import (
+    DBVersion,
     ProcStatus,
-    ProcStatusLog,
     OrganizeLog,
     AutoUpdateSchedule,
+    SystemStatusLog,
 )
 from sqlalchemy import (
     select,
     delete,
     update,
+    func,
 )
 from sqlalchemy.orm import Session
 
@@ -105,5 +107,86 @@ class AutoUpdateScheduleQuery:
     @staticmethod
     def delete_schedules(db :Session):
         stmt = ( delete(AutoUpdateSchedule) )
+        db.execute(stmt)
+        db.commit()
+
+class DBVersionQuery:
+    @classmethod
+    def get_version(cls, db :Session):
+        stmt = ( select(DBVersion) )
+        return db.scalar(stmt)
+    
+    @classmethod
+    def set_version(cls, db :Session, new_v :DBVersion):
+        v = cls.get_version(db)
+        if v:
+            stmt = ( update(DBVersion)
+                    .where(DBVersion.id == v.id)
+                    .values(major=new_v.major,
+                            minor=new_v.minor,
+                            patch=new_v.patch)
+                    )
+            db.excute(stmt)
+            db.commit()
+            return
+        db.add(new_v)
+        db.commit()
+        db.refresh(new_v)
+
+class SystemStatusLogQuery:
+    @classmethod
+    def add(cls, db :Session, status :str):
+        syssts = SystemStatusLog(status=status)
+        db.add(syssts)
+        db.commit()
+        db.refresh(syssts)
+    
+    @classmethod
+    def add_check_pre_status(cls, db :Session, status :str):
+        newest = cls.get_newest_log(db)
+        if newest and newest.status == status:
+            return
+        cls.add(db=db, status=status)
+    
+    @classmethod
+    def get_newest_log(cls, db :Session):
+        stmt = ( select(SystemStatusLog)
+                .order_by(SystemStatusLog.created_at.desc(), SystemStatusLog.log_id.desc())
+                .limit(1)
+                )
+        return db.scalar(stmt)
+    
+    @classmethod
+    def get_all(cls, db :Session) -> Optional[SystemStatusLog]:
+        stmt = ( select(SystemStatusLog)
+                .order_by(SystemStatusLog.created_at.desc(), SystemStatusLog.log_id.desc())
+                )
+        return db.scalars(stmt).all()
+    
+    @classmethod
+    def get_count_log(cls, db :Session):
+        stmt = ( select(func.count(SystemStatusLog.log_id)))
+        return db.scalar(stmt)
+    
+    @classmethod
+    def get_old_log(cls, db :Session, limit=-1):
+        stmt = ( select(SystemStatusLog)
+                .order_by(SystemStatusLog.created_at.asc(), SystemStatusLog.log_id.asc())
+                )
+        if limit > 0:
+            stmt = stmt.limit(limit)
+        return db.scalars(stmt).all()
+        
+    @classmethod
+    def delete_amount_over_limit(cls, db :Session, limit :int):
+        elem_cnt = cls.get_count_log(db)
+        if limit >= elem_cnt:
+            return
+        del_cnt = elem_cnt - limit
+        del_targets = cls.get_old_log(db=db, limit=del_cnt)
+        del_target_ids = [t.log_id for t in del_targets]
+        stmt = ( delete(SystemStatusLog)
+                .where(SystemStatusLog.log_id.in_(del_target_ids))
+                )
         db.execute(stmt)
         db.commit()

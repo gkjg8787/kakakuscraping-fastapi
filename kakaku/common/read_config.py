@@ -51,3 +51,9 @@ def is_auto_update_item():
 
 def get_auto_update_time():
     return settings.AUTO_UPDATE_TIME
+
+def get_db_version():
+    return settings.DB_VERSION
+
+def get_system_status_log_max():
+    return settings.SYSTEM_STATUS_LOG_MAX

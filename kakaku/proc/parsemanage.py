@@ -6,10 +6,10 @@ from multiprocessing import Process
 from common import cmnlog
 from proc import getAndWrite
 
-from proc import db_organizer
 
 from proc.proc_status import ProcName
-from proc import manager_util
+from proc import manager_util, scrapingmanage as scm
+from proc.sendcmd import ScrOrder
 
 from accessor.read_sqlalchemy import get_session
 
@@ -57,12 +57,18 @@ class ParseProc:
             if (task == None):
                 if is_parse:
                     is_parse = False
+                    logger.info(get_filename() + " sendTask "+ ScrOrder.DB_ORGANIZE_SYNC)
+                    scm.sendTask(ScrOrder.DB_ORGANIZE_SYNC, "", "")
+                    logger.info(get_filename() + " sendTask "+ ScrOrder.DB_ORGANIZE_LOG_2DAYS_CLEANER)
+                    scm.sendTask(ScrOrder.DB_ORGANIZE_LOG_2DAYS_CLEANER, "", "")
+                    '''
                     logger.info(get_filename() + " start db_organizer sync")
                     db_organizer.start_func(db, orgcmd=db_organizer.DBOrganizerCmd.SYNC_PRICELOG)
                     logger.info(get_filename() + " end db_organizer sync")
                     logger.info(get_filename() + " start db_organizer pricelog_2days cleaner")
                     db_organizer.start_func(db, orgcmd=db_organizer.DBOrganizerCmd.PRICELOG_2DAYS_CLEANER)
                     logger.info(get_filename() + " end db_organizer pricelog_2days cleaner")
+                    '''
                 else:
                     manager_util.writeProcWaiting(db, psa=psa)
                     time.sleep(0.1)

@@ -3,6 +3,7 @@
 {% block head %}
     <title>管理画面</title>
     <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/controlpanel.css') }}" type="text/css">
 {% endblock %}
 
 {% block body %}
@@ -16,6 +17,9 @@
         {% endfor %}
     </div>
     {% endif %}
+    <div class="system_status_log_box">
+        <textarea class="system_status_log" readonly>{{ sysstatuslog }}</textarea>
+    </div>
     <h2>操作</h2>
     {% if updatemsg %}
         <p>{{ updatemsg }}</p>

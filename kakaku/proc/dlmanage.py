@@ -8,7 +8,7 @@ from urllib.parse import urlparse
 from downloader import download_html
 from common import cmnlog
 from common.read_config import get_back_server_queue_timeout
-from proc.proc_status import ProcStatusAccess, ProcName
+from proc.proc_status import ProcName
 
 from accessor.read_sqlalchemy import get_session
 from proc import manager_util

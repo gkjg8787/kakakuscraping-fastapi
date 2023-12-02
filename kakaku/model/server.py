@@ -13,6 +13,14 @@ class Base(DeclarativeBase):
             dic[col.name] = getattr(self, col.name)
         return dic
 
+class DBVersion(Base):
+    __tablename__ = "db_version"
+
+    id : Mapped[int] = mapped_column(primary_key=True)
+    major : Mapped[int]
+    minor : Mapped[int]
+    patch : Mapped[int]
+
 class ProcStatus(Base):
     __tablename__ = "proc_status"
 
@@ -32,15 +40,15 @@ class ProcStatus(Base):
                             f", created_at={self.created_at!r}, updated_at={self.updated_at!r}"
                             ")" )
 
-class ProcStatusLog(Base):
-    __tablename__ = "proc_status_log"
+class SystemStatusLog(Base):
+    __tablename__ = "system_status_log"
 
     log_id: Mapped[int] = mapped_column(primary_key=True)
     status: Mapped[str]
     created_at: Mapped[datetime] = mapped_column(server_default=func.CURRENT_TIMESTAMP())
 
     def __repr__(self) -> str:
-        return ( f"ProcStatusLog(log_id={self.log_id!r}, status={self.status!r}, created_at={self.created_at!r}")
+        return ( f"SystemStatusLog(log_id={self.log_id!r}, status={self.status!r}, created_at={self.created_at!r}")
 
 class OrganizeLog(Base):
     __tablename__ = "organizelog"

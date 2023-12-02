@@ -14,9 +14,15 @@ from common.filter_name import (
     SystemCtrlBtnName,
     DashBoardPostName,
 )
+from common.util import utcTolocaltime
 from proc.auto_update import AutoUpdateOnOff
 from model.server import AutoUpdateSchedule
 from accessor.server import AutoUpdateScheduleQuery
+from proc.system_status_log import SystemStatusLogAccess
+
+
+
+SYSTEM_STS_LOG_DEFAULT = "表示するログがありません"
 
 class DashBoardTemplate(BaseTemplateValue):
     system_ctrl_btn_name :str = DashBoardPostName.SYSTEM_CTRL_BTN.value
@@ -27,6 +33,7 @@ class DashBoardTemplate(BaseTemplateValue):
     sysstop :bool = True
     autoupdate :str = AutoUpdateOnOff.OFF.jname
     autoupdate_schedule :list[AutoUpdateSchedule] = []
+    sysstatuslog :str = SYSTEM_STS_LOG_DEFAULT
 
     def __init__(self, request, db :Session):
         super().__init__(request=request)
@@ -40,6 +47,18 @@ class DashBoardTemplate(BaseTemplateValue):
         if is_auto_update_item():
             self.autoupdate = AutoUpdateOnOff.ON.jname
             self.autoupdate_schedule = AutoUpdateScheduleQuery.get_schedules(db)
+        
+        self.sysstatuslog = self.get_system_status_log_text(db)
+
+    @classmethod
+    def get_system_status_log_text(cls, db :Session) -> str:
+        sysstslogs = SystemStatusLogAccess.get_all(db=db)
+        printlogs :list[str] = []
+        for log in sysstslogs:
+            printlogs.append(f"{utcTolocaltime(log.created_at)} : {log.status}")
+        if len(printlogs) > 0:
+            return "\n".join(printlogs)
+        return SYSTEM_STS_LOG_DEFAULT
 
 class BackServerCtrl:
     CMD_NAME = "proc_manage.py"

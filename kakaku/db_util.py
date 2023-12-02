@@ -1,32 +1,12 @@
 import sys
 import argparse
-from enum import Enum
-
-from model import item, store, server
-from accessor.read_sqlalchemy import getEngine, get_old_db_engine
-
-def createDB():
-    print("create all table")
-    eng = getEngine()
-    item.Base.metadata.create_all(eng)
-    store.Base.metadata.create_all(eng)
-    server.Base.metadata.create_all(eng)
-    
-    old_db_eng = get_old_db_engine()
-    item.Base.metadata.create_all(old_db_eng)
-
-def removeDB():
-    print("drop all table")
-    eng = getEngine()
-    item.Base.metadata.drop_all(eng)
-    store.Base.metadata.drop_all(eng)
-    server.Base.metadata.drop_all(eng)
 
 
-class DBCommandName(Enum):
-    CREATE = 'create'
-    DROP = 'drop'
-    RECREATE = 'recreate'
+from proc.db_ctrl_util import (
+    DBCommandName,
+    createDB,
+    removeDB,
+)
 
 def parse_paramter(argv):
     parser = argparse.ArgumentParser(description='table create and drop')

@@ -35,6 +35,9 @@ LOGTEMP=f"{BASE_DIR}/tempdata/log/"
 
 SEARCHOPTION=f"/{SRC_DIR}/url_search/"
 
+DB_VERSION=(0, 1, 0)
+SYSTEM_STATUS_LOG_MAX=20
+
 AUTO_DEL_DLFILE=True
 NO_VERIFY_DOMAIN="" #"www.netoff.co.jp"
 ITEMCOMB_SELECT_LIMIT=7

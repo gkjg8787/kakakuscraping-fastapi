@@ -12,6 +12,11 @@ from common import cmnlog, util
 from proc.dlmanage import DlProc
 from proc.parsemanage import ParseProc
 from proc.proc_status import ProcStatusAccess, ProcName
+from proc.system_status_log import (
+    SystemStatusLogAccess,
+    SystemStatusLogName,
+    update_to_active_for_systemstatuslog,
+)
 from proc import manager_util
 
 from sqlalchemy.orm import Session
@@ -20,6 +25,8 @@ from accessor.read_sqlalchemy import get_session
 from common.read_config import (
     get_back_server_queue_timeout,
 )
+from accessor.server import OrganizeLogQuery
+from proc import db_organizer
 
 from proc.auto_update import UpdateTimer
 
@@ -61,6 +68,7 @@ def startQueue():
     logger.info(get_filename() + ' manager start')
     with next(get_session()) as db:
         writeProcStart(db=db)
+        SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.STARTUP)
 
     task_queue = queue.Queue()
     result_queue = queue.Queue()
@@ -80,11 +88,12 @@ def startQueue():
     endSubProc()
     with next(get_session()) as db:
         writeAllProcStop(db=db)
+        SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.STOP)
     manager.shutdown()
     logger.info(get_filename() + ' manager end')
 
 def start_db_organize(db :Session, cmdstr :str):
-    from proc import db_organizer
+    SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.DB_ORGANIZE)
     if cmdstr == sendcmd.ScrOrder.DB_ORGANIZE_DAYS:
         db_organizer.start_func(db=db, orgcmd=db_organizer.DBOrganizerCmd.ALL)
     elif cmdstr == sendcmd.ScrOrder.DB_ORGANIZE_SYNC:
@@ -99,10 +108,12 @@ def scrapingURL(task, db :Session):
     logger = getLogger(cmnlog.LogName.MANAGER)
     if task.cmdstr == sendcmd.ScrOrder.UPDATE:
         logger.info(get_filename() + ' get UPDATE')
+        SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.DATA_UPDATE)
         #dlAndParse(task.url, task.id, logger)
         dlproc.putDlTask(task.url, task.id)
         return
     if task.cmdstr == sendcmd.ScrOrder.UPDATE_ACT_ALL:
+        SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.ALL_DATA_UPDATE)
         updateAllItems.updateAllitems(db, dlproc)
         return
     if task.cmdstr == sendcmd.ScrOrder.DB_ORGANIZE_SYNC\
@@ -111,8 +122,6 @@ def scrapingURL(task, db :Session):
         return
 
 def check_db_organize(db :Session):
-    from accessor.server import OrganizeLogQuery
-    from proc import db_organizer
     ret = OrganizeLogQuery.get_log(db, name=db_organizer.DBOrganizerCmd.PRICELOG_CLEANER.name)
     if not ret \
         or (ret and not util.isLocalToday(util.utcTolocaltime(ret.created_at))):
@@ -126,6 +135,7 @@ def waitTask(task, result, db :Session):
     manager_util.writeProcActive(db, psa=psa)
     check_db_organize(db)
     manager_util.writeProcWaiting(db, psa=psa)
+    SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.ACTIVE)
     uptimer = UpdateTimer(db=db, logger=logger)
     while True:
         try:
@@ -144,6 +154,7 @@ def waitTask(task, result, db :Session):
         except queue.Empty:
             if not psa.getStatus() == ProcStatusAccess.WAITING:
                 manager_util.writeProcWaiting(db, psa=psa)
+            update_to_active_for_systemstatuslog(db=db)
             uptimer.run(db=db)
             time.sleep(0.1)
 
