@@ -398,7 +398,7 @@ class SearchShippingContext(BaseTemplateValue):
     sword :str = ""
     pref_list :List[str] = []
     search_result :List = []
-    errmsg = ""
+    errmsg :str = ""
 
     def __init__(self, request, ssq :ppc.SearchShippingQuery):
         super().__init__(request=request)

@@ -11,6 +11,7 @@ from common.filter_name import (
     FilterOnOff,
     UrlSortName,
     ExtractStoreSortName,
+    TemplatePostName,
 )
 from common.templates_string import HTMLOption
 
@@ -438,19 +439,18 @@ class GroupItemUpdateForm():
 
     def __init__(self,
                  group_id :Optional[str] = Form(None),
-                 group_item_list :Optional[List[str]]= Form(None),
                  ):
         if is_valid_id(group_id):
             self.group_id = group_id
-        if group_item_list:
-            results :List[int] = []
-            if type(group_item_list) is list:
-                for item_id in group_item_list:
-                    if is_valid_id(item_id):
-                        results.append(int(item_id))
-            elif is_valid_id(group_item_list):
-                results.append(group_item_list)
-            self.group_item_list = results
+
+    def set_group_item_list(self, form_dict :Dict[str, List]):
+        if not TemplatePostName.GROUP_ITEM_LIST.value in form_dict:
+            return
+        results :List[int] = []
+        for item_id in form_dict[TemplatePostName.GROUP_ITEM_LIST.value]:
+            if is_valid_id(item_id):
+                results.append(item_id)
+        self.group_item_list = results
     
     def is_valid(self):
         if self.group_id == const_value.NONE_ID:

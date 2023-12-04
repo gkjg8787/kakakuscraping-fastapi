@@ -348,10 +348,18 @@ def read_users_groups_edit(request :Request,
     )
 
 @router.post("/groups/edit/update/", response_class=HTMLResponse)
-def read_users_groups_edit_update(request :Request,
+async def read_users_groups_edit_update(request :Request,
                                   giform :ppi.GroupItemUpdateForm = Depends(),
                                   db :Session = Depends(get_session)
                                   ):
+    form_dict :dict[str, list] = {}
+    async with request.form() as fm:
+        for key in [k for k in fm.keys()]:
+            form_dict[key] = fm.getlist(key)
+
+    if len(form_dict) > 0: 
+        giform.set_group_item_list(form_dict)
+        
     ugi = template_value.item.UpdateGroupItem(giform=giform, db=db)
     
     return RedirectResponse(url=str(request.url_for("read_users_groups_edit")) + ugi.get_query()

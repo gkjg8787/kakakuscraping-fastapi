@@ -1,7 +1,7 @@
 python-multipart
 fastapi >=0.95.2, <1.0
 uvicorn
-pydantic >=1.10, <2.0
+pydantic >=2.0, <3.0
 requests >=2.31.0, <3.0
 sqlalchemy >=2.0.15, <3.0
 sqlalchemy_utils

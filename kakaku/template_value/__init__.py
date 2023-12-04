@@ -1,7 +1,6 @@
 from fastapi import Request
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class BaseTemplateValue(BaseModel):
     request: Request = None
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
