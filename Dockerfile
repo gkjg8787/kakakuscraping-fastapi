@@ -1,4 +1,4 @@
-FROM debian:bullseye
+FROM debian:bookworm
 
 RUN apt-get update
 
@@ -10,13 +10,15 @@ RUN ln -sf /usr/share/zoneinfo/Japan /etc/localtime && \
 RUN apt-get install -y python3
 
 RUN apt-get install -y \
-    python3-pip sqlite3 procps
+    python3-pip sqlite3 python3-venv procps
 
 WORKDIR /app
 
 COPY requirements.txt ./
 
-RUN pip install -r requirements.txt
+RUN python3 -m venv /app/venv && . /app/venv/bin/activate && pip install -Ur requirements.txt
+
+ENV PATH /app/venv/bin:$PATH
 
 COPY . .
 
