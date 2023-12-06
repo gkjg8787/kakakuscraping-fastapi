@@ -111,16 +111,7 @@
             {%- include "users/item_price_range_filter.html" %}
             {%- endwith %} 
             </p>
-        <p>
-            <form method="get" action="{{ url_for('read_users') }}">
-                <button type="submit">アイテム一覧へ戻る</button>
-                {% for k, v in fquery.items() %}
-                    {% if k != EXST_NAME and k != ESSORT_NAME and v != "" %}
-                    <input type="hidden" name="{{ k }}" value="{{ v}}">
-                    {% endif %}
-                {% endfor %}
-            </form>
-        </p>
+        <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
         <p><a href="{{ url_for('read_users_filter_clear') }}" class="plain-link">検索条件クリア</a></p>
     </div>
     <p>
