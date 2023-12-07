@@ -276,6 +276,28 @@ def test_get_newest_data_exist_data_filter_isort_high_trendrate(test_db):
             continue
     delete_item_model(test_db)
 
+def test_get_newest_data_no_data_filter_isort_old_update_time(test_db):
+    filter_dict = {filter_name.FilterQueryName.ISORT.value:filter_name.ItemSortName.OLD_UPDATE_TIME.id}
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 0
+
+def test_get_newest_data_exist_data_filter_isort_old_update_time(test_db):
+    add_data_set_1(test_db)
+    filter_dict = {filter_name.FilterQueryName.ISORT.value:filter_name.ItemSortName.OLD_UPDATE_TIME.id}
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 8
+    uptime = None
+    for res in results:
+        dic = { k:y for k,y in res._mapping.items()}
+        if not uptime:
+            uptime = dbtimeTodatetime(dic["created_at"])
+            continue
+        if uptime:
+            assert uptime <= dbtimeTodatetime(dic["created_at"])
+            uptime = dbtimeTodatetime(dic["created_at"])
+            continue
+    delete_item_model(test_db)
+
 def test_get_newest_data_no_data_filter_isort_new_update_time(test_db):
     filter_dict = {filter_name.FilterQueryName.ISORT.value:filter_name.ItemSortName.NEW_UPDATE_TIME.id}
     results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
@@ -295,6 +317,102 @@ def test_get_newest_data_exist_data_filter_isort_new_update_time(test_db):
         if uptime:
             assert uptime >= dbtimeTodatetime(dic["created_at"])
             uptime = dbtimeTodatetime(dic["created_at"])
+            continue
+    delete_item_model(test_db)
+
+def test_get_newest_data_no_data_filter_isort_low_lowest_price(test_db):
+    filter_dict = {filter_name.FilterQueryName.ISORT.value:filter_name.ItemSortName.LOW_LOWESTPRICE.id}
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 0
+
+def test_get_newest_data_exist_data_filter_isort_low_lowest_price(test_db):
+    add_data_set_1(test_db)
+    filter_dict = {filter_name.FilterQueryName.ISORT.value:filter_name.ItemSortName.LOW_LOWESTPRICE.id}
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 8
+    price = None
+    for res in results:
+        dic = { k:y for k,y in res._mapping.items()}
+        if not price:
+            price = int(dic["lowestprice"])
+            continue
+        if price:
+            assert price <= int(dic["lowestprice"])
+            price = int(dic["lowestprice"])
+            continue
+    delete_item_model(test_db)
+
+def test_get_newest_data_no_data_filter_isort_high_lowest_price(test_db):
+    filter_dict = {filter_name.FilterQueryName.ISORT.value:filter_name.ItemSortName.HIGH_LOWESTPRICE.id}
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 0
+
+def test_get_newest_data_exist_data_filter_isort_high_lowest_price(test_db):
+    add_data_set_1(test_db)
+    filter_dict = {filter_name.FilterQueryName.ISORT.value:filter_name.ItemSortName.HIGH_LOWESTPRICE.id}
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 8
+    price = None
+    for res in results:
+        dic = { k:y for k,y in res._mapping.items()}
+        if not price:
+            price = int(dic["lowestprice"])
+            continue
+        if price:
+            assert price >= int(dic["lowestprice"])
+            price = int(dic["lowestprice"])
+            continue
+    delete_item_model(test_db)
+
+def test_get_newest_data_no_data_filter_isort_closest_lowest_price(test_db):
+    filter_dict = {filter_name.FilterQueryName.ISORT.value:filter_name.ItemSortName.CLOSEST_LOWESTPRICE.id}
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 0
+
+def test_get_newest_data_exist_data_filter_isort_closest_lowest_price(test_db):
+    add_data_set_1(test_db)
+    filter_dict = {filter_name.FilterQueryName.ISORT.value:filter_name.ItemSortName.CLOSEST_LOWESTPRICE.id}
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 7
+
+    def get_compare_val(dic :dict):
+        return int(dic["price"]) - int(dic["lowestprice"])
+    
+    pre_diff = None
+    for res in results:
+        dic = { k:y for k,y in res._mapping.items()}
+        if not pre_diff:
+            pre_diff = get_compare_val(dic)
+            continue
+        if pre_diff:
+            assert pre_diff <= get_compare_val(dic)
+            pre_diff = get_compare_val(dic)
+            continue
+    delete_item_model(test_db)
+
+def test_get_newest_data_no_data_filter_isort_furthest_lowest_price(test_db):
+    filter_dict = {filter_name.FilterQueryName.ISORT.value:filter_name.ItemSortName.FURTHEST_LOWESTPRICE.id}
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 0
+
+def test_get_newest_data_exist_data_filter_isort_furthest_lowest_price(test_db):
+    add_data_set_1(test_db)
+    filter_dict = {filter_name.FilterQueryName.ISORT.value:filter_name.ItemSortName.FURTHEST_LOWESTPRICE.id}
+    results = NewestQuery.get_newest_data(test_db, filter=filter_dict)
+    assert len(results) == 7
+
+    def get_compare_val(dic :dict):
+        return int(dic["price"]) - int(dic["lowestprice"])
+    
+    pre_diff = None
+    for res in results:
+        dic = { k:y for k,y in res._mapping.items()}
+        if not pre_diff:
+            pre_diff = get_compare_val(dic)
+            continue
+        if pre_diff:
+            assert pre_diff >= get_compare_val(dic)
+            pre_diff = get_compare_val(dic)
             continue
     delete_item_model(test_db)
 

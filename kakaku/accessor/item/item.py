@@ -221,11 +221,51 @@ class NewestQuery:
                     .order_by(text_to_decimal(NewestItem.trendrate).desc())
                     )
             return stmt
+        if fnum == ItemSortName.OLD_UPDATE_TIME.id:
+            stmt = (stmt
+                    .order_by(NewestItem.created_at.asc())
+                    )
+            return stmt
         if fnum == ItemSortName.NEW_UPDATE_TIME.id:
             stmt = (stmt
                     .order_by(NewestItem.created_at.desc())
                     )
             return stmt
+        if fnum == ItemSortName.LOW_LOWESTPRICE.id:
+            stmt = (stmt
+                    .order_by(NewestItem.lowestprice.asc())
+                    )
+            return stmt
+        if fnum == ItemSortName.HIGH_LOWESTPRICE.id:
+            stmt = (stmt
+                    .order_by(NewestItem.lowestprice.desc())
+                    )
+            return stmt
+        if fnum == ItemSortName.CLOSEST_LOWESTPRICE.id\
+            or fnum == ItemSortName.FURTHEST_LOWESTPRICE.id:
+            diff_t = ( cls.get_diff_query_between_newestprice_and_lowestprice()
+                    .cte("diff_t")
+                    )
+            if fnum == ItemSortName.CLOSEST_LOWESTPRICE.id:
+                stmt = (stmt
+                        .join(diff_t, diff_t.c.item_id == NewestItem.item_id)
+                        .order_by(diff_t.c.diff.asc(), NewestItem.item_id.asc())
+                        )
+            else:
+                stmt = (stmt
+                        .join(diff_t, diff_t.c.item_id == NewestItem.item_id)
+                        .order_by(diff_t.c.diff.desc(), NewestItem.item_id.asc())
+                        )
+            return stmt
+        return stmt
+    
+    @classmethod
+    def get_diff_query_between_newestprice_and_lowestprice(cls):
+        stmt = ( select(NewestItem.item_id,
+                        (NewestItem.newestprice - NewestItem.lowestprice).label("diff")
+                        )
+                .where(NewestItem.newestprice > const_value.INIT_PRICE)
+                )
         return stmt
     
     @classmethod
