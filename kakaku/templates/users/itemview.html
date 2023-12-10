@@ -70,9 +70,11 @@
         <p><input type="button" onclick="window.close();" value="このタブを閉じる"></p>
     <h2>登録URL一覧</h2>
     {% if urllist %}
+    <p>
     <form action="{{ url_for('read_users_items_update') }}" method="post">
         <button type="submit" name="{{ POST_ITEM_ID }}" value="{{ items['item_id'] }}">一括情報取得</button>
     </form>
+    </p>
     {% endif %}
     <table class="url_table">
         <tr>

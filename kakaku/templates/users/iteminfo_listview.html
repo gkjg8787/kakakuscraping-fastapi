@@ -47,15 +47,13 @@
     <div id="ctrlmenu">
         <p><a href="{{ url_for('read_users_items_add') }}" class="like_button_link">アイテム追加</a></p>
         <p><a href="{{ url_for('read_search') }}" class="like_button_link">アイテムを探して追加</a></p>
-        <p>
         {%- if res %}
-        <form action="{{ url_for('read_users_items_update_all') }}" method="post">
+        <p><form action="{{ url_for('read_users_items_update_all') }}" method="post">
             <button type="submit" name="{{ POST_ITEM_ALL_UPDATE }}" value="{{ item_all_update_value }}">一括情報取得</button>
-        </form>
+        </form></p>
         {%- else %}
-        <button disabled>一括情報取得</button>
+        <p><button disabled>一括情報取得</button></p>
         {%- endif %}
-        </p>
         {%- if res %}
         <p><a href="{{ url_for('read_select_item_price_combination') }}" class="like_button_link">アイテムの価格計算</a></p>
         {%- else %}
