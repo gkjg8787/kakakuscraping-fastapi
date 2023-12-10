@@ -142,14 +142,14 @@ class ItemDetailConst(Enum):
 
 @unique
 class ItemDetailTimePeriodName(Enum):
-    ONE_DAY = (1,"１日")
-    THREE_DAY = (3, "３日")
-    ONE_WEEK = (4, "１週間",)
-    TWO_WEEK = (5, "２週間",)
-    ONE_MONTH = (6, "１か月",)
-    THREE_MONTH = (7, "３か月",)
-    SIX_MONTH = (8, "６か月",)
-    ONE_YEAR = (9, "１年",)
+    ONE_DAY = (1,"本日")
+    THREE_DAY = (3, "３日前")
+    ONE_WEEK = (4, "１週間前",)
+    TWO_WEEK = (5, "２週間前",)
+    ONE_MONTH = (6, "１か月前",)
+    THREE_MONTH = (7, "３か月前",)
+    SIX_MONTH = (8, "６か月前",)
+    ONE_YEAR = (9, "１年前",)
 
     def __init__(self, id:int, text:str):
         self.id = id
