@@ -134,10 +134,34 @@ class TemplatePostName(AutoLowerName):
 
 class ItemDetailQueryName(AutoLowerName):
     ITEMID = auto()
+    PERIODID = auto()
 
 class ItemDetailConst(Enum):
     YEARS_LIMIT = 1
     MAX_LIMIT = 100
+
+@unique
+class ItemDetailTimePeriodName(Enum):
+    ONE_DAY = (1,"１日")
+    THREE_DAY = (3, "３日")
+    ONE_WEEK = (4, "１週間",)
+    TWO_WEEK = (5, "２週間",)
+    ONE_MONTH = (6, "１か月",)
+    THREE_MONTH = (7, "３か月",)
+    SIX_MONTH = (8, "６か月",)
+    ONE_YEAR = (9, "１年",)
+
+    def __init__(self, id:int, text:str):
+        self.id = id
+        self.qname = self.name.lower()
+        self.jname = text
+    
+    @classmethod
+    def hasId(cls, id:int) -> bool:
+        for isn in cls:
+            if isn.id == id:
+                return True
+        return False
 
 class FilterDefault:
     GID = -1

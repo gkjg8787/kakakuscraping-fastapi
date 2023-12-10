@@ -125,7 +125,19 @@
         {% endfor %}
     {% endif %}
     </table>
-    <h2>取得データ一覧（{{ item_data_years_limit }}年前または{{ item_data_max_cnt }}件まで）</h2>
+    <h2>取得データ一覧</h2>
+    <p>
+        <form method="get" action="">
+            対象期間 : <select name="{{ TIME_PERIOD_Q_NAME }}" onchange="submit(this.form)">
+                {%- for tp in timePeriodList %}
+                <option value="{{ tp.id }}" {{ tp.selected }}>
+                    {{ tp.text }}
+                </option>
+                {%- endfor %}
+            </select>
+            <input type="hidden" name="{{ ITEMID_Q_NAME }}" value="{{ items['item_id'] }}">
+        </form>
+    </p>
     <p>
     件数 {{ loglist_length }}件
     </p>

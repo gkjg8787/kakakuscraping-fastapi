@@ -12,6 +12,7 @@ from common.filter_name import (
     UrlSortName,
     ExtractStoreSortName,
     TemplatePostName,
+    ItemDetailTimePeriodName,
 )
 from common.templates_string import HTMLOption
 
@@ -154,10 +155,19 @@ class NewestFilterQuery():
 
 class ItemDetailQuery():
     itemid : str = ""
+    periodid :str = ""
 
-    def __init__(self, itemid :str = ""):
+    def __init__(self,
+                 itemid :str = "",
+                 periodid :str = ""
+                 ):
         if is_valid_id(itemid):
             self.itemid = itemid
+        if is_valid_id(periodid) and self.is_valid_period_id(periodid):
+            self.periodid = periodid
+    
+    def is_valid_period_id(self, pid :str):
+        return ItemDetailTimePeriodName.hasId(int(pid))
 
 
 class TemplatesItemSort(BaseModel):

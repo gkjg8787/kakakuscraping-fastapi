@@ -1002,7 +1002,8 @@ class ItemQuery:
     def get_item_pricelog_by_item_id_1year(cls,
                                            db :Session,
                                            item_id :int,
-                                           result_limit :Optional[int] = None
+                                           result_limit :int | None = None,
+                                           days :int | None = None,
                                            ):
         stmt = (
             select(Item.item_id,
@@ -1023,9 +1024,12 @@ class ItemQuery:
             .join(Url, UrlInItem.url_id == Url.url_id)
             .join(PriceLog, PriceLog.url_id == Url.url_id)
             .where(Item.item_id == item_id)
-            .where(utc_to_jst_datetime_for_query(PriceLog.created_at) >= get_jst_datetime_for_query(interval_years=INTERVAL_ONE_YEARS_AGO))
             .order_by(PriceLog.created_at.desc())
         )
+        if days and days <= 0:
+            stmt = (stmt
+                    .where(utc_to_jst_datetime_for_query(PriceLog.created_at) >= get_jst_datetime_for_query(interval_days=days))
+                    )
         if result_limit and result_limit > 0:
             stmt = stmt.limit(result_limit)
         return db.execute(stmt).all()

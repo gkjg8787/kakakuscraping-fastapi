@@ -3,6 +3,8 @@ from datetime import datetime
 import re
 import copy
 
+from dateutil.relativedelta import relativedelta
+
 from fastapi import Request
 from pydantic import BaseModel
 
@@ -128,16 +130,23 @@ class UpdateAllItemUrlPostContext(BaseTemplateValue):
         sendTask(ScrOrder.UPDATE_ACT_ALL, '', '')
         self.updateSuccess = True
     
-    
+class IdTextSelected:
+    id :int
+    selected :str = ""
+    text :str
+
+    def __init__(self, id :int, text :str):
+        self.id = id
+        self.text = text
 
 class ItemDetailContext(BaseTemplateValue):
     loglist : List
     loglist_length : int = 0
     items : Dict
     urllist : List
+    timePeriodList :List[IdTextSelected] = []
     ITEMID_Q_NAME : str = filter_name.ItemDetailQueryName.ITEMID.value
-    item_data_years_limit :int = filter_name.ItemDetailConst.YEARS_LIMIT.value
-    item_data_max_cnt :int = filter_name.ItemDetailConst.MAX_LIMIT.value
+    TIME_PERIOD_Q_NAME :str = filter_name.ItemDetailQueryName.PERIODID.value
     POST_ITEM_ID : str = filter_name.TemplatePostName.ITEM_ID.value
     POST_URL_ID :str = filter_name.TemplatePostName.URL_ID.value
     POST_URL_PATH :str = filter_name.TemplatePostName.URL_PATH.value
@@ -154,21 +163,67 @@ class ItemDetailContext(BaseTemplateValue):
         if not idq.itemid:
             return
         itemid = int(idq.itemid)
+        periodid = filter_name.ItemDetailTimePeriodName.ONE_DAY.id
+        if idq.periodid:
+            periodid = int(idq.periodid)
         self.items = NewestQuery.get_newest_data_by_item_id(db, item_id=itemid)
         if not self.items:
             return
+        day = self.get_days_of_timeperiod(tpid=periodid)
         self.loglist = ItemQuery.get_item_pricelog_by_item_id_1year(db,
                                                                     item_id=itemid,
-                                                                    result_limit=self.item_data_max_cnt,
+                                                                    result_limit=None, #self.item_data_max_cnt,
+                                                                    days=-day,
                                                                     )
         if self.loglist:
             self.loglist_length = len(self.loglist)
         self.urllist = UrlQuery.get_urlinfo_by_item_id(db, item_id=itemid)
+        self.timePeriodList = self.create_time_period_list(periodid=periodid)
 
     def has_data(self) -> bool:
         if not self.items or len(self.items) == 0:
             return False
         return True
+    
+    @staticmethod
+    def create_time_period_list(periodid :int):
+        timePeriodList = []
+        for idtp in filter_name.ItemDetailTimePeriodName:
+            iap = IdTextSelected(id=idtp.id, text=idtp.jname)
+            if periodid == idtp.id:
+                iap.selected = templates_string.HTMLOption.SELECTED.value
+            timePeriodList.append(iap)
+        return timePeriodList
+    
+    @staticmethod
+    def get_days_of_timeperiod(tpid : int):
+        if tpid == filter_name.ItemDetailTimePeriodName.ONE_DAY.id:
+            return 1
+        if tpid == filter_name.ItemDetailTimePeriodName.THREE_DAY.id:
+            return 3
+        if tpid == filter_name.ItemDetailTimePeriodName.ONE_WEEK.id:
+            return 7
+        if tpid == filter_name.ItemDetailTimePeriodName.TWO_WEEK.id:
+            return 14
+        
+        now = cm_util.utcTolocaltime(datetime.utcnow())
+        if tpid == filter_name.ItemDetailTimePeriodName.ONE_MONTH.id:
+            date = now + relativedelta(months=-1)
+            delta = now - date
+            return delta.days
+        if tpid == filter_name.ItemDetailTimePeriodName.THREE_MONTH.id:
+            date = now + relativedelta(months=-3)
+            delta = now - date
+            return delta.days
+        if tpid == filter_name.ItemDetailTimePeriodName.SIX_MONTH.id:
+            date = now + relativedelta(months=-6)
+            delta = now - date
+            return delta.days
+        if tpid == filter_name.ItemDetailTimePeriodName.ONE_YEAR.id:
+            date = now + relativedelta(years=-1)
+            delta = now - date
+            return delta.days
+        return 1
 
 class ItemDetailChartContext(BaseTemplateValue):
     ITEMID_Q_NAME :str = filter_name.ItemDetailQueryName.ITEMID.value
@@ -739,14 +794,10 @@ class DeleteItemContext(BaseTemplateValue):
         ItemQuery.delete_item_relation_by_item_id(db, item_id=self.item_id)
         self.delSuccess = True
 
-class ItemAnalysisPeriod:
-    id :int
-    selected :str = ""
-    text :str
 
-    def __init__(self, id :int, text :str):
-        self.id = id
-        self.text = text
+
+class ItemAnalysisPeriod(IdTextSelected):
+    pass
 
 class ItemAnalysisContext(BaseTemplateValue):
     item_id :int = const_value.NONE_ID
