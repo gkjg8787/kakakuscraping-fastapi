@@ -80,7 +80,12 @@ class ExtractStoreSortName(Enum):
     ITEM_NAME = (5, "アイテム名",)
     LOW_TRENDRATE = (7, "値下げ",)
     HIGH_TRENDRATE = (8, "値上げ",)
-    NEW_UPDATE_TIME = (9, "更新が新しい")
+    OLD_UPDATE_TIME = (9, "更新が古い")
+    NEW_UPDATE_TIME = (10, "更新が新しい")
+    LOW_LOWESTPRICE = (11, "最安値が安い")
+    HIGH_LOWESTPRICE = (12, "最安値が高い")
+    CLOSEST_LOWESTPRICE = (13, "最安値との差が小さい")
+    FURTHEST_LOWESTPRICE = (14, "最安値との差が大きい")
 
     def __init__(self, id:int, text:str):
         self.id = id

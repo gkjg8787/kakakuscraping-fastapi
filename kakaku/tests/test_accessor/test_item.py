@@ -840,6 +840,26 @@ def test_get_storename_newest_data_exist_data_dup_filter_essort_high_trendrate(t
             continue
     delete_item_and_store_model(test_db)
 
+def test_get_storename_newest_data_exist_data_dup_filter_essort_old_updatetime(test_db):
+    add_extract_store_data_set_1(test_db)
+    store_id = 1
+    filter_dict = {
+        filter_name.FilterQueryName.EX_STORE.value:store_id,
+        filter_name.FilterQueryName.ESSORT.value:filter_name.ExtractStoreSortName.OLD_UPDATE_TIME.id
+        }
+    results = NewestQuery.get_storename_newest_data(test_db, filter=filter_dict)
+    uptime = None
+    for res in results:
+        dic = { k:y for k,y in res._mapping.items()}
+        if not uptime:
+            uptime = dbtimeTodatetime(dic["created_at"])
+            continue
+        if uptime:
+            assert uptime <= dbtimeTodatetime(dic["created_at"])
+            uptime = dbtimeTodatetime(dic["created_at"])
+            continue
+    delete_item_and_store_model(test_db)
+
 def test_get_storename_newest_data_exist_data_dup_filter_essort_new_updatetime(test_db):
     add_extract_store_data_set_1(test_db)
     store_id = 1
@@ -857,6 +877,97 @@ def test_get_storename_newest_data_exist_data_dup_filter_essort_new_updatetime(t
         if uptime:
             assert uptime >= dbtimeTodatetime(dic["created_at"])
             uptime = dbtimeTodatetime(dic["created_at"])
+            continue
+    delete_item_and_store_model(test_db)
+
+def test_get_storename_newest_data_exist_data_dup_filter_essort_low_lowest_price(test_db):
+    add_extract_store_data_set_1(test_db)
+    store_id = 1
+    filter_dict = {
+        filter_name.FilterQueryName.EX_STORE.value:store_id,
+        filter_name.FilterQueryName.ESSORT.value:filter_name.ExtractStoreSortName.LOW_LOWESTPRICE.id
+        }
+    results = NewestQuery.get_storename_newest_data(test_db, filter=filter_dict)
+
+    price = None
+    for res in results:
+        dic = { k:y for k,y in res._mapping.items()}
+        if not price:
+            price = int(dic["lowestprice"])
+            continue
+        if price:
+            assert price <= int(dic["lowestprice"])
+            price = int(dic["lowestprice"])
+            continue
+    delete_item_and_store_model(test_db)
+
+
+def test_get_storename_newest_data_exist_data_dup_filter_essort_high_lowest_price(test_db):
+    add_extract_store_data_set_1(test_db)
+    store_id = 1
+    filter_dict = {
+        filter_name.FilterQueryName.EX_STORE.value:store_id,
+        filter_name.FilterQueryName.ESSORT.value:filter_name.ExtractStoreSortName.HIGH_LOWESTPRICE.id
+        }
+    results = NewestQuery.get_storename_newest_data(test_db, filter=filter_dict)
+
+    price = None
+    for res in results:
+        dic = { k:y for k,y in res._mapping.items()}
+        if not price:
+            price = int(dic["lowestprice"])
+            continue
+        if price:
+            assert price >= int(dic["lowestprice"])
+            price = int(dic["lowestprice"])
+            continue
+    delete_item_and_store_model(test_db)
+
+def test_get_storename_newest_data_exist_data_dup_filter_essort_closest_lowest_price(test_db):
+    add_extract_store_data_set_1(test_db)
+    store_id = 1
+    filter_dict = {
+        filter_name.FilterQueryName.EX_STORE.value:store_id,
+        filter_name.FilterQueryName.ESSORT.value:filter_name.ExtractStoreSortName.CLOSEST_LOWESTPRICE.id
+        }
+    results = NewestQuery.get_storename_newest_data(test_db, filter=filter_dict)
+
+    def get_compare_val(dic :dict):
+        return int(dic["price"]) - int(dic["lowestprice"])
+    
+    pre_diff = None
+    for res in results:
+        dic = { k:y for k,y in res._mapping.items()}
+        if not pre_diff:
+            pre_diff = get_compare_val(dic)
+            continue
+        if pre_diff:
+            assert pre_diff <= get_compare_val(dic)
+            pre_diff = get_compare_val(dic)
+            continue
+    delete_item_and_store_model(test_db)
+
+def test_get_storename_newest_data_exist_data_dup_filter_essort_furthest_lowest_price(test_db):
+    add_extract_store_data_set_1(test_db)
+    store_id = 1
+    filter_dict = {
+        filter_name.FilterQueryName.EX_STORE.value:store_id,
+        filter_name.FilterQueryName.ESSORT.value:filter_name.ExtractStoreSortName.FURTHEST_LOWESTPRICE.id
+        }
+    results = NewestQuery.get_storename_newest_data(test_db, filter=filter_dict)
+
+    def get_compare_val(dic :dict):
+        return int(dic["price"]) - int(dic["lowestprice"])
+    
+    pre_diff = None
+    for res in results:
+        dic = { k:y for k,y in res._mapping.items()}
+        if not pre_diff:
+            pre_diff = get_compare_val(dic)
+            continue
+        if pre_diff:
+            assert pre_diff >= get_compare_val(dic)
+            pre_diff = get_compare_val(dic)
             continue
     delete_item_and_store_model(test_db)
 

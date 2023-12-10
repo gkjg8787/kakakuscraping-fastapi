@@ -10,6 +10,7 @@ from sqlalchemy import (
     union,
     func,
     between,
+    and_,
 )
 #from sqlalchemy.dialects.sqlite import insert as lite_insert
 
@@ -568,12 +569,61 @@ class NewestQuery:
                     .order_by(text_to_decimal(unionprice.c.trendrate).desc())
                     )
             return stmt
+        if fnum == ExtractStoreSortName.OLD_UPDATE_TIME.id:
+            stmt = (stmt
+                    .order_by(unionprice.c.created_at.asc())
+                    )
+            return stmt
         if fnum == ExtractStoreSortName.NEW_UPDATE_TIME.id:
             stmt = (stmt
                     .order_by(unionprice.c.created_at.desc())
                     )
             return stmt
+        if fnum == ExtractStoreSortName.LOW_LOWESTPRICE.id:
+            stmt = (stmt
+                    .order_by(NewestItem.lowestprice.asc())
+                    )
+            return stmt
+        if fnum == ExtractStoreSortName.HIGH_LOWESTPRICE.id:
+            stmt = (stmt
+                    .order_by(NewestItem.lowestprice.desc())
+                    )
+            return stmt
+        if fnum == ExtractStoreSortName.CLOSEST_LOWESTPRICE.id\
+            or fnum == ExtractStoreSortName.FURTHEST_LOWESTPRICE.id:
+            diff_t = ( cls.get_diff_extract_query_between_newestprice_and_lowestprice(stmt)
+                    .cte("diff_t")
+                    )
+            if fnum == ExtractStoreSortName.CLOSEST_LOWESTPRICE.id:
+                stmt = (stmt
+                        .join(diff_t,
+                              and_(diff_t.c.item_id == Item.item_id,
+                                   diff_t.c.price == unionprice.c.price)
+                              )
+                        .order_by(diff_t.c.diff.asc(), Item.item_id.asc())
+                        )
+            else:
+                stmt = (stmt
+                        .join(diff_t,
+                              and_(diff_t.c.item_id == Item.item_id,
+                                   diff_t.c.price == unionprice.c.price)
+                              )
+                        .order_by(diff_t.c.diff.desc(), Item.item_id.asc())
+                        )
+            return stmt
         return stmt
+    
+    @classmethod
+    def get_diff_extract_query_between_newestprice_and_lowestprice(cls, base):
+        diffb = base.cte("diffb")
+        stmt = ( select(diffb.c.item_id,
+                        diffb.c.price,
+                        (diffb.c.price - diffb.c.lowestprice).label("diff")
+                        )
+                .where(diffb.c.price > const_value.INIT_PRICE)
+                )
+        return stmt
+    
     @classmethod
     def __set_in_stock_filter_for_storename_newest(cls, filter:Dict, stmt, unionprice):
         if not fqn.ZAIKO.value in filter.keys() \
