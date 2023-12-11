@@ -19,6 +19,8 @@ class SearchFilterQuery():
     zaiko :int = FilterDefault.ZAIKO
     listview :int = FilterDefault.LIST_VIEW
 
+    setting_list :list[FilterQueryName] = []
+
     def __init__(self,
                  word :Optional[str] = None,
                  page :Optional[str] = None,
@@ -28,24 +30,33 @@ class SearchFilterQuery():
                  zaiko :Optional[str] = None,
                  listview :Optional[str] = None,
                  ):
+        self.setting_list = []
         if word and len(word) > 0:
             self.word = word
+            self.setting_list.append(FilterQueryName.WORD)
         if is_valid_positive_int(page):
             self.page = page
+            self.setting_list.append(FilterQueryName.PAGE)
         if store:
             results :List[int] = []
             for s in store:
                 if is_valid_positive_int(s):
                     results.append(int(s))
             self.stores = results
+            if len(results) > 0:
+                self.setting_list.append(FilterQueryName.STORE)
         if is_valid_positive_int(category):
             self.category = int(category)
+            self.setting_list.append(FilterQueryName.CATEGORY)
         if is_valid_positive_int(safes):
             self.safes = int(safes)
+            self.setting_list.append(FilterQueryName.SAFES)
         if is_valid_positive_int(zaiko):
             self.zaiko = int(zaiko)
+            self.setting_list.append(FilterQueryName.ZAIKO)
         if is_valid_positive_int(listview):
             self.listview = int(listview)
+            self.setting_list.append(FilterQueryName.LISTVIEW)
     
     def get_query_dict(self):
         results = {}

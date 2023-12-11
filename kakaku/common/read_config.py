@@ -38,7 +38,10 @@ def get_back_server_queue_timeout():
     return settings.PROC_QUEUE_TIMEOUT
 
 def get_search_option_path():
-    return settings.SEARCHOPTION
+    return settings.SEARCHOPTION_DIR
+
+def get_search_options_default():
+    return settings.SEARCHOPTIONS_DEFAULT
 
 def get_itemcomb_select_limit():
     return settings.ITEMCOMB_SELECT_LIMIT
