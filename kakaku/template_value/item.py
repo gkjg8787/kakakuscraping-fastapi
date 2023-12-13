@@ -885,7 +885,7 @@ class UrlListContext(BaseTemplateValue):
     ITEMACT_NAME :str = filter_name.FilterQueryName.ACT.value
     actstslist :list
     fquery :dict
-
+    ITEMID_Q_NAME :str = filter_name.ItemDetailQueryName.ITEMID.value
     URLSORT_NAME :str = filter_name.FilterQueryName.USORT.value
     urlSortList :list
 
