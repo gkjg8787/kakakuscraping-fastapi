@@ -1,20 +1,18 @@
-import sys
 import os
-import argparse
 import json
 from typing import List
 from pathlib import Path
 import subprocess
+import time
 
 from sqlalchemy.orm import Session
 
-from itemcomb import sumitemcomb, storepostage
+from itemcomb import sumitemcomb
 
 from accessor.item import (
     ItemQuery,
 )
 from accessor.store import StoreQuery
-from accessor.read_sqlalchemy import get_session
 
 from common.read_config import (
     get_exec_itemcomb,
@@ -101,19 +99,19 @@ def start_searchcomb_subprocess(storeconf :dict, itemlist :list[dict]):
     cmd = str(Path(base_path, SUMITEMCOMB_BINARY))
     if not os.path.isfile(cmd):
         logger.warning(f"not exist cmd={cmd}")
-        return sumitemcomb.searchcomb(storeconf, itemlist, 'json')
+        return sumitemcomb.searchcomb(storeconf, itemlist)
     
     strstconf = storeconfToStrStoreConf(storeconf)
     p = subprocess.run([cmd, json.dumps(strstconf), json.dumps(itemlist)], encoding="utf-8", capture_output=True)
     logger.debug(f'{get_filename()} returncode={p.returncode}, stdout={str(p.stdout)}')
     ret = json.loads(str(p.stdout).rstrip())
     if len(ret) > 0:
-        return json.dumps(convert_result_of_proc(ret))
-    return ""
+        return convert_result_of_proc(ret)
+    return {}
 
 def start_searchcomb(storeconf :dict, itemlist :list[dict], exec_type :str):
     if str(exec_type).lower() != EXEC_BIN_TYPE.lower():
-        return sumitemcomb.searchcomb(storeconf, itemlist, 'json')
+        return sumitemcomb.searchcomb(storeconf, itemlist)
     else:
         return start_searchcomb_subprocess(storeconf, itemlist)
 
@@ -130,39 +128,11 @@ def startCalcSumitemComb(db :Session, itemidlist :List[int]):
     logger.info(f'{get_filename()} storeconf= {storeconf}')
     logger.info(f'{get_filename()} itemlist= {itemlist}')
     logger.info(f'{get_filename()} exec= {get_exec_itemcomb()}')
+    stime = time.perf_counter()
     ret = start_searchcomb(storeconf, itemlist, get_exec_itemcomb())
+    etime = time.perf_counter()
+    ret["proc_time"] = etime - stime
     logger.info(get_filename() + ' searchcomb end')
     return ret
 
-def getCalcSumitemComb(db :Session):
-    cmdstr, itemidlist, updateterms = parseParamOpt()
-    if cmdstr == 'idcalc':
-        ret = startCalcSumitemComb(db, itemidlist=itemidlist)
-        return ret
-    elif cmdstr == 'upcalc':
-        storepostage.updateShippingTerms(db, shippingterms=updateterms)
-        ret = startCalcSumitemComb(db, itemidlist=itemidlist)
-        return ret
-
-def startcmd():
-    db = next(get_session())
-    res = getCalcSumitemComb(db)
-    #htmltext = sumitemcomb_adapt_deco.createHtml(json.loads(res))
-    #print(htmltext)
-    return res
-
-def parseParamOpt():
-    parser = argparse.ArgumentParser(description='get iteminfo and passing to sumitemcomb.py')
-    parser.add_argument('-i', '--itemid', metavar='id',help='List of selected items', type=int, nargs='+')
-    parser.add_argument('-s', '--store', metavar='json',help='store shipping information in json format')
-    args = parser.parse_args()
-    #print(args)
-    if args.itemid is None:
-        #print('--itemid are required')
-        sys.exit(1)
-    if not args.store is None and len(args.store) > 0:
-        updateterms = json.loads(str(args.store))
-        return 'upcalc',args.itemid, updateterms
-
-    return 'idcalc',args.itemid, ''
 

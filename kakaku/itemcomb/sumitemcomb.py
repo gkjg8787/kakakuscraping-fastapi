@@ -1,8 +1,6 @@
 import re
 from .sumitem import SumItem, Store, SelectItem, StoreOperator
-import json
-import argparse
-import sys
+
 
 def createStoreCatalog(storeconf):
     storecatalog :list[Store] = []
@@ -154,68 +152,17 @@ def saitekiPrice(itemlist, storeconf):
     return retdict
 
 
-def parseParamOpt():
-    parser = argparse.ArgumentParser(description='best conbination of cheap items')
-    parser.add_argument('-s', '--store', metavar='json or file',help='List of shipping charges at the store')
-    parser.add_argument('-i', '--item', metavar='json or file',help='List of products to buy')
-    parser.add_argument('-f', '--file', help='Loading a list by file', action='store_true')
-    parser.add_argument('-o', '--output',help='Set output format', choices=['desc','json'], default='desc')
-    args = parser.parse_args()
-    #print(args)
-    if args.store == None and args.item == None:
-        return {},[]
-    if (args.store != None or args.item != None) \
-        and (args.store == None or args.item == None):
-        print('--store and --item are required at the same time')
-        return {},[],args.output
-    if args.file:
-        with open(args.store, encoding='utf-8') as f:
-            storetext = f.read()
-        with open(args.item, encoding='utf-8') as f:
-            itemtext = f.read()
-    else:
-        storetext = args.store
-        itemtext = args.item
-    storeconf = json.loads(storetext)
-    itemlist = json.loads(itemtext)
-    return storeconf, itemlist['itemlist'], args.output
 
-def printResult(outf, retdict):
-    print(getTextResult(outf, retdict))
-
-def getTextResult(outf, retdict):
-    if str(outf) == 'json':
-        return json.dumps(retdict['lowest_sum'].getjson(), indent=4, sort_keys=True, ensure_ascii=False)
-    else:
-        text = ''
-        text += 'ws_len = {}'.format(retdict['ws_len'])
-        text += '\n'+'bulk_len = {}'.format(retdict['bulk_len'])
-        text += '\n'+'lowest_price = {}'.format(retdict['lowest_sum'].getSum())
-        text += '\n'+retdict['lowest_sum'].getTextSum()
-        return text
-
-def startitemcomb(storeconf, itemlist):
+def searchcomb(storeconf, itemlist):
     if len(storeconf)==0:
-        #storeconf = gstoreconf
-        print('Error no storeconf')
-        return ""
+        return {"errmsg":"no storeconf"}
     if len(itemlist)==0:
-        #itemlist = gitemlist
-        print('Error no itemlist')
-        return ""
-    return saitekiPrice(itemlist, storeconf)
+        return {"errmsg":"no itemlist"}
+    res = saitekiPrice(itemlist, storeconf)
+    if res['lowest_sum'] == None:
+        return {}
+    return res['lowest_sum'].getdict()
 
-def startcmd():
-    #printStoreCatalog(storeconf)
-    storeconf, itemlist, outf = parseParamOpt()
-    res = startitemcomb(storeconf, itemlist)
-    printResult(outf, res)
 
-def searchcomb(storeconf, itemlist, outf):
-    res = startitemcomb(storeconf, itemlist)
-    return getTextResult(outf, res)
-
-if __name__ == '__main__':
-    startcmd()
 
 

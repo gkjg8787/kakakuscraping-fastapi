@@ -256,6 +256,7 @@ class ItemCombCalcResultContext(BaseTemplateValue):
     sum_postage :str = ""
     item_list :List[ResultItem] = []
     store_list :List = []
+    proc_time : str = "0"
 
     def __init__(self, request, icrf :ppc.ItemCombinationResultForm, db :Session):
         super().__init__(request=request)
@@ -265,9 +266,9 @@ class ItemCombCalcResultContext(BaseTemplateValue):
         #print(f"icrf.store_list={icrf.store_list}")
         res = startCalcSumitemComb(db, itemidlist=icrf.item_id_list)
         #print(f"res={res}")
-        self.set_convert_result(json.loads(res))
+        self.set_convert_result(res)
     
-    def set_convert_result(self, res):
+    def set_convert_result(self, res :dict):
         storeres = {}
         for k,v in res.items():
             if k == 'sum_pos_in':
@@ -275,6 +276,11 @@ class ItemCombCalcResultContext(BaseTemplateValue):
                 continue
             if k == 'sum_postage':
                 self.sum_postage = v
+                continue
+            if k == 'errmsg':
+                continue
+            if k == 'proc_time':
+                self.proc_time = f'{v:.3f}'
                 continue
             storeres[k] = v
         self.item_list = self._create_item_list(storeres)

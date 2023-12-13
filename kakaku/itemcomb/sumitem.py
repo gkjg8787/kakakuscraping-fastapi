@@ -69,7 +69,7 @@ class SumItem:
             text += '\n' + '{} : item = {}'.format(storename, ','.join(setitems))
         return text
 
-    def getjson(self):
+    def getdict(self):
         if len(self.sums) == 0:
             self.createSum()
         result = {'sum_pos_in':self.getSum()}

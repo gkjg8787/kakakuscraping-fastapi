@@ -45,6 +45,9 @@ def assert_itemlist_result(a :list, r :list):
                 
 def assert_searchcomb_result(a :dict, r :dict):
     for k,v in a.items():
+        if k == "proc_time"\
+            or k == "errmsg":
+            continue
         if isinstance(v, int):
             assert a[k] == r[k]
             continue
@@ -67,7 +70,7 @@ def test_searchcomb_1(loginit):
                     itemlist=testcase[ITEMLIST],
                     exec_type=sic_ada.get_exec_itemcomb(),
                     )
-    assert_searchcomb_result(testcase[RESULT], json.loads(ret))
+    assert_searchcomb_result(testcase[RESULT], ret)
 
 def test_searchcomb_2(loginit):
     testcase = itemcomb_test_data.item_list_case_2
@@ -76,7 +79,7 @@ def test_searchcomb_2(loginit):
                     itemlist=testcase[ITEMLIST],
                     exec_type=sic_ada.get_exec_itemcomb(),
                     )
-    assert_searchcomb_result(testcase[RESULT], json.loads(ret))
+    assert_searchcomb_result(testcase[RESULT], ret)
 
 def test_searchcomb_3(loginit):
     testcase = itemcomb_test_data.item_list_case_3
@@ -85,7 +88,7 @@ def test_searchcomb_3(loginit):
                     itemlist=testcase[ITEMLIST],
                     exec_type=sic_ada.get_exec_itemcomb(),
                     )
-    assert_searchcomb_result(testcase[RESULT], json.loads(ret))
+    assert_searchcomb_result(testcase[RESULT], ret)
 
 def test_searchcomb_4(loginit):
     testcase = itemcomb_test_data.item_list_case_4
@@ -94,7 +97,7 @@ def test_searchcomb_4(loginit):
                     itemlist=testcase[ITEMLIST],
                     exec_type=sic_ada.get_exec_itemcomb(),
                     )
-    assert_searchcomb_result(testcase[RESULT], json.loads(ret))
+    assert_searchcomb_result(testcase[RESULT], ret)
 
 def test_searchcomb_5(loginit):
     testcase = itemcomb_test_data.item_list_case_5
@@ -103,7 +106,7 @@ def test_searchcomb_5(loginit):
                     itemlist=testcase[ITEMLIST],
                     exec_type=sic_ada.get_exec_itemcomb(),
                     )
-    assert_searchcomb_result(testcase[RESULT], json.loads(ret))
+    assert_searchcomb_result(testcase[RESULT], ret)
 
 def test_searchcomb_6_heavy(loginit):
     testcase = itemcomb_test_data.item_list_case_6
@@ -112,5 +115,5 @@ def test_searchcomb_6_heavy(loginit):
                     itemlist=testcase[ITEMLIST],
                     exec_type=sic_ada.get_exec_itemcomb(),
                     )
-    assert_searchcomb_result(testcase[RESULT], json.loads(ret))
+    assert_searchcomb_result(testcase[RESULT], ret)
     
