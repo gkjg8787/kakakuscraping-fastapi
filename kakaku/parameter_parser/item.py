@@ -9,6 +9,8 @@ from common.filter_name import (
     FilterQueryName,
     ItemSortName,
     FilterOnOff,
+    StoreListSortName,
+    StoreTermsConfiguredFilterName,
     UrlSortName,
     ExtractStoreSortName,
     TemplatePostName,
@@ -623,6 +625,45 @@ def get_in_stock_filter_checked(f :dict) -> str:
         and int(f[FilterQueryName.ZAIKO.value]) == FilterOnOff.ON:
         return HTMLOption.CHECKED.value
     return ""
+
+class StoreListFilterQuery:
+    sort : str = str(StoreListSortName.OLD_STORE.id)
+    confed : str = ""
+
+    def __init__(self,
+                 sort :str = "",
+                 confed : str = "",
+                 ):
+        if sort and sort.isdigit() and StoreListSortName.hasId(int(sort)):
+            self.sort = sort
+        if confed and confed.isdigit() and StoreTermsConfiguredFilterName.hasId(int(confed)):
+            self.confed = confed
+    
+    def get_filter_dict(self) -> dict:
+        results = {}
+        if self.sort:
+            results[FilterQueryName.SORT.value] = self.sort
+        if self.confed:
+            results[FilterQueryName.CONFED.value] = self.confed
+        return results
+    
+def get_store_sort_list(f:Dict) -> List:
+    results = [TemplatesItemSort(name=i.qname, id=i.id, text=i.jname) for i in StoreListSortName]
+    if not FilterQueryName.SORT.value in f:
+        return results
+    for r in results:
+        if int(r.id) == int(f[FilterQueryName.SORT.value]):
+            r.selected = HTMLOption.SELECTED.value
+    return results
+
+def get_store_terms_configured_list(f:Dict) -> List:
+    results = [TemplatesItemSort(name=i.qname, id=i.id, text=i.jname) for i in StoreTermsConfiguredFilterName]
+    if not FilterQueryName.CONFED.value in f:
+        return results
+    for r in results:
+        if int(r.id) == int(f[FilterQueryName.CONFED.value]):
+            r.selected = HTMLOption.SELECTED.value
+    return results
 
 class EditShippingConditionForm:
     errmsg :str = ""

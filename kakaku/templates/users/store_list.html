@@ -16,6 +16,16 @@
         {%- endif %}
     </div>
     <p>
+    {%- with ITEMACT_NAME = CONFIGUREDTERMS_NAME, actstslist = confstslist, fquery = fquery %}
+    {%- include "users/item_act_filter.html" %}
+    {%- endwith %}
+    </p>
+    <p>
+    {%- with ITEMSORT_NAME = STORESORT_NAME, itemSortList = storeSortList, fquery = fquery %}
+    {%- include "users/item_sort_filter.html" %}
+    {%- endwith %}
+    </p>
+    <p>
         件数
         {{ res_length }}件
     </p>

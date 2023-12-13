@@ -457,9 +457,10 @@ def read_users_extract(request: Request,
 
 @router.get("/stores/", response_class=HTMLResponse)
 def read_users_stores(request: Request,
+                      slfq : ppi.StoreListFilterQuery = Depends(),
                       db :Session = Depends(get_session)
                       ):
-    ulc = template_value.item.StoreListContext(request=request, db=db)
+    ulc = template_value.item.StoreListContext(request=request, db=db, slfp=slfq)
 
     context = dict(ulc)
     return templates.TemplateResponse(

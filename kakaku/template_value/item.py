@@ -1029,10 +1029,20 @@ class StoreListContext(BaseTemplateValue):
     res : list[StoreForListContext] = []
     res_length :int = 0
     POST_STORE_ID :str = filter_name.TemplatePostName.STORE_ID.value
+    STORESORT_NAME :str = filter_name.FilterQueryName.SORT.value
+    storeSortList :list
+    fquery :dict
+    CONFIGUREDTERMS_NAME :str = filter_name.FilterQueryName.CONFED.value
+    confstslist : list
 
-    def __init__(self, request, db :Session):
-        super().__init__(request=request)
-        results = ac_store.StoreQuery.get_store_and_postage_all(db)
+    def __init__(self, request, db :Session, slfp :ppi.StoreListFilterQuery):
+        fq = slfp.get_filter_dict()
+        super().__init__(request=request,
+                         fquery=fq,
+                         storeSortList=ppi.get_store_sort_list(fq),
+                         confstslist=ppi.get_store_terms_configured_list(fq),
+                         )
+        results = ac_store.StoreQuery.get_store_and_postage_all(db=db, fq=fq)
         self.res = self.convert_to_StoreForListContext(results)
         if not self.res:
             return

@@ -19,6 +19,7 @@ from accessor.util import (
     utc_to_jst_datetime_for_query,    
     get_jst_date_for_query,
 )
+from common import filter_name
 
 class StoreQuery:
 
@@ -187,10 +188,44 @@ class StoreQuery:
         return stmt
 
     @classmethod
-    def get_store_and_postage_all(cls, db :Session):
-        stmt = cls.get_store_and_postage_stmt()
-        return db.execute(stmt).all()
+    def _set_store_list_filter(cls, stmt, fq :dict):
+        if filter_name.FilterQueryName.SORT.value in fq:
+            sort_id = int(fq[filter_name.FilterQueryName.SORT.value])
+        else:
+            return stmt
+        match sort_id:
+            case filter_name.StoreListSortName.NAME_ASC.id:
+                return stmt.order_by(Store.storename.asc())
+            case filter_name.StoreListSortName.NAME_DESC.id:
+                return stmt.order_by(Store.storename.desc())
+            case filter_name.StoreListSortName.OLD_STORE.id:
+                return stmt.order_by(Store.store_id.asc())
+            case filter_name.StoreListSortName.NEW_STORE.id:
+                return stmt.order_by(Store.store_id.desc())
+            case _:
+                return stmt
     
+    @classmethod
+    def _set_store_terms_configured_filter(cls, stmt, fq :dict):
+        if not filter_name.FilterQueryName.CONFED.value in fq:
+            return stmt
+        confed_id = int(fq[filter_name.FilterQueryName.CONFED.value])
+        match confed_id:
+            case filter_name.StoreTermsConfiguredFilterName.ALL.id:
+                return stmt
+            case filter_name.StoreTermsConfiguredFilterName.CONFIGURED.id:
+                return stmt.where(StorePostage.boundary != None)
+            case filter_name.StoreTermsConfiguredFilterName.NONE.id:
+                return stmt.where(StorePostage.boundary == None)
+            case _:
+                return stmt
+    @classmethod
+    def get_store_and_postage_all(cls, db :Session, fq :dict = {}):
+        stmt = cls.get_store_and_postage_stmt()
+        stmt = cls._set_store_terms_configured_filter(stmt=stmt, fq=fq)
+        stmt = cls._set_store_list_filter(stmt=stmt, fq=fq)
+        return db.execute(stmt).all()
+        
     @classmethod
     def get_store_and_postage_by_item_id(cls, db :Session, item_id :int):
         stmt = cls.get_store_and_postage_stmt()

@@ -12,6 +12,7 @@ class FilterQueryName(AutoLowerName):
     GID = auto()
     ACT = auto()
     STORE = auto()
+    SORT = auto()
     ISORT = auto()
     CATEGORY = auto()
     PAGE = auto()
@@ -25,6 +26,7 @@ class FilterQueryName(AutoLowerName):
     ESSORT = auto()
     PRMIN = auto()
     PRMAX = auto()
+    CONFED = auto()
 
 @unique
 class ActFilterName(Enum):
@@ -98,13 +100,50 @@ class ExtractStoreSortName(Enum):
             if isn.id == id:
                 return True
         return False
+@unique
+class StoreTermsConfiguredFilterName(Enum):
+    ALL = (1, "全て")
+    CONFIGURED = (2, "設定済み")
+    NONE = (3, "未設定")
+
+    def __init__(self, id:int, text:str):
+        self.id = id
+        self.qname = self.name.lower()
+        self.jname = text
+    
+    @classmethod
+    def hasId(cls, id:int) -> bool:
+        for isn in cls:
+            if isn.id == id:
+                return True
+        return False
+
+@unique
+class StoreListSortName(Enum):
+    OLD_STORE = (1, "登録が古い")
+    NEW_STORE = (2, "登録が新しい")
+    NAME_ASC = (3, "店名昇")
+    NAME_DESC = (4, "店名降")
+
+    def __init__(self, id:int, text:str):
+        self.id = id
+        self.qname = self.name.lower()
+        self.jname = text
+    
+    @classmethod
+    def hasId(cls, id:int) -> bool:
+        for isn in cls:
+            if isn.id == id:
+                return True
+        return False
+
 
 @unique
 class UrlSortName(Enum):
-    URLID_ASC = (1, "URL_ID昇順",)
-    URLID_DESC = (2, "URL_ID降順",)
-    ITEMID_ASC = (3, "ITEM_ID昇順",)
-    ITEMID_DESC = (4, "ITEM_ID降順",)
+    URLID_ASC = (1, "URL_ID昇",)
+    URLID_DESC = (2, "URL_ID降",)
+    ITEMID_ASC = (3, "アイテムID昇",)
+    ITEMID_DESC = (4, "アイテムID降",)
 
     def __init__(self, id:int, text:str):
         self.id = id
