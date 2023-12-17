@@ -357,7 +357,7 @@ async def read_users_groups_edit_update(request :Request,
         for key in [k for k in fm.keys()]:
             form_dict[key] = fm.getlist(key)
 
-    if len(form_dict) > 0: 
+    if form_dict: 
         giform.set_group_item_list(form_dict)
         
     ugi = template_value.item.UpdateGroupItem(giform=giform, db=db)

@@ -453,7 +453,7 @@ class GroupItemUpdateForm():
                  group_id :Optional[str] = Form(None),
                  ):
         if is_valid_id(group_id):
-            self.group_id = group_id
+            self.group_id = int(group_id)
 
     def set_group_item_list(self, form_dict :Dict[str, List]):
         if not TemplatePostName.GROUP_ITEM_LIST.value in form_dict:
@@ -461,7 +461,7 @@ class GroupItemUpdateForm():
         results :List[int] = []
         for item_id in form_dict[TemplatePostName.GROUP_ITEM_LIST.value]:
             if is_valid_id(item_id):
-                results.append(item_id)
+                results.append(int(item_id))
         self.group_item_list = results
     
     def is_valid(self):

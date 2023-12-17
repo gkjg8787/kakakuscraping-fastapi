@@ -543,6 +543,31 @@ def test_read_users_groups_edit_update_update_item(test_db):
     assert response.status_code == 200
     drop_test_db()
 
+def test_read_users_groups_edit_update_update_item_list(test_db):
+    add_item_name_and_url_success()
+    response = client.post(
+        f'{prefix}/items/add/result/',
+        data={
+            filter_name.TemplatePostName.ITEM_NAME.value:'two',
+            filter_name.TemplatePostName.URL_PATH.value:SURUGAYA_OTHER_NAUSHIKA
+            },
+        )
+    assert response.status_code == 200
+    is_html(response.text)
+    assert "登録しました。" in response.text
+    add_test_group()
+    group_item_list = [1, 2]
+    response = client.post(
+        f'{prefix}/groups/edit/update/',
+        data={
+            filter_name.TemplatePostName.GROUP_ID.value:1,
+            filter_name.TemplatePostName.GROUP_ITEM_LIST.value:group_item_list,
+            }
+    )
+    check_redirect(response, [ RedirectCheckValue(status_code=302, location="/groups/edit/") ])
+    assert response.status_code == 200
+    drop_test_db()
+
 def test_read_users_groups_delete_no_data(test_db):
     response = client.post(
         f'{prefix}/groups/delete/',
