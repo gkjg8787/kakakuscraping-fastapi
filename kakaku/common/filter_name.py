@@ -1,8 +1,5 @@
 from enum import Enum, auto, unique
 
-class AutoUpperName(Enum):
-    def _generate_next_value_(name, start, count, last_values):
-        return name.upper()
 
 class AutoLowerName(Enum):
     def _generate_next_value_(name, start, count, last_values):
@@ -27,6 +24,7 @@ class FilterQueryName(AutoLowerName):
     PRMIN = auto()
     PRMAX = auto()
     CONFED = auto()
+    OSCTYPE = auto()
 
 @unique
 class ActFilterName(Enum):
@@ -247,6 +245,23 @@ class AnalysisTermName(Enum):
     THREE_MONTH = (4, "３か月",)
     SIX_MONTH = (5, "６か月",)
     ONE_YEAR = (6, "１年",)
+
+    def __init__(self, id:int, text:str):
+        self.id = id
+        self.qname = self.name.lower()
+        self.jname = text
+    
+    @classmethod
+    def hasId(cls, id:int) -> bool:
+        for isn in cls:
+            if isn.id == id:
+                return True
+        return False
+
+@unique
+class OnlineStoreCopyTypeName(Enum):
+    OVERWRITE = (1, "上書き",)
+    FILL_BLANK = (2, "未登録を埋める",)
 
     def __init__(self, id:int, text:str):
         self.id = id

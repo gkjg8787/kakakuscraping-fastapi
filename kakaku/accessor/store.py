@@ -1,18 +1,25 @@
-from typing import List
+from typing import List, TypedDict
 from sqlalchemy.orm import Session
 
 from model.item import (
     PriceLog,
+    PriceLog_2days,
     UrlInItem,
 )
 from model.store import (
     Store,
     StorePostage,
+    OnlineStore,
+    OnlineStorePostage,
+    Prefecture,
+    DailyOnlineShopInfo,
 )
 from sqlalchemy import (
     select,
     delete,
     update,
+    func,
+    or_,
 )
 from accessor.util import (
     utc_to_jst_date_for_query,
@@ -23,11 +30,9 @@ from common import filter_name
 
 class StoreQuery:
 
-    SEL_ALL = select(Store)
-
     @classmethod
     def get_all(cls, db :Session):
-        return db.scalars(cls.SEL_ALL).all()
+        return db.scalars(select(Store)).all()
     
     @classmethod
     def add_store(cls, db :Session, storename :str) -> int:
@@ -49,6 +54,7 @@ class StoreQuery:
         db.commit()
         for store in add_list:
             db.refresh(store)
+        return add_list
     
     @classmethod
     def delete_store_by_store_id(cls, db :Session, store_id :int) -> None:
@@ -171,7 +177,27 @@ class StoreQuery:
         return db.execute(stmt).all()
     
     @classmethod
-    def get_store_and_postage_stmt(cls):
+    def get_store_and_postage_all_utc(cls, db :Session):
+        stmt = ( select(Store.store_id,
+                   Store.storename,
+                   Store.created_at,
+                   StorePostage.terms_id,
+                   StorePostage.boundary,
+                   StorePostage.postage,
+                   StorePostage.created_at.label("terms_created_at")
+                   )
+                .join(StorePostage,
+                      Store.store_id == StorePostage.store_id,
+                      isouter=True
+                      )
+                .order_by(Store.store_id,
+                    StorePostage.terms_id
+                    )
+            )
+        return db.execute(stmt).all()
+
+    @classmethod
+    def get_store_and_postage_local_time_stmt(cls):
         stmt = ( select(Store.store_id,
                    Store.storename,
                    utc_to_jst_datetime_for_query(Store.created_at).label("created_at"),
@@ -221,14 +247,14 @@ class StoreQuery:
                 return stmt
     @classmethod
     def get_store_and_postage_all(cls, db :Session, fq :dict = {}):
-        stmt = cls.get_store_and_postage_stmt()
+        stmt = cls.get_store_and_postage_local_time_stmt()
         stmt = cls._set_store_terms_configured_filter(stmt=stmt, fq=fq)
         stmt = cls._set_store_list_filter(stmt=stmt, fq=fq)
         return db.execute(stmt).all()
         
     @classmethod
     def get_store_and_postage_by_item_id(cls, db :Session, item_id :int):
-        stmt = cls.get_store_and_postage_stmt()
+        stmt = cls.get_store_and_postage_local_time_stmt()
         stmt = (stmt
                 .where(Store.store_id == item_id)
                 )
@@ -240,3 +266,492 @@ class StoreQuery:
                 .where(Store.store_id == store_id)
                 )
         return db.scalar(stmt)
+    
+    @classmethod
+    def delete_store_by_not_in_storenames(cls, db :Session, storename_list :list[str]):
+        store_ids_q = (select(Store.store_id)
+                   .where(Store.storename.not_in(storename_list))
+                   )
+        delete_store = (delete(Store)
+                .where(Store.store_id.in_(store_ids_q))
+                )
+        db.execute(delete_store)
+        db.commit()
+    
+    @classmethod
+    def delete_all_storepostage(cls, db :Session):
+        stmt = (delete(StorePostage))
+        db.execute(stmt)
+        db.commit()
+    
+    @classmethod
+    def add_postage_by_add_postage_dict(cls, db :Session, add_postage_dict :dict[str, list[StorePostage]]):
+        add_list :list[StorePostage] = []
+        for st_list in add_postage_dict.values():
+            db.add_all(st_list)
+            add_list.extend(st_list)
+        db.commit()
+        for a in add_list:
+            db.refresh(a)
+    
+class OnlineStoreQuery:
+    @classmethod
+    def get_all_stmt(cls):
+        return (select(OnlineStore.shop_id,
+                       OnlineStore.storename,
+                       OnlineStore.created_at,
+                       OnlineStorePostage.pref_id,
+                       OnlineStorePostage.terms_id,
+                       OnlineStorePostage.boundary,
+                       OnlineStorePostage.postage,
+                       OnlineStorePostage.campaign_msg,
+                       OnlineStorePostage.insert_proc_type,
+                       OnlineStorePostage.created_at.label("terms_created_at")
+                       )
+                .select_from(OnlineStore)
+                .join(OnlineStorePostage,
+                      OnlineStore.shop_id == OnlineStorePostage.shop_id,
+                      isouter=True
+                      )
+                )
+    
+    @classmethod
+    def get_all(cls, db :Session):
+        stmt = (cls.get_all_stmt()
+                .order_by(OnlineStore.shop_id.asc(),
+                          OnlineStorePostage.pref_id,
+                          OnlineStorePostage.terms_id
+                          )
+                )
+        return db.execute(stmt).all()
+    
+    @classmethod
+    def get_all_by_prefname(cls, db:Session, pref_name_list :list[str]):
+        stmt = (cls.get_all_stmt()
+                .join(Prefecture,
+                      Prefecture.pref_id == OnlineStorePostage.pref_id
+                      )
+                .where(Prefecture.name.in_(pref_name_list))
+                .order_by(OnlineStore.shop_id.asc(),
+                          OnlineStorePostage.pref_id,
+                          OnlineStorePostage.terms_id
+                          )
+                )
+        return db.execute(stmt).all()
+    
+    @classmethod
+    def get_all_local_time_stmt(cls):
+        return (select(OnlineStore.shop_id,
+                       OnlineStore.storename,
+                       utc_to_jst_datetime_for_query(OnlineStore.created_at).label("created_at"),
+                       OnlineStorePostage.pref_id,
+                       OnlineStorePostage.terms_id,
+                       OnlineStorePostage.boundary,
+                       OnlineStorePostage.postage,
+                       OnlineStorePostage.campaign_msg,
+                       OnlineStorePostage.insert_proc_type,
+                       utc_to_jst_datetime_for_query(OnlineStorePostage.created_at).label("terms_created_at")
+                       )
+                .select_from(OnlineStore)
+                .join(OnlineStorePostage,
+                      OnlineStore.shop_id == OnlineStorePostage.shop_id,
+                      isouter=True
+                      )
+                )
+    
+    @classmethod
+    def set_store_sort_filter(cls, stmt, fq :dict):
+        if filter_name.FilterQueryName.SORT.value in fq:
+            sort_id = int(fq[filter_name.FilterQueryName.SORT.value])
+        else:
+            return (stmt
+                    .order_by(OnlineStore.shop_id.asc(),
+                          OnlineStorePostage.pref_id,
+                          OnlineStorePostage.terms_id
+                          )
+                    )
+        match sort_id:
+            case filter_name.StoreListSortName.NAME_ASC.id:
+                return stmt.order_by(OnlineStore.storename.asc(),
+                                     OnlineStore.shop_id.asc(),
+                                     OnlineStorePostage.pref_id.asc(),
+                                     OnlineStorePostage.terms_id.asc()
+                                     )
+            case filter_name.StoreListSortName.NAME_DESC.id:
+                return stmt.order_by(OnlineStore.storename.desc(),
+                                     OnlineStore.shop_id.asc(),
+                                     OnlineStorePostage.pref_id.asc(),
+                                     OnlineStorePostage.terms_id.asc()
+                                     )
+            case filter_name.StoreListSortName.OLD_STORE.id:
+                return stmt.order_by(OnlineStore.shop_id.asc(),
+                                     OnlineStorePostage.pref_id.asc(),
+                                     OnlineStorePostage.terms_id.asc()
+                                     )
+            case filter_name.StoreListSortName.NEW_STORE.id:
+                return stmt.order_by(OnlineStore.shop_id.desc(),
+                                     OnlineStorePostage.pref_id.asc(),
+                                     OnlineStorePostage.terms_id.asc()
+                                     )
+            case _:
+                return stmt
+    
+    @classmethod
+    def set_store_terms_configured_filter(cls, stmt, fq :dict):
+        if not filter_name.FilterQueryName.CONFED.value in fq:
+            return stmt
+        confed_id = int(fq[filter_name.FilterQueryName.CONFED.value])
+        match confed_id:
+            case filter_name.StoreTermsConfiguredFilterName.ALL.id:
+                return stmt
+            case filter_name.StoreTermsConfiguredFilterName.CONFIGURED.id:
+                return stmt.where(OnlineStorePostage.boundary != None)
+            case filter_name.StoreTermsConfiguredFilterName.NONE.id:
+                return stmt.where(OnlineStorePostage.boundary == None)
+            case _:
+                return stmt
+    
+    @classmethod
+    def set_pref_filter(cls, stmt, fq :dict):
+        if not filter_name.FilterQueryName.PREF.value in fq:
+            return stmt
+        return (stmt
+                .join(Prefecture,
+                      OnlineStorePostage.pref_id == Prefecture.pref_id,
+                      isouter=True
+                      )
+                .where(Prefecture.name == fq[filter_name.FilterQueryName.PREF.value])
+                )
+    @classmethod
+    def set_shop_id_filter(cls, stmt, fq :dict):
+        if not filter_name.FilterQueryName.STORE.value in fq:
+            return stmt
+        return (stmt
+                .where(OnlineStore.shop_id == int(fq[filter_name.FilterQueryName.STORE.value]))
+                )
+        
+    @classmethod
+    def get_all_local_time_by_query(cls, db :Session, fq :dict):
+        stmt = cls.get_all_local_time_stmt()
+        stmt = cls.set_shop_id_filter(stmt, fq)
+        stmt = cls.set_store_terms_configured_filter(stmt, fq)
+        stmt = cls.set_pref_filter(stmt, fq)
+        stmt = cls.set_store_sort_filter(stmt, fq)
+        return db.execute(stmt).all()
+
+    @classmethod
+    def get_storename_list(cls, db :Session) -> list[str] | None:
+        stmt = (select(OnlineStore.storename))
+        return db.scalars(stmt).all()
+    
+    @classmethod
+    def get_onlinestore_all(cls, db :Session) -> list[OnlineStore] | None:
+        stmt = (select(OnlineStore))
+        return db.scalars(stmt).all()
+
+    @classmethod
+    def get_postage_including_none_by_storename_list(cls,
+                                      db :Session,
+                                      storename_list :list[str],
+                                      insert_proc_type_list :list[int] = []
+                                      ):
+        stmt = (select(OnlineStore.shop_id,
+                       OnlineStore.storename,
+                       OnlineStorePostage.pref_id,
+                       OnlineStorePostage.terms_id,
+                       OnlineStorePostage.boundary,
+                       OnlineStorePostage.postage,
+                       OnlineStorePostage.campaign_msg,
+                       OnlineStorePostage.insert_proc_type
+                       )
+                .select_from(OnlineStore)
+                .join(OnlineStorePostage,
+                      OnlineStore.shop_id == OnlineStorePostage.shop_id,
+                      isouter=True
+                      )
+                .where(OnlineStore.storename.in_(storename_list))
+                .order_by(OnlineStore.shop_id.asc(),
+                          OnlineStorePostage.pref_id,
+                          OnlineStorePostage.terms_id
+                          )
+                )
+        if insert_proc_type_list:
+            stmt = stmt.where(or_(
+                OnlineStorePostage.insert_proc_type.in_(insert_proc_type_list),
+                OnlineStorePostage.insert_proc_type == None
+                                  )
+                            )
+        return db.execute(stmt).all()
+    
+    @classmethod
+    def get_count_postage_not_updated_today(cls,
+                                      db :Session,
+                                      insert_proc_type_list :list[int] = []
+                                      ):
+        stmt = (select(func.count(OnlineStore.shop_id))
+                .join(OnlineStorePostage,
+                      OnlineStore.shop_id == OnlineStorePostage.shop_id,
+                      isouter=True
+                      )
+                .where(or_(
+                    OnlineStorePostage.created_at == None,
+                    utc_to_jst_date_for_query(OnlineStorePostage.created_at) < get_jst_date_for_query()
+                    ))
+                )
+        if insert_proc_type_list:
+            stmt = stmt.where(or_(
+                OnlineStorePostage.insert_proc_type.in_(insert_proc_type_list),
+                OnlineStorePostage.insert_proc_type == None
+                                  )
+                            )
+        return db.scalar(stmt)
+    
+    @classmethod
+    def get_shop_id(cls, db :Session, storename :str) -> int | None:
+        stmt = (select(OnlineStore.shop_id)
+                .where(OnlineStore.storename == storename)
+                )
+        return db.scalar(stmt)
+    
+    @classmethod
+    def add_store(cls,
+                  db :Session,
+                  storename : str
+                  ) -> int:
+        
+        os = OnlineStore(storename=storename)
+        db.add(os)
+        db.commit()
+        db.refresh(os)
+        return os.shop_id
+    
+    @classmethod
+    def add_postage_by_dict_list(cls,
+                                db :Session,
+                                shop_id :int,
+                                start_terms_id :int,
+                                pos_dict_list :list[dict],
+                                ):
+        osp_list :list[OnlineStorePostage] = []
+        terms_id = start_terms_id
+        pre_pref_id = None
+        for dic in pos_dict_list:
+            if not pre_pref_id:
+                pre_pref_id = dic["pref_id"]
+            elif pre_pref_id == dic["pref_id"]:
+                terms_id += 1
+            else:
+                terms_id = start_terms_id
+            osp = OnlineStorePostage(shop_id=shop_id,
+                                    pref_id=dic["pref_id"],
+                                    terms_id=terms_id,
+                                    boundary=dic["boundary"],
+                                    postage=dic["postage"],
+                                    campaign_msg=dic["campaign_msg"],
+                                    insert_proc_type=dic["insert_proc_type"]
+                                    )
+            osp_list.append(osp)
+            db.add(osp)
+            pre_pref_id = dic["pref_id"]
+            
+        if not osp_list:
+            return
+        db.commit()
+        for osp in osp_list:
+            db.refresh(osp)
+    
+    
+    @classmethod
+    def delete_postage_by_storename_and_pref_id(cls,
+                                                db :Session,
+                                                storename :str,
+                                                pref_id :int,
+                                                insert_proc_type_list :list[int] = []
+                                                ):
+        shop_id_q = (select(OnlineStore.shop_id)
+                   .where(OnlineStore.storename == storename)
+                   ).scalar_subquery()
+        stmt = (delete(OnlineStorePostage)
+                .where(OnlineStorePostage.shop_id == shop_id_q)
+                .where(OnlineStorePostage.pref_id == pref_id)
+                )
+        if insert_proc_type_list:
+            stmt = (stmt
+                    .where(OnlineStorePostage.insert_proc_type.in_(insert_proc_type_list))
+                    )
+        db.execute(stmt)
+        db.commit()
+    
+    @classmethod
+    def delete_postage_by_not_in_storename_list(cls,
+                                                db :Session,
+                                                storename_list :list[str]
+                                                ):
+        shop_ids_q = (select(OnlineStore.shop_id)
+                   .where(OnlineStore.storename.in_(storename_list))
+                   )
+        stmt = (delete(OnlineStorePostage)
+                .where(OnlineStorePostage.shop_id.not_in(shop_ids_q))
+                )
+        db.execute(stmt)
+        db.commit()
+    
+    @classmethod
+    def delete_postage_by_storename_and_pref_id_and_not_in_terms_id(cls,
+                                                                    db :Session,
+                                                                    storename :str,
+                                                                    pref_id :int,
+                                                                    leave_terms_id_list :list[int],
+                                                                    insert_proc_type_list :list[int] = []
+                                                                    ):
+        shop_id_q = (select(OnlineStore.shop_id)
+                   .where(OnlineStore.storename == storename)
+                   ).scalar_subquery()
+        stmt = (delete(OnlineStorePostage)
+                .where(OnlineStorePostage.shop_id == shop_id_q)
+                .where(OnlineStorePostage.pref_id == pref_id)
+                .where(OnlineStorePostage.terms_id.not_in(leave_terms_id_list))
+                )
+        if insert_proc_type_list:
+            stmt = (stmt
+                    .where(OnlineStorePostage.insert_proc_type.in_(insert_proc_type_list))
+                    )
+        db.execute(stmt)
+        db.commit()
+
+    @classmethod
+    def delete_postage_by_shop_id_and_insert_proc_type(cls,
+                                                       db :Session,
+                                                       shop_id :int,
+                                                       insert_proc_type :int
+                                                      ):
+        stmt = (delete(OnlineStorePostage)
+                .where(OnlineStorePostage.shop_id == shop_id)
+                .where(OnlineStorePostage.insert_proc_type == insert_proc_type)
+                )
+        db.execute(stmt)
+        db.commit()
+
+    @classmethod
+    def get_todays_storenames(cls, db :Session):
+        stmt = (select(PriceLog_2days.storename.distinct())
+                .where(utc_to_jst_date_for_query(PriceLog_2days.created_at) == get_jst_date_for_query())
+                )
+        return db.scalars(stmt).all()
+
+class PrefectureQuery:
+    @classmethod
+    def add_all(cls, db :Session, prefname_list :list[str]):
+        for prefname in prefname_list:
+            p = Prefecture(name=prefname)
+            db.add(p)
+        if not prefname_list:
+            return
+        db.commit()
+
+    @classmethod
+    def get_by_prefname_list(cls,
+                             db :Session,
+                             prefname_list :list[str]
+                             ):
+        stmt = (select(Prefecture)
+                .where(Prefecture.name.in_(prefname_list))
+                )
+        return db.scalars(stmt).all()
+    
+    @classmethod
+    def get_all(cls , db :Session) -> list[Prefecture] | None:
+        stmt = select(Prefecture)
+        return db.scalars(stmt).all()
+
+
+class DailyOnlineShopInfoQuery:
+    @classmethod
+    def get_all(cls, db :Session) -> list[DailyOnlineShopInfo] | None:
+        stmt = select(DailyOnlineShopInfo)
+        return db.scalars(stmt).all()
+    
+    @classmethod
+    def get_by_contains_storename(cls, db :Session, storename :str):
+        stmt = (select(DailyOnlineShopInfo)
+                .where(DailyOnlineShopInfo.shop_name.contains(storename))
+                )
+        return db.scalars(stmt).all()
+    
+    @classmethod
+    def get_shop_id_by_storename(cls, db :Session, storename :str):
+        stmt = (select(DailyOnlineShopInfo.shop_id)
+                .where(DailyOnlineShopInfo.shop_name == storename)
+                )
+        return db.scalar(stmt)
+    
+    @classmethod
+    def add_all(cls, db :Session, add_list :list[DailyOnlineShopInfo]):
+        db.add_all(add_list)
+        db.commit()
+        for a in add_list:
+            db.refresh(a)
+    
+    @classmethod
+    def delete(cls,
+               db :Session,
+               insert_proc_type_list :list[int] = [],
+               delete_older_than_today :bool = False,
+               ):
+        stmt = delete(DailyOnlineShopInfo)
+        if insert_proc_type_list:
+            stmt = (stmt
+                    .where(DailyOnlineShopInfo.insert_proc_type.in_(insert_proc_type_list))
+                    )
+        if delete_older_than_today:
+            stmt = (stmt
+                    .where(utc_to_jst_date_for_query(DailyOnlineShopInfo.created_at) < get_jst_date_for_query())
+                    )
+        db.execute(stmt)
+        db.commit()
+
+    @classmethod
+    def get_todays_count(cls,
+                         db :Session,
+                         insert_proc_type_list :list[int] = []
+                         ):
+        stmt = (select(func.count(DailyOnlineShopInfo.shop_id))
+                .where(utc_to_jst_date_for_query(DailyOnlineShopInfo.created_at) == get_jst_date_for_query())
+                )
+        if insert_proc_type_list:
+            stmt = (stmt.
+                    where(DailyOnlineShopInfo.insert_proc_type.in_(insert_proc_type_list))
+                    )
+        return db.scalar(stmt)
+
+    @classmethod
+    def get_count_before_today(cls,
+                               db :Session,
+                               insert_proc_type_list :list[int] = []
+                               ):
+        stmt = (select(func.count(DailyOnlineShopInfo.shop_id))
+                .where(utc_to_jst_date_for_query(DailyOnlineShopInfo.created_at) < get_jst_date_for_query())
+                )
+        if insert_proc_type_list:
+            stmt = (stmt.
+                    where(DailyOnlineShopInfo.insert_proc_type.in_(insert_proc_type_list))
+                    )
+        return db.scalar(stmt)
+    
+    @classmethod
+    def update(cls,
+               db :Session,
+               update_list :list[DailyOnlineShopInfo]
+               ):
+        if not update_list:
+            return
+        for dosi in update_list:
+            dic = dosi.toDict()
+            shop_id = dic.pop("shop_id")
+            stmt = (update(DailyOnlineShopInfo)
+                    .where(DailyOnlineShopInfo.shop_id == shop_id)
+                    .values(dic)
+                    )
+            db.execute(stmt)
+        db.commit()
+

@@ -1431,7 +1431,7 @@ class UrlQuery:
         db.commit()
     
     @classmethod
-    def get_url_and_item_comb_list(cls, db :Session, filter :dict):
+    def get_url_and_item_comb_list_in_local_time(cls, db :Session, filter :dict):
         isactive = cls.get_act_filter(filter)
 
         url_uniq = ( select(PriceLog.url_id.distinct().label('url_id'),
@@ -1447,7 +1447,7 @@ class UrlQuery:
         stmt = ( select(Url.url_id,
                         Url.urlpath,
                         url_uniq.c.uniqname,
-                        Url.created_at,
+                        utc_to_jst_datetime_for_query(Url.created_at).label("created_at"),
                         UrlInItem.item_id,
                         Item.name.label('itemname'),
                         UrlInItem.active)

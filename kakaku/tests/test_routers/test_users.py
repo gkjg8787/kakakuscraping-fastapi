@@ -823,3 +823,10 @@ def test_read_users_store_delete_result(test_db):
     assert "店舗情報の削除" in response.text
     assert "削除しました。" in response.text
     drop_test_db()
+
+def test_read_users_online_stores(test_db):
+    response = client.get(f'{prefix}/onlinestores/')
+    assert response.status_code == 200
+    is_html(response.text)
+    assert '自動取得した店舗一覧' in response.text
+    assert '0件' in response.text

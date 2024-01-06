@@ -1,15 +1,10 @@
 from typing import List, Dict, Union, Optional
-import re
-from enum import Enum
-import json
 
 from pydantic import BaseModel
-
 from sqlalchemy.orm import Session
 
 from common import (
     filter_name,
-    const_value,
     templates_string,
     read_config,
 )
@@ -28,8 +23,13 @@ from itemcomb.storepostage import (
 from itemcomb.sumitemcomb_adapt import startCalcSumitemComb
 import model.store as mstore
 
-from itemcomb.surugaya_postage_util import getPrefList, funcstart
+from itemcomb import surugaya_postage_util as spu 
 from itemcomb.surugaya_postage.const_value import DEFAULT_PREF
+
+from template_value.storepostage import (
+    StoreShippingTerms,
+    Terms,
+)
 
 class ItemSelectionContext(BaseTemplateValue):
     res :List
@@ -85,105 +85,6 @@ class ItemSelectionContext(BaseTemplateValue):
         if filter_name.FilterQueryName.PRMAX.value in self.fquery:
             self.MAX_PRICE_RANGE = int(self.fquery[filter_name.FilterQueryName.PRMAX.value])
 
-class OperatorName(Enum):
-    GT = ("gt", "<")
-    GE = ("ge", "<=")
-    LT = ("lt", ">")
-    LE = ("le", ">=")
-
-    def __init__(self, lower :str, symbol :str):
-        self.lower = lower
-        self.symbol = symbol
-
-
-class SelecteTermsOperator():
-    gt :str = ""
-    ge :str = ""
-    lt :str = ""
-    le :str = ""
-
-class Terms():
-    terms_num :int
-    terms_index :int
-    boundary1 :str = ""
-    boundary2 :str = ""
-    ope :List[SelecteTermsOperator]
-    postage :str = ""
-    created_at :str = ""
-
-
-    def __init__(self, terms_index, boundary, postage, created_at):
-        self.terms_index = self.__get_int_or_default(terms_index)
-        self.terms_num = self.terms_index
-        if boundary:
-            self.ope = []
-            self.set_boundary(boundary)
-        else:
-            self.ope = [self.create_SelecteTermsOperator('')]
-        if postage:
-            self.postage = postage
-        if created_at:
-            self.created_at = created_at
-    
-    @classmethod
-    def __get_int_or_default(cls, val) -> int:
-        if not val or not str(val).isdecimal():
-            return const_value.INIT_TERMS_ID
-        return int(val)
-
-
-    def create_SelecteTermsOperator(self, opestr) -> SelecteTermsOperator:
-        res = SelecteTermsOperator()
-        selected = templates_string.HTMLOption.SELECTED.value
-        if opestr == OperatorName.GE.symbol:
-            res.ge = selected
-            return res
-        if opestr == OperatorName.GT.symbol:
-            res.gt = selected
-            return res
-        if opestr == OperatorName.LE.symbol:
-            res.le = selected
-            return res
-        if opestr == OperatorName.LT.symbol:
-            res.lt = selected
-            return res
-        return res
-
-    def set_boundary(self, boundary):
-        pattern = r'([0-9]*)([<|>]=?)'
-        boudarydivptn = re.compile(pattern)
-        bv = boudarydivptn.findall(boundary)
-        if len(bv) == 0:
-            self.boundary1 = ''
-            self.ope.append(self.create_SelecteTermsOperator(''))
-        if len(bv) == 1 or len(bv) == 2:
-            self.boundary1 = bv[0][0]
-            self.ope.append(self.create_SelecteTermsOperator(bv[0][1]))
-        if len(bv) == 2:
-            self.boundary2 = bv[1][0]
-            self.ope.append(self.create_SelecteTermsOperator(bv[1][1]))
-        return
-
-
-class StoreShippingTerms():
-    store_id :Union[int,str]
-    storename :str
-    terms_list :List[Terms]
-
-    def __init__(self, store_id, storename):
-        self.store_id = self.__get_int_or_blank(store_id)
-        self.storename = storename
-        self.terms_list = []
-
-    def add_terms(self, terms :Terms):
-        self.terms_list.append(terms)    
-
-
-    @staticmethod
-    def __get_int_or_blank(val):
-        if not val or not str(val).isdecimal():
-            return ''
-        return int(val)
 
 
 
@@ -341,57 +242,12 @@ class ItemCombCalcResultContext(BaseTemplateValue):
                              store_id_list=store_id_list,
                              storepostage_list=storepostage_list)
 
-class StoreShippingInfo:
+
+class SearchShippingResult(BaseModel):
     shop_name :str = ""
     url :str = ""
     shop_id :int
-    postage :Union[int,None] = None
-    national_fee :Union[int,None] = None
-    local_fee :Union[int,None] = None
-
-    def __init__(self, res :Dict):
-        if 'shop_name' in res:
-            self.shop_name = res['shop_name']
-        if 'href' in res:
-            self.url = res['href']
-        if 'shop_id' in res:
-            self.shop_id = int(res['shop_id'])
-        if 'postage' in res:
-            self.set_postages(res['postage'])
-
-    
-    def set_postages(self, postages):
-        for p in postages:
-            if 'national_fee' in p \
-                and not self.national_fee\
-                and p['national_fee']:
-                self.national_fee = int(p['national_fee'])
-            if 'fee' in p\
-                and not self.local_fee\
-                and p['fee']:
-                self.local_fee = int(p['fee'])
-                continue
-        if not self.national_fee:
-            self.postage = self.local_fee
-        elif not self.local_fee:
-            self.postage = self.national_fee
-        elif self.national_fee != 0 and self.local_fee != 0:
-            self.postage =  self.local_fee
-
-
-    
-
-class ShippingResult:
-    shipping_list :List[StoreShippingInfo] = []
-
-    def __init__(self, result :Dict):
-        self.shipping_list = list()
-        if 'result' in result:
-            for r in result['result']:
-                ssi = StoreShippingInfo(r)
-                self.shipping_list.append(ssi)
-    def get_list(self):
-        return self.shipping_list
+    postage :int | None = None
 
 class DestinationPrefecture(BaseModel):
     name :str = ""
@@ -406,21 +262,23 @@ class SearchShippingContext(BaseTemplateValue):
     search_result :List = []
     errmsg :str = ""
 
-    def __init__(self, request, ssq :ppc.SearchShippingQuery):
+    def __init__(self, request, ssq :ppc.SearchShippingQuery, db :Session):
         super().__init__(request=request)
         if not ssq.pref:
             pref = DEFAULT_PREF
         else:
             pref = ssq.pref
         #print(pref)
-        raw_pref_list = getPrefList()
+        raw_pref_list = spu.getPrefList()
         self.pref_list = self.create_pref_list(raw_pref_list, pref)
         self.sword = ssq.word
         if not ssq.is_valid():
             self.errmsg = ssq.errmsg
             return
-        res = funcstart(storename=ssq.word, exact=False, prefectures=[pref])
-        self.search_result = self.create_search_result(res)
+        self.search_result = self.cretate_search_result(db=db,
+                                                        storename=ssq.word,
+                                                        prefectures=[pref]
+                                                        )
         if len(self.search_result) == 0:
             self.errmsg = "見つかりませんでした"
             return
@@ -433,10 +291,24 @@ class SearchShippingContext(BaseTemplateValue):
                 dp.selected = templates_string.HTMLOption.SELECTED.value
             results.append(dp)
         return results
-
-    def create_search_result(self, res):
-        #print(res)
-        sr = ShippingResult(res)
-        return sr.get_list()
+    
+    def cretate_search_result(self,
+                              db :Session,
+                              storename :str,
+                              prefectures :list[str]
+                              ):
+        if not prefectures:
+            return []
+        res = spu.get_shippingResult(db=db, storename=storename, prefectures=prefectures)
+        results :list[SearchShippingResult] = []
+        for r in res.get_list():
+            ssr = SearchShippingResult(shop_id=r.shop_id,
+                                       url=r.url,
+                                       shop_name=r.shop_name,
+                                       postage=r.get_prefecture_postage(prefectures[0])
+                                       )
+            results.append(ssr)
+            
+        return results
 
 

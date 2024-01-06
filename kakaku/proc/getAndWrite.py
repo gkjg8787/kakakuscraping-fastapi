@@ -1,6 +1,6 @@
 import os
-import sys
 import datetime
+from enum import Enum, auto
 
 from typing import Dict, List, Optional
 
@@ -19,6 +19,9 @@ from html_parser import (
 )
 from common import read_config, const_value
 from common.util import isLocalToday, utcTolocaltime
+from itemcomb import postage_data as posd
+from itemcomb import surugaya_postage_util as spu
+
 #from common.stop_watch import stop_watch
 
 
@@ -219,10 +222,6 @@ def __is_update_price(insert_new :int,
         and insert_new == db_new:
         return True
     return False
-    #if (insert_new != db_new and insert_new != const_value.INIT_PRICE)\
-    #    or (insert_used != db_used and insert_used != const_value.INIT_PRICE):
-    #    return True
-    #return False
 
 def get_newest_pricelog(pricelog_list :List, url_id :int, storename :str):
     newest = None
@@ -248,11 +247,205 @@ def update_itemsprice(db :Session,
     pldict = convert_pricelog(pricedatadict)
     upsert_pricelog(db, pldict=pldict, newest_pricelog=newest_pricelog)
 
-def get_parse_data(fname, url_id, url):
+def get_now_db_datetime():
     dt_now = datetime.datetime.utcnow()
     date = dt_now.replace(microsecond = 0)
+    return date
+
+def get_parse_data(fname, url_id, url):
+    date = get_now_db_datetime()
     return gethtmlparse.getParser(fname, url_id, date, url)
+
+
+def create_online_postage_dict_list(db :Session, pstorepos :htmlparse.ParseStorePostage):
+    pos_dict_list :list[dict]= []
+    if not pstorepos.target_prefectures:
+        pref_id = const_value.NONE_PREF_ID
+        for terms in pstorepos.terms:
+            pos_dict :dict = {}
+            pos_dict["boundary"] = terms.boundary
+            pos_dict["postage"] = terms.postage
+            pos_dict["pref_id"] = pref_id
+            pos_dict["campaign_msg"] = pstorepos.campaign_msg
+            pos_dict["insert_proc_type"] = posd.InsertProcType.ITEM_UPDATE.value
+            pos_dict_list.append(pos_dict)
+    else:
+        pref_list = store.PrefectureQuery.get_all(db)
+        pref_dict :dict[str, int] = { pref.name : pref.pref_id for pref in pref_list}
+        for pref_name in pstorepos.target_prefectures:
+            for terms in pstorepos.terms:
+                pos_dict :dict = {}
+                pos_dict["boundary"] = terms.boundary
+                pos_dict["postage"] = terms.postage
+                pos_dict["pref_id"] = pref_dict[pref_name]
+                pos_dict["campaign_msg"] = pstorepos.campaign_msg
+                pos_dict["insert_proc_type"] = posd.InsertProcType.ITEM_UPDATE.value
+                pos_dict_list.append(pos_dict)
+    return pos_dict_list
+
+
+def add_online_storepostage(db :Session,
+                            pstorepos :htmlparse.ParseStorePostage,
+                            shop_id :int | None = None):
+    if not shop_id:
+        shop_id = store.OnlineStoreQuery.get_shop_id(db=db, storename=pstorepos.storename)
+        if not shop_id:
+            raise ValueError("shop_id is None")
+    pos_dict_list = create_online_postage_dict_list(db=db, pstorepos=pstorepos)
+    store.OnlineStoreQuery.add_postage_by_dict_list(db=db,
+                                    shop_id=shop_id,
+                                    start_terms_id=const_value.INIT_TERMS_ID,
+                                    pos_dict_list=pos_dict_list
+                                    )
+
+
+def add_online_store_and_storepostage(db :Session, pstorepos :htmlparse.ParseStorePostage):
+    if not pstorepos:
+        return
+    shop_id = store.OnlineStoreQuery.add_store(db=db, storename=pstorepos.storename)    
+    add_online_storepostage(db=db,
+                            pstorepos=pstorepos,
+                            shop_id=shop_id
+                            )
+
+def create_storename_to_pstorepos_dict(parseitems :htmlparse.ParseItems):
+    store_to_pstorepos :dict[str, htmlparse.ParseStorePostage] = {}
+    for pstorepos in parseitems.getPostageList():
+        store_to_pstorepos[pstorepos.storename] = pstorepos
+    return store_to_pstorepos
+
+def create_storename_to_online_dbdata_dict(db :Session, storename_list :list[str]):
+    storename_list = store.OnlineStoreQuery.get_storename_list(db)
+    dbdata_list = store.OnlineStoreQuery.get_postage_including_none_by_storename_list(db=db,
+                                                                    storename_list=storename_list,
+                                                                    insert_proc_type_list=[posd.InsertProcType.ITEM_UPDATE.value]
+                                                                    )
+    dbdata_store_dict :dict[str, list[dict]]= {}
+    for dbdata in dbdata_list:
+        dic = {k:v for k,v in dbdata._mapping.items()}
+        if not "storename" in dic:
+            continue
+        if "storename" in dbdata_store_dict:
+            dbdata_store_dict[dic["storename"]].append(dic)
+        else:
+            dbdata_store_dict[dic["storename"]] = [dic]
+    for storename in storename_list:
+        if not storename in dbdata_store_dict:
+            dbdata_store_dict[storename] = []
+    return dbdata_store_dict
+
+def equal_dbdata_and_online_terms(dbdata :dict, parsedata :htmlparse.ParseStorePostage):
+    for terms in parsedata.terms:
+        if terms.boundary == dbdata["boundary"]\
+            and terms.postage == int(dbdata["postage"])\
+            and parsedata.campaign_msg == dbdata["campaign_msg"]\
+            and posd.InsertProcType.ITEM_UPDATE.value == int(dbdata["insert_proc_type"]):
+            return True
+    return False
+
+class NextActOnlineUpdate(Enum):
+    ADD = auto()
+    UPDATE = auto()
+    NONE = auto()
+
+def get_next_act_to_online_storepostage(parsedata :htmlparse.ParseStorePostage,
+                                  dbdata_list :list[dict]
+                                  ) -> NextActOnlineUpdate:
+    if parsedata.target_prefectures:
+        raise ValueError("ParseStorePostage.target_prefectures is not None")
+    pref_id = const_value.NONE_PREF_ID
+    for dbdata in dbdata_list:
+        if parsedata.storename != dbdata["storename"]:
+            continue
+        if dbdata["pref_id"] is None:
+            if parsedata.terms:
+                return NextActOnlineUpdate.UPDATE
+            else:
+                return NextActOnlineUpdate.NONE
+        if pref_id == int(dbdata["pref_id"]):
+            if equal_dbdata_and_online_terms(dbdata, parsedata):
+                return NextActOnlineUpdate.NONE
+            return NextActOnlineUpdate.UPDATE
+    return NextActOnlineUpdate.ADD
+            
+
+def update_online_storepostage(db :Session, parseitems :htmlparse.ParseItems):
+    if not parseitems.hasPostage():
+        return
+    storename_to_pstorepos = create_storename_to_pstorepos_dict(parseitems=parseitems)
     
+    storename_to_dbdata = create_storename_to_online_dbdata_dict(db=db,
+                                                                 storename_list=list(storename_to_pstorepos.keys())
+                                                                 )
+    for storename, pstorepos in storename_to_pstorepos.items():
+        if storename in storename_to_dbdata:
+            nextact = get_next_act_to_online_storepostage(pstorepos, storename_to_dbdata[storename])
+            match nextact:
+                case NextActOnlineUpdate.NONE:
+                    continue
+                case NextActOnlineUpdate.ADD:
+                    add_online_storepostage(db=db, pstorepos=pstorepos, shop_id=None)
+                    continue
+                case NextActOnlineUpdate.UPDATE:
+                    store.OnlineStoreQuery.delete_postage_by_storename_and_pref_id(db=db,
+                                                                                   storename=storename,
+                                                                                   pref_id=const_value.NONE_PREF_ID,
+                                                                                   insert_proc_type_list=[posd.InsertProcType.ITEM_UPDATE.value]
+                                                                                   )
+                    add_online_storepostage(db=db, pstorepos=pstorepos, shop_id=None)
+                    continue
+        else:
+            add_online_store_and_storepostage(db=db, pstorepos=pstorepos)
+
+def is_update_makepure_postage_shop(up_data :htmlparse.ParseShopIDInfo,
+                                    db_data :store.DailyOnlineShopInfo,
+                                    now :datetime.datetime
+                                    ):
+    if spu.convert_storename_to_search_storename(up_data.storename) != db_data.shop_name:
+        return True
+    if up_data.url != db_data.url:
+        return True
+    if db_data.insert_proc_type != posd.InsertProcType.ITEM_UPDATE.value:
+        return True
+    if utcTolocaltime(db_data.created_at).date() < utcTolocaltime(now).date():
+        return True
+    return False
+
+def create_DailyOnlineShopInfo_from_ParseShopIDInfo(psii :htmlparse.ParseShopIDInfo,
+                                                    now :datetime.datetime
+                                                    ):
+    return store.DailyOnlineShopInfo(
+                                shop_id=psii.shop_id,
+                                shop_name=spu.convert_storename_to_search_storename(psii.storename),
+                                url=psii.url,
+                                insert_proc_type=posd.InsertProcType.ITEM_UPDATE.value,
+                                created_at=now
+                                )
+
+def update_makepure_postage_shop_list(db :Session, parseitems :htmlparse.ParseItems):
+    if not parseitems.hasShopIDInfo():
+        return
+    db_list = store.DailyOnlineShopInfoQuery.get_all(db=db) or []
+    db_dict :dict = {dosi.shop_id : dosi for dosi in db_list}
+    add_list :list[store.DailyOnlineShopInfo] = []
+    up_list :list[store.DailyOnlineShopInfo] = []
+    now = get_now_db_datetime()
+    for psii in parseitems.getShopIDInfo().values():
+        #check update or add
+        if not psii.shop_id in db_dict:
+            add_list.append(create_DailyOnlineShopInfo_from_ParseShopIDInfo(psii, now))
+        elif is_update_makepure_postage_shop(up_data=psii,
+                                             db_data=db_dict[psii.shop_id],
+                                             now=now
+                                             ):
+            up_list.append(create_DailyOnlineShopInfo_from_ParseShopIDInfo(psii, now))
+    if up_list:
+        store.DailyOnlineShopInfoQuery.update(db=db, update_list=up_list)
+    if add_list:
+        store.DailyOnlineShopInfoQuery.add_all(db=db, add_list=add_list)
+    
+
+
 def startParse(db :Session, url :str, item_id, fname :str, logger=None) -> None:
     url_id = UrlQuery.add_url(db, urlpath=url)
     gp = get_parse_data(fname, url_id, url)
@@ -260,4 +453,6 @@ def startParse(db :Session, url :str, item_id, fname :str, logger=None) -> None:
         logprint("ERROR UNSUPPORTED URL", True, logger)
         return
     update_itemsprices(db=db, parseitems=gp, item_id=item_id, url_id=url_id)
+    update_online_storepostage(db=db, parseitems=gp)
+    update_makepure_postage_shop_list(db=db, parseitems=gp)
     deleteTempFile(fname)

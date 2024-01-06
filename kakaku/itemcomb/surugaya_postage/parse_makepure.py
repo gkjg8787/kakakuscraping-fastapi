@@ -5,14 +5,14 @@ from bs4 import BeautifulSoup
 
 class SurugayaMakepure:
     def __init__(self):
-        self.shoplist = []
+        self.shopdict :dict[str, dict]= {}
 
-    def parse(self, htmltext):
+    def parse(self, htmltext, insert_proc_type :int | None = None):
         self.soup = BeautifulSoup(htmltext,"html.parser")
-        self.shoplist = self.parseShop()
+        self.shopdict = self.parseShop(insert_proc_type)
     
-    def parseShop(self):
-        res = []
+    def parseShop(self, insert_proc_type :int | None = None):
+        res :dict[str, dict] = {}
         ptn = r'https://www.suruga-ya.jp/shop/'
         rptn = r'https:\/\/www\.suruga-ya\.jp\/shop\/(.+)'
         q = r'.full-width a'
@@ -27,11 +27,13 @@ class SurugayaMakepure:
             #if not ptn in u['href']:
             #    continue
             dic['shop_name'] = u.text
-            dic['href'] = u['href']
+            dic['url'] = u['href']
             dic['shop_id'] = m.group(1)
-            res.append(dic)
+            if insert_proc_type:
+                dic['insert_proc_type'] = insert_proc_type
+            res[u.text] = dic
         return res
 
-    def getShopList(self):
-        return self.shoplist
+    def getShopDict(self):
+        return self.shopdict
 

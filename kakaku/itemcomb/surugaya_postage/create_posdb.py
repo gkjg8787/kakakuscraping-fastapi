@@ -1,19 +1,19 @@
-import os
-import json
-from pathlib import Path
-import datetime
 
 import requests
 
+from common import const_value as cmn_const_value
 from itemcomb.surugaya_postage.parse_makepure import SurugayaMakepure
-
 from itemcomb.surugaya_postage.const_value import (
-    userAgent,
     header,
     SHOPLIST_URL,
-    SHOPLIST_FNAME,
 )
+from itemcomb.postage_data import InsertProcType
 
+from accessor.read_sqlalchemy import Session
+from accessor.store import (
+    DailyOnlineShopInfoQuery,
+    DailyOnlineShopInfo
+)
 
 def downLoadHtml(url):
     res = requests.get(url=url, headers=header, cookies=None)
@@ -30,48 +30,74 @@ def downLoadHtml(url):
 def getMakepureHtml():
     return downLoadHtml(SHOPLIST_URL)
 
-def getShopListFilePath():
-    p = Path(__file__)
-    return os.path.join(p.parent, SHOPLIST_FNAME)
 
-def createShopListFile():
-    text = getMakepureHtml()
-    sm = SurugayaMakepure()
-    sm.parse(text)
-    dic = sm.getShopList()
-    f = open(getShopListFilePath(),'w')
-    f.write(json.dumps(dic,ensure_ascii=False))
-    f.close()
-
-def expireShopListFile():
-    ftime = datetime.datetime.fromtimestamp(os.stat(getShopListFilePath()).st_mtime)
-    elapsed_time = datetime.datetime.now() - ftime
-    if elapsed_time.days > 0:
+def is_todays_data_dailyonlineshopinfo(db :Session):
+    cnt = DailyOnlineShopInfoQuery.get_todays_count(db=db,
+                                                    insert_proc_type_list=[InsertProcType.MAKEPURE_TOOL.value]
+                                                    )
+    if cnt and cnt > 0:
         return True
-    else:
-        return False
+    return False
 
-def grepShopList(name):
-    slist = readShopList()
-    res = []
-    for shop in slist:
-        if name in shop['shop_name']:
-            res.append(shop)
-    return res
+def is_expired_dailyonlineshopinfo(db :Session):
+    cnt = DailyOnlineShopInfoQuery.get_count_before_today(db=db,
+                                                    insert_proc_type_list=[InsertProcType.MAKEPURE_TOOL.value]
+                                                    )
+    if cnt and cnt > 0:
+        return True
+    return False
 
-def readShopList():
-    f = open(getShopListFilePath(), 'r')
-    jsontext = f.read()
-    f.close()
-    return json.loads(jsontext)
 
-def getShopID(name):
-    shoplist = readShopList()
-    for shop in shoplist:
-        if name == shop['shop_name']:
-            return shop['shop_id']
-    return -1
+def create_db_shop_id_dict(db :Session):
+    db_data = DailyOnlineShopInfoQuery.get_all(db=db) or []
+    results :dict[int, int] = {}
+    for dosi in db_data:
+        if dosi.shop_id in results:
+            continue
+        results[dosi.shop_id] = 1
+    return results
 
-if __name__ == '__main__':
-    createShopListFile()
+def create_dailyonlineshopinfo(db :Session):
+    DailyOnlineShopInfoQuery.delete(db=db,
+                                    insert_proc_type_list=[InsertProcType.MAKEPURE_TOOL.value]
+                                    )
+    sm = SurugayaMakepure()
+    sm.parse(getMakepureHtml(), insert_proc_type=InsertProcType.MAKEPURE_TOOL.value)
+    dic = sm.getShopDict()
+    add_list :list[DailyOnlineShopInfo] = []
+    dup_chk :dict = {}
+    db_shopid_dict = create_db_shop_id_dict(db)
+    
+    for v in dic.values():
+        shop_id = int(v["shop_id"])
+        if shop_id in dup_chk:
+            continue
+        dup_chk[shop_id] = 1
+        if shop_id in db_shopid_dict:
+            continue
+        add_list.append(DailyOnlineShopInfo(
+            shop_id=int(v["shop_id"]),
+            shop_name=v["shop_name"],
+            url=v["url"],
+            insert_proc_type=v["insert_proc_type"]
+            )
+            )
+    DailyOnlineShopInfoQuery.add_all(db=db, add_list=add_list)
+
+
+def grepShopList(db :Session, name :str):
+    ret = DailyOnlineShopInfoQuery.get_by_contains_storename(db, storename=name)
+    if not ret:
+        return []
+    results :list[dict] = []
+    for r in ret:
+        results.append(r.toDict())
+    return results
+
+def getShopID(db :Session, name:str) -> int:
+    ret = DailyOnlineShopInfoQuery.get_shop_id_by_storename(db, storename=name)
+    if not ret:
+        return cmn_const_value.NONE_ID
+    return ret
+
 

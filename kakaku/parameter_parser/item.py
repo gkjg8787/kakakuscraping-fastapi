@@ -15,6 +15,7 @@ from common.filter_name import (
     ExtractStoreSortName,
     TemplatePostName,
     ItemDetailTimePeriodName,
+    OnlineStoreCopyTypeName,
 )
 from common.templates_string import HTMLOption
 
@@ -24,10 +25,11 @@ from accessor.item import GroupQuery
 from sqlalchemy.orm import Session
 
 from parameter_parser.util import is_suppoer_url, is_valid_id
-from parameter_parser.calcitemcomb import (
-    ItemCombinationResultForm,
+from parameter_parser.storepostage import (
     ItemCombStore,
+    FormDataConvert
 )
+from itemcomb.prefecture import PrefectureName
 
 class NewestFilterQuery():
     gid :str = ""
@@ -673,9 +675,9 @@ class EditShippingConditionForm:
                  ):
         pass
     
-    def set_store_list(self, stores):
+    def set_store_list(self, stores :list[str]):
         if stores:
-            self.store_list = ItemCombinationResultForm.parse_stores(stores=stores)
+            self.store_list = FormDataConvert.parse_stores(stores=stores)
 
 class DeleteStoreForm:
     store_id :int = const_value.NONE_ID
@@ -692,3 +694,58 @@ class DeleteStoreForm:
             self.errmsg = "店舗が不明です"
             return False
         return True
+
+def is_valid_pref(pref :str):
+    if not pref:
+        return False
+    if pref == PrefectureName.get_country_wide_name():
+        return True
+    if pref in PrefectureName.get_all_prefecturename():
+        return True
+    return False
+
+class OnlineStoreListFilterQuery:
+    sort :str = str(StoreListSortName.OLD_STORE.id)
+    confed :str = ""
+    pref :str = ""
+    store :str = ""
+
+    def __init__(self,
+                 sort :str = "",
+                 confed :str = "",
+                 pref :str = "",
+                 store :str = "",
+                 ):
+        if sort and sort.isdigit() and StoreListSortName.hasId(int(sort)):
+            self.sort = sort
+        if confed and confed.isdigit() and StoreTermsConfiguredFilterName.hasId(int(confed)):
+            self.confed = confed
+        if is_valid_pref(pref):
+            self.pref = pref
+        if store and store.isdigit():
+            self.store = store
+    
+    def get_filter_dict(self) -> dict:
+        results = {}
+        if self.sort:
+            results[FilterQueryName.SORT.value] = self.sort
+        if self.confed:
+            results[FilterQueryName.CONFED.value] = self.confed
+        if self.pref:
+            results[FilterQueryName.PREF.value] = self.pref
+        if self.store:
+            results[FilterQueryName.STORE.value] = self.store
+        return results
+
+class OnlineStoreCopyToMyQuery:
+    online_store_copy_type :int
+    pref :str = ""
+
+    def __init__(self,
+                 osctype :int,
+                 pref :str,
+                ):
+        if osctype and OnlineStoreCopyTypeName.hasId(osctype):
+            self.online_store_copy_type = osctype
+        if is_valid_pref(pref):
+            self.pref = pref

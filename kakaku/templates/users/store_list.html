@@ -15,6 +15,8 @@
         <button disabled>送料条件の編集</button>
         {%- endif %}
     </div>
+    <p><a href="{{ url_for('read_users_online_stores') }}" class="like_button_link">自動取得した店舗一覧</a></p>
+    <h3>フィルタ</h3>
     <p>
     {%- with ITEMACT_NAME = CONFIGUREDTERMS_NAME, actstslist = confstslist, fquery = fquery %}
     {%- include "users/item_act_filter.html" %}

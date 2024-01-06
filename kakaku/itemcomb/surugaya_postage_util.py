@@ -1,16 +1,117 @@
-import sys
 import argparse
 import json
-import os
-from pathlib import Path
 import time
+import re
 
-from typing import List
+from typing import List, Dict
 
+from common import const_value
 from itemcomb.surugaya_postage import create_posdb
 from itemcomb.surugaya_postage import post_surugaya_postage
+from itemcomb.prefecture import PrefectureName
 
-POST_WAIT_TIME = 0.5
+from accessor.read_sqlalchemy import Session, get_session
+
+MIN_POST_WAIT_TIME = 0.5
+
+class PrefecturePostage:
+    name : str = ""
+    national_fee : int | None = None
+    local_fee :int | None = None
+
+    def get_postage(self):
+        if self.local_fee:
+            return self.local_fee
+        else:
+            return self.national_fee
+    
+    def is_national_fee(self):
+        return (self.local_fee is None)
+
+class StoreShippingInfo:
+    shop_name :str = ""
+    url :str = ""
+    shop_id :int
+    prefectures_postage :list[PrefecturePostage]
+
+    def __init__(self, res :Dict):
+        self.prefectures_postage = []
+        if 'shop_name' in res:
+            self.shop_name = res['shop_name']
+        if 'url' in res:
+            self.url = res['url']
+        if 'shop_id' in res:
+            self.shop_id = int(res['shop_id'])
+        if 'postage' in res:
+            self.set_postages(res['postage'])
+
+    
+    def set_postages(self, postages):
+        for p in postages:
+            prefpos = PrefecturePostage()
+            if 'national_fee' in p \
+                and p['national_fee']:
+                prefpos.national_fee = int(p['national_fee'])
+            if 'fee' in p\
+                and p['fee']:
+                prefpos.local_fee = int(p['fee'])
+            if 'prefecture' in p:
+                prefpos.name = p['prefecture']
+            if not prefpos.name:
+                if not 'warning' in p\
+                    or not 'list_pref_fee not exist' in p['warning']:
+                    continue
+                prefpos.name = PrefectureName.get_country_wide_name()
+                
+            self.prefectures_postage.append(prefpos)
+
+    
+    def get_prefecture_postage(self, prefecture :str):
+        if len(self.prefectures_postage) == 1\
+            and self.prefectures_postage[0].name == PrefectureName.get_country_wide_name():
+            return self.prefectures_postage[0].get_postage()
+
+        for prefpos in self.prefectures_postage:
+            if prefpos.name == prefecture:
+                return prefpos.get_postage()
+        return None
+
+class ShippingResult:
+    shipping_list :List[StoreShippingInfo] = []
+
+    def __init__(self, result :Dict):
+        self.shipping_list = list()
+        if 'result' in result:
+            for r in result['result']:
+                ssi = StoreShippingInfo(r)
+                self.shipping_list.append(ssi)
+    def get_list(self):
+        return self.shipping_list
+
+def get_shippingResult(db :Session,
+                       storename :str,
+                       prefectures :list[str]  | None = None,
+                       post_wait_time :float = MIN_POST_WAIT_TIME
+                       ):
+    ret = funcstart(db=db,
+                    storename=storename,
+                    exact=False,
+                    post_wait_time=post_wait_time,
+                    prefectures=prefectures
+                    )
+    return ShippingResult(ret)
+
+def convert_storename_to_search_storename(storename :str):
+    ret = storename.replace("駿河屋", "")
+    ret = ret.replace("ブックマーケット", "")
+    ret = re.sub(r"\s+","", ret)
+    ret.strip()
+    m = re.findall(r"(.+)店", ret)
+    if not m:
+        return ret
+    if m[0]:
+        return m[0]
+    return ret
 
 def outputResult(rdict, outputtype):
     if outputtype == 'json':
@@ -21,13 +122,16 @@ def outputResult(rdict, outputtype):
         print(f"{shoppos}")
         print(f"---------------------------------")
 
-def getPostage(pdict):
+def getPostage(db :Session, pdict :dict, wait_time :float = MIN_POST_WAIT_TIME):
     #print(pdict)
     if not pdict['exact']:
-        gsl = create_posdb.grepShopList(pdict['storename'])
+        gsl = create_posdb.grepShopList(db, name=pdict['storename'])
     else:
-        shopid = create_posdb.getShopID(pdict['storename'])
-        gsl = [{'shop_name': pdict['storename'], 'shop_id':shopid}]
+        shopid = create_posdb.getShopID(db, name=pdict['storename'])
+        if shopid == const_value.NONE_ID:
+            gsl = []
+        else:
+            gsl = [{'shop_name': pdict['storename'], 'shop_id':shopid}]
     reslist = []
     for shop in gsl:
         resdic = {}
@@ -35,27 +139,23 @@ def getPostage(pdict):
         resdic.update(shop)
         resdic['postage'] = jdicts
         reslist.append(resdic)
-        time.sleep(POST_WAIT_TIME)
+        if wait_time < MIN_POST_WAIT_TIME:
+            wait_time = MIN_POST_WAIT_TIME
+        time.sleep(wait_time)
     return {'result':reslist }
 
-def checkUpdateShopList(forced_shop_update, without_shop_update):
-    if not os.path.isfile(create_posdb.getShopListFilePath()):
-        create_posdb.createShopListFile()
+def checkUpdateShopList(db :Session, forced_shop_update, without_shop_update):
+    if not create_posdb.is_todays_data_dailyonlineshopinfo(db=db):
+        create_posdb.create_dailyonlineshopinfo(db=db)
         return
     if without_shop_update:
         return
-    if forced_shop_update or create_posdb.expireShopListFile():
-        create_posdb.createShopListFile()
+    if forced_shop_update or create_posdb.is_expired_dailyonlineshopinfo(db=db):
+        create_posdb.create_dailyonlineshopinfo(db=db)
         return
 
 def getPrefList():
-    p = Path(__file__)
-    dirp = 'surugaya_postage'
-    pref_file_name = 'pref_name.txt'
-    f = open(os.path.join(p.parent, dirp, pref_file_name))
-    pl = f.read().splitlines()
-    f.close()
-    return pl
+    return PrefectureName.get_all_prefecturename()
 
 def inPrefList(prefs):
     pl = getPrefList()
@@ -83,7 +183,7 @@ def parseParamOpt(param):
         res['storename'] = args.storename
     else:
         print('parameter ng')
-        sys.exit(1)
+        return
 
     res['exact'] = args.exact
     res['forced_shop_update'] = args.forced_shop_update
@@ -95,22 +195,28 @@ def parseParamOpt(param):
             res['pref'] = args.pref
         else:
             print('pref parameter ng')
-            sys.exit(1)
+            return
     
     return res
 
-def funcstart(storename :str,
+def funcstart(db :Session,
+              storename :str,
               exact :bool,
+              post_wait_time :float,
               forced_shop_update :bool = False,
               without_shop_update :bool = False,
               outtype :str = "dict",
-              prefectures :List[str] = ["東京都"]):
-    checkUpdateShopList(forced_shop_update, without_shop_update)
-    rdict = getPostage({
-        'storename':storename,
-        'exact':exact,
-        'pref':prefectures,
-    })
+              prefectures :List[str] = ["東京都"],
+              ):
+    checkUpdateShopList(db, forced_shop_update, without_shop_update)
+    rdict = getPostage(db,
+                       pdict={
+                        'storename':storename,
+                        'exact':exact,
+                        'pref':prefectures,
+                       },
+                       wait_time=post_wait_time
+                    )
     if outtype == "dict":
         return rdict
     else:
@@ -119,9 +225,7 @@ def funcstart(storename :str,
 def cmdstart(argv):
     pdict = parseParamOpt(argv[1:])
     #print(pdict)
-    checkUpdateShopList(pdict['forced_shop_update'], pdict['without_shop_update'])
-    rdict = getPostage(pdict)
+    with next(get_session()) as db:
+        checkUpdateShopList(db, pdict['forced_shop_update'], pdict['without_shop_update'])
+        rdict = getPostage(db, pdict)
     outputResult(rdict, pdict['outputtype'])
-
-if __name__ == '__main__':
-    cmdstart(sys.argv)

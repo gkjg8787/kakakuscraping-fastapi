@@ -3,7 +3,6 @@ import time
 import sys
 import queue
 
-from typing import Optional
 
 from proc import sendcmd
 from proc import updateAllItems
@@ -19,28 +18,32 @@ from proc.system_status_log import (
 )
 from proc import manager_util
 
-from sqlalchemy.orm import Session
-from accessor.read_sqlalchemy import get_session
+from accessor.read_sqlalchemy import get_session, Session
 
 from common.read_config import (
     get_back_server_queue_timeout,
 )
 from accessor.server import OrganizeLogQuery
-from proc import db_organizer
+from proc import (
+    db_organizer,
+    online_store_postage
+)
 
-from proc.auto_update import UpdateTimer
+from proc.auto_update import TimerProc
 
 from .queuemanager import (
     QueueManager,
     server_port,
     server_pswd,
 )
+from itemcomb.prefecture import PrefectureDBSetting
 
 QUEUE_TIMEOUT = int(get_back_server_queue_timeout()) #5
 
 
-dlproc :Optional[DlProc] = None
-parseproc :Optional[ParseProc] = None
+dlproc :DlProc | None = None
+parseproc :ParseProc | None = None
+timerproc :TimerProc | None = None
 
 
 def getProcStatusAccess():
@@ -49,7 +52,7 @@ def getProcStatusAccess():
 def writeAllProcStop(db :Session):
     ProcStatusAccess.delete_all(db)
 
-def writeProcStart(db :Session, psa :Optional[ProcStatusAccess]=None):
+def writeProcStart(db :Session, psa :ProcStatusAccess | None = None):
     writeAllProcStop(db)
     if psa is None :
         psa = getProcStatusAccess()
@@ -82,8 +85,7 @@ def startQueue():
     result = manager.get_result_queue()
 
     createSubProc()
-    with next(get_session()) as db:
-        waitTask(task=task, result=result, db=db)
+    waitTask(task=task, result=result)
 
     endSubProc()
     with next(get_session()) as db:
@@ -106,20 +108,30 @@ def start_db_organize(db :Session, cmdstr :str):
 
 def scrapingURL(task, db :Session):
     logger = getLogger(cmnlog.LogName.MANAGER)
-    if task.cmdstr == sendcmd.ScrOrder.UPDATE:
-        logger.info(get_filename() + ' get UPDATE')
-        SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.DATA_UPDATE)
-        #dlAndParse(task.url, task.id, logger)
-        dlproc.putDlTask(task.url, task.id)
-        return
-    if task.cmdstr == sendcmd.ScrOrder.UPDATE_ACT_ALL:
-        SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.ALL_DATA_UPDATE)
-        updateAllItems.updateAllitems(db, dlproc)
-        return
-    if task.cmdstr == sendcmd.ScrOrder.DB_ORGANIZE_SYNC\
-        or task.cmdstr == sendcmd.ScrOrder.DB_ORGANIZE_DAYS:
-        start_db_organize(db, cmdstr=task.cmdstr)
-        return
+    match task.cmdstr:
+        case sendcmd.ScrOrder.UPDATE:
+            logger.info(get_filename() + ' get UPDATE')
+            SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.DATA_UPDATE)
+            dlproc.putDlTask(task.url, task.id)
+            return
+        case sendcmd.ScrOrder.AUTO_UPDATE_ACT_ALL:
+            SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.AUTO_ALL_DATA_UPDATE)
+            updateAllItems.updateAllitems(db, dlproc)
+            return
+        case  sendcmd.ScrOrder.UPDATE_ACT_ALL:
+            SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.ALL_DATA_UPDATE)
+            updateAllItems.updateAllitems(db, dlproc)
+            return
+        case sendcmd.ScrOrder.DB_ORGANIZE_SYNC:
+            start_db_organize(db, cmdstr=task.cmdstr)
+            return
+        case sendcmd.ScrOrder.DB_ORGANIZE_DAYS:
+            start_db_organize(db, cmdstr=task.cmdstr)
+            return
+        case sendcmd.ScrOrder.UPDATE_ONLINE_STORE_POSTAGE:
+            SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.ONLINE_STORE_UPDATE)
+            online_store_postage.update_online_store_postage(db=db)
+            return
 
 def check_db_organize(db :Session):
     ret = OrganizeLogQuery.get_log(db, name=db_organizer.DBOrganizerCmd.PRICELOG_CLEANER.name)
@@ -128,21 +140,23 @@ def check_db_organize(db :Session):
         start_db_organize(db, cmdstr=sendcmd.ScrOrder.DB_ORGANIZE_DAYS)
     return
 
-def waitTask(task, result, db :Session):
+def waitTask(task, result):
     logger = getLogger(cmnlog.LogName.MANAGER)
     logger.info(get_filename() + ' waitTask start')
     psa = getProcStatusAccess()
-    manager_util.writeProcActive(db, psa=psa)
-    check_db_organize(db)
-    manager_util.writeProcWaiting(db, psa=psa)
-    SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.ACTIVE)
-    uptimer = UpdateTimer(db=db, logger=logger)
+    with next(get_session()) as db:
+        manager_util.writeProcActive(db, psa=psa)
+        check_db_organize(db)
+        PrefectureDBSetting.init_setting(db=db)
+        manager_util.writeProcWaiting(db, psa=psa)
+        SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.ACTIVE)
     while True:
         try:
             t = task.get(timeout=QUEUE_TIMEOUT)
             logger.debug(get_filename() + ' get task')
             if not psa.getStatus() == ProcStatusAccess.ACTIVE:
-                manager_util.writeProcActive(db, psa=psa)
+                with next(get_session()) as db:
+                    manager_util.writeProcActive(db, psa=psa)
 
             if(t.cmdstr == sendcmd.ScrOrder.END):
                 logger.info(get_filename() + ' get END')
@@ -150,23 +164,27 @@ def waitTask(task, result, db :Session):
             elif(t.cmdstr not in sendcmd.ScrOrder.ORDERLIST):
                 logger.error(get_filename() + 'not in cmdstr =' + t.cmdstr)
             else:
-                scrapingURL(t, db=db)
+                with next(get_session()) as db:
+                    scrapingURL(t, db=db)
         except queue.Empty:
-            if not psa.getStatus() == ProcStatusAccess.WAITING:
-                manager_util.writeProcWaiting(db, psa=psa)
-            update_to_active_for_systemstatuslog(db=db)
-            uptimer.run(db=db)
+            with next(get_session()) as db:
+                if not psa.getStatus() == ProcStatusAccess.WAITING:
+                    manager_util.writeProcWaiting(db, psa=psa)
+                update_to_active_for_systemstatuslog(db=db)
             time.sleep(0.1)
 
 def createSubProc():
-    global dlproc, parseproc
+    global dlproc, parseproc, timerproc
     dlproc = DlProc()
     parseproc = ParseProc()
+    timerproc = TimerProc()
     parseproc.setDlProc(dlproc)
     parseproc.start()
+    timerproc.start()
 
 def endSubProc():
-    global dlproc, parseproc
+    global dlproc, parseproc, timerproc
+    timerproc.end()
     parseproc.shutdown()
     dlproc.shutdownAll()
 

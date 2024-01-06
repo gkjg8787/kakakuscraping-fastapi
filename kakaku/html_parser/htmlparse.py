@@ -1,5 +1,6 @@
 from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
+import copy
 
 from common import const_value
 
@@ -141,14 +142,56 @@ class ParseItemInfo:
             return 0
         rate = int(lpn) / int(opn)
         return (rate - 1)
+
+class ParsePostageTerms:
+    boundary : str = ""
+    postage : int = 0
+
+
+class ParseStorePostage:
+    storename :str = ""
+    terms : list[ParsePostageTerms] = []
+    campaign_msg :str = ""
+    target_prefectures :list[str] = []
+
+    def __init__(self):
+        pass
     
+    def add_terms(self, terms :ParsePostageTerms):
+        if not self.terms:
+            self.terms = [terms]
+            return
+        self.terms.append(terms)
+    
+    def set_prefectures(self, prefecture_list :list[str]):
+        self.target_prefectures = copy.deepcopy(prefecture_list)
+
+class ParseShopIDInfo:
+    storename :str = ""
+    shop_id :int = const_value.NONE_ID
+    url :str = ""
+
+
 class ParseItems(metaclass=ABCMeta):
     @abstractmethod
     def getItems(self):
         return ()
+    
     def trimStr(self,text):
         table = str.maketrans({
             '\u3000':'',
             '\n':''
             })
         return text.translate(table).strip()
+    
+    def hasPostage(self) -> bool:
+        return False
+    
+    def getPostageList(self) -> list[ParseStorePostage] | None:
+        return None
+    
+    def hasShopIDInfo(self) -> bool:
+        return False
+    
+    def getShopIDInfo(self) -> dict[str, ParseShopIDInfo] | None:
+        return None

@@ -54,7 +54,7 @@ async def read_item_price_combination_result(request :Request,
                                              icr :ItemCombinationResultForm = Depends(),
                                              db :Session = Depends(get_session)
                                              ):
-    stores = []
+    stores :list[str] = []
     async with request.form() as fm:
         for k, v in fm._dict.items():
             if 'item_id' in k:
@@ -71,8 +71,11 @@ async def read_item_price_combination_result(request :Request,
         )
 
 @router.get("/shipping/search/", response_class=HTMLResponse)
-def read_input_search_shop_shipping(request :Request, ssq :SearchShippingQuery = Depends()):
-    ssc = SearchShippingContext(request=request, ssq=ssq)
+def read_input_search_shop_shipping(request :Request,
+                                    ssq :SearchShippingQuery = Depends(),
+                                    db :Session = Depends(get_session)
+                                    ):
+    ssc = SearchShippingContext(request=request, ssq=ssq, db=db)
     context = dict(ssc)
     return templates.TemplateResponse(
         "itemcomb/search_shipping.html"

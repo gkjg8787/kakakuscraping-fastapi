@@ -60,3 +60,18 @@ def get_db_version():
 
 def get_system_status_log_max():
     return settings.SYSTEM_STATUS_LOG_MAX
+
+def get_auto_update_check_cycle_time():
+    return settings.AUTO_UPDATE_CHECK_CYCLE_TIME
+
+def get_auto_db_organizer_check_cycle_time():
+    return settings.AUTO_DB_ORGANIZER_CYCLE_TIME
+
+def get_auto_update_online_store_time():
+    return settings.AUTO_UPDATE_ONLINE_STORE_TIME
+
+def get_auto_update_online_store_cycle_time():
+    return settings.AUTO_UPDATE_ONLINE_STORE_CYCLE_TIME
+
+def get_default_shipping_prefecture_name():
+    return settings.DEFAULT_SHIPPING_PREFECTURE

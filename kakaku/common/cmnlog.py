@@ -48,3 +48,4 @@ class LogName:
     SEARCH = "search"
     DB_ORGANIZE = "db_organize"
     ITEMCOMB = "itemcomb"
+    TIMER = "timer"

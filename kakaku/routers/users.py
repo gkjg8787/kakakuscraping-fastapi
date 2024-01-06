@@ -485,7 +485,7 @@ async def read_users_stores_postage_edit_result(request: Request,
                                                 escf :ppi.EditShippingConditionForm = Depends(),
                                                 db :Session = Depends(get_session)
                                             ):
-    stores = []
+    stores :list[str] = []
     async with request.form() as fm:
         for k, v in fm._dict.items():
             if 'item_id' in k:
@@ -525,5 +525,31 @@ def read_users_store_delete_result(request: Request,
     context = dict(ulc)
     return templates.TemplateResponse(
         "users/del_shipping_condition.html"
+        ,context
+        )
+
+@router.get("/onlinestores/", response_class=HTMLResponse)
+def read_users_online_stores(request: Request,
+                      slfq : ppi.OnlineStoreListFilterQuery = Depends(),
+                      db :Session = Depends(get_session)
+                      ):
+    oslc = template_value.item.OnlineStoreListContext(request=request, db=db, slfp=slfq)
+
+    context = dict(oslc)
+    return templates.TemplateResponse(
+        "users/online_store_list.html"
+        ,context
+        )
+
+@router.get("/onlinestores/cp/", response_class=HTMLResponse)
+def read_users_online_stores_copy(request: Request,
+                      oscq : ppi.OnlineStoreCopyToMyQuery = Depends(),
+                      db :Session = Depends(get_session)
+                      ):
+    oscc = template_value.item.OnlineStoreCopyContext(request=request, db=db, oscq=oscq)
+
+    context = dict(oscc)
+    return templates.TemplateResponse(
+        "users/copy_online_store_list_result.html"
         ,context
         )

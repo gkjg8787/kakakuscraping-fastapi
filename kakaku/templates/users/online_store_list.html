@@ -1,0 +1,110 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
+    <title>自動取得した店舗一覧</title>
+{% endblock %}
+
+{% block body %}
+    <h1>自動取得した店舗一覧</h1>
+    <h2>操作メニュー</h2>
+    <div>自動取得した店舗情報をMy店舗一覧へコピーする
+        <form action="{{ url_for('read_users_online_stores_copy') }}" method="get">
+            送付先：<select name="{{ PREF_NAME }}">
+                {%- for pref in pref_list_for_copy %}
+                <option value="{{ pref.text }}" {{ pref.selected }}>{{ pref.text }}</option>
+                {%- endfor %}
+                </select>
+            <select name="{{ ONLINE_STORE_COPY_NAME }}">
+            {%- for osctype in online_store_copy_type_list %}
+            <option value="{{ osctype.id }}" {{ osctype.selected }}>{{ osctype.text }}</option>
+            {%- endfor %}
+            </select>
+            <button type="submit">でコピーする</button>
+        </form>
+    </div>
+    <p><a href="{{ url_for('read_users_stores') }}" class="plain-link">店舗一覧へ戻る</a></p>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
+    <h3>フィルタ</h3>
+    <p>
+    {%- with ITEMACT_NAME = CONFIGUREDTERMS_NAME, actstslist = confstslist, fquery = fquery %}
+    {%- include "users/item_act_filter.html" %}
+    {%- endwith %}
+    </p>
+    <p>
+    {%- with ITEMSORT_NAME = STORESORT_NAME, itemSortList = storeSortList, fquery = fquery %}
+    {%- include "users/item_sort_filter.html" %}
+    {%- endwith %}
+    </p>
+    <form action="" method="get" accept-charset="utf-8">
+        <div>送付先：<select name="{{ PREF_NAME }}" onchange="submit(this.form)">
+            <option value="">全て</option>
+            {%- for pref in pref_list %}
+            <option value="{{ pref.text }}" {{ pref.selected }}>{{ pref.text }}</option>
+            {%- endfor %}
+            </select>
+        </div>
+        {% for k, v in fquery.items() %}
+            {% if k != PREF_NAME and v != "" %}
+            <input type="hidden" name="{{ k }}" value="{{ v }}">
+            {% endif %}
+        {% endfor %}
+    </form>
+    <p>
+    {%- with EQST_NAME = EQST_NAME, storelist = storelist, fquery = fquery %}
+    {%- include "users/item_store_filter.html" %}
+    {%- endwith %}
+    </p>
+    <p>
+        件数
+        {{ res_length }}件
+    </p>
+    <table class="store_list_table">
+        <tr>
+            <th>shop_id</th>
+            <th>店舗名</th>
+            <th>登録日</th>
+            <th>送付先都道府県</th>
+            <th>送料条件</th>
+            <th>送料</th>
+            <th>条件更新日</th>
+            <th>キャンペーン</th>
+        </tr>
+        {%- for row in res %}
+        <tr>
+            {%- if row.terms_num > 0 %}
+            <td rowspan="{{ row.terms_num }}">{{ row.shop_id }}</td>
+            <td rowspan="{{ row.terms_num }}">{{ row.storename }}</td>
+            <td rowspan="{{ row.terms_num }}">{{ row.created_at }}</td>
+            <td>{{ row.terms_list[0].pref }}</td>
+            <td>{{ row.terms_list[0].temrs_text }}</td>
+            <td>{{ row.terms_list[0].postage }}</td>
+            <td>{{ row.terms_list[0].created_at }}</td>
+            <td>{{ row.terms_list[0].campaign_msg }}</td>
+            {%- else %}
+            <td>{{ row.shop_id }}</td>
+            <td>{{ row.storename }}</td>
+            <td>{{ row.created_at }}</td>
+            <td>None</td>
+            <td>None</td>
+            <td>None</td>
+            <td>None</td>
+            <td>None</td>
+            {%- endif %}
+        </tr>
+        {%- if row.terms_num > 1 %}
+        {%- for terms in row.terms_list[1:] %}
+        <tr>
+            <td>{{ terms.pref }}</td>
+            <td>{{ terms.temrs_text }}</td>
+            <td>{{ terms.postage }}</td>
+            <td>{{ terms.created_at }}</td>
+            <td>{{ terms.campaign_msg }}</td>
+        </tr>
+        {%- endfor %}
+        {%- endif %}
+        {%- endfor %}
+    </table>
+    <p><a href="{{ url_for('read_users_stores') }}" class="plain-link">店舗一覧へ戻る</a></p>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
+{% endblock %}

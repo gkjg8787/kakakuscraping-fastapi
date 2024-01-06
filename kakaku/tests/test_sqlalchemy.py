@@ -1,21 +1,11 @@
-from typing import Optional
-from accessor.item import (
-    ItemQuery,
-    NewestQuery,
-    UrlQuery,
-    UrlActive,
-)
 from accessor.store import (
     StoreQuery
 )
 
 from sqlalchemy import (
-    select,
     insert,
     delete,
-    func,
 )
-from accessor.item.item import OrganizerQuery
 
 from model.item import (
     NewestItem,
@@ -30,6 +20,10 @@ from model.item import (
 from model.store import (
     Store,
     StorePostage,
+    Prefecture,
+    OnlineStore,
+    OnlineStorePostage,
+    DailyOnlineShopInfo,
 )
 
 def insert_pricelog_sync(db, pldict :dict):
@@ -162,4 +156,24 @@ def delete_item_and_store_model(db):
     __delete_store_model(db)
     db.commit()
 
+def insert_online_store_dict_list(db, store_dict_list :list[dict]):
+    stmt = insert(OnlineStore).values(store_dict_list)
+    db.execute(stmt)
+    db.commit()
 
+def insert_online_store_postage_dict_list(db, store_pos_dict_list :list[dict]):
+    stmt = insert(OnlineStorePostage).values(store_pos_dict_list)
+    db.execute(stmt)
+    db.commit()
+
+def insert_daily_online_shop_info_dict_list(db, shop_info_dict_list :list[dict]):
+    stmt = insert(DailyOnlineShopInfo).values(shop_info_dict_list)
+    db.execute(stmt)
+    db.commit()
+
+def delete_online_store_model(db):
+    db.execute(delete(OnlineStore))
+    db.execute(delete(OnlineStorePostage))
+    db.execute(delete(Prefecture))
+    db.execute(delete(DailyOnlineShopInfo))
+    db.commit()

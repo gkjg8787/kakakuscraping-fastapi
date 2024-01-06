@@ -4,10 +4,19 @@ import logging
 
 import pytest
 
-from common import cmnlog
+from common import (
+    cmnlog,
+    const_value as cmn_const_value
+)
 from itemcomb import sumitemcomb_adapt as sic_ada
-from tests.data import itemcomb_test_data
+from itemcomb import surugaya_postage_util as spu
+from itemcomb import prefecture as ic_pref
+from itemcomb import postage_data as posd
+from accessor import store as ac_store
 
+from tests.data import itemcomb_test_data
+from tests.test_db import test_db
+from tests.test_sqlalchemy import delete_online_store_model
 
 ITEMLIST = "itemlist"
 RESULT = "result"
@@ -116,4 +125,178 @@ def test_searchcomb_6_heavy(loginit):
                     exec_type=sic_ada.get_exec_itemcomb(),
                     )
     assert_searchcomb_result(testcase[RESULT], ret)
-    
+
+def test_convert_storename_to_search_storename():
+    storename = "storename"
+    answer = "answer"
+    storename_dict_list = [
+        {storename:"駿河屋日本橋本館",
+         answer:"日本橋本館"
+        },
+        {storename:"ブックマーケット福島北店 Supported by 駿河屋",
+         answer:"福島北"
+        },
+        {storename:"駿河屋 町田旭町店",
+         answer:"町田旭町"
+         },
+        {storename:"駿河屋",
+         answer:""
+         },
+         {storename:"ブックエコ中間店",
+          answer:"ブックエコ中間"
+         }
+    ]
+    for sn_dic in storename_dict_list:
+        ret = spu.convert_storename_to_search_storename(storename=sn_dic[storename])
+        assert ret == sn_dic[answer]
+
+def test_prefecture_PrefectureDBSetting_init_setting(test_db):
+    ic_pref.PrefectureDBSetting.init_setting(test_db)
+    ret = ac_store.PrefectureQuery.get_all(test_db)
+    assert len(ret) == len(ic_pref.PrefectureName.get_all_prefecturename()) + 1
+    pref_name_dic : dict[str, int] = {}
+    for pref in ret:
+        pref_name_dic[pref.name] = 1
+        if pref.pref_id == cmn_const_value.NONE_PREF_ID:
+            assert pref.name == ic_pref.PrefectureName.get_country_wide_name()
+            continue
+        assert pref.name in ic_pref.PrefectureName.get_all_prefecturename()
+    assert len(pref_name_dic) == len(ret)
+    delete_online_store_model(test_db)
+
+
+def test_surugaya_postage_util_get_shippingResult_success(test_db):
+    storename = "千葉中央"
+    prefectures = ["東京都"]
+    sres = spu.get_shippingResult(test_db, storename=storename, prefectures=prefectures)
+    assert len(sres.get_list()) != 0
+    for si in sres.get_list():
+        assert 0 != si.get_prefecture_postage(prefectures[0])
+        assert "千葉中央" in si.shop_name
+        break
+    delete_online_store_model(test_db)
+
+
+def assert_get_list_of_boundary_value_and_operation(boundary_text :str, result :list[dict]):
+    div_list = posd.ShippingTermsBoundary.get_list_of_boundary_value_and_operation(boundary_text)
+    assert len(div_list) == len(result)
+    for div, res in zip(div_list, result):
+        assert div["boundary_ope"] == res["boundary_ope"]
+        assert div["boundary_val"] == res["boundary_val"]
+
+def test_postage_data_shipping_terms_boundary_get_list_of_boundary_value_and_operation_success_1():
+    testdata = {"boundary":"0<",
+                "result":[{"boundary_val":0,
+                           "boundary_ope":"<"}
+                        ]
+                }
+    assert_get_list_of_boundary_value_and_operation(testdata["boundary"],
+                                                    testdata["result"]
+                                                    )
+
+def test_postage_data_shipping_terms_boundary_get_list_of_boundary_value_and_operation_success_2():
+    testdata = {"boundary":"0<=:2000>",
+                "result":[{"boundary_val":0,
+                           "boundary_ope":"<="},
+                           {"boundary_val":2000,
+                            "boundary_ope":">"}
+                        ]
+                }
+    assert_get_list_of_boundary_value_and_operation(testdata["boundary"],
+                                                    testdata["result"]
+                                                    )
+
+def test_postage_data_shipping_terms_boundary_get_list_of_boundary_value_and_operation_success_3():
+    testdata = {"boundary":"300<:1500>=",
+                "result":[{"boundary_val":300,
+                           "boundary_ope":"<"},
+                           {"boundary_val":1500,
+                            "boundary_ope":">="}
+                        ]
+                }
+    assert_get_list_of_boundary_value_and_operation(testdata["boundary"],
+                                                    testdata["result"]
+                                                    )
+
+def assert_add_terms_to_boundary(based :dict, addd :dict):
+    base_boundary = posd.ShippingTermsBoundary.create_boundary_of_db(lower_ope=based["ope"],
+                                                     lower_val=based["val"]
+                                                     )
+    assert based["result"] == base_boundary
+    result = posd.ShippingTermsBoundary.add_terms_to_boundary(base_boundary,
+                                                            add_ope=addd["ope"],
+                                                            add_val=addd["val"]
+                                                            )
+    assert addd["result"] == result
+
+def test_postage_data_shipping_terms_boundary_add_terms_boundary_success_1():
+    testdata = {"base":{"ope":"<",
+                        "val":500,
+                        "result":"500<"
+                        },
+                "add":{"ope":">=",
+                       "val":2000,
+                       "result":"500<:2000>="
+                       }
+                }
+    assert_add_terms_to_boundary(testdata["base"], testdata["add"])
+
+def test_postage_data_shipping_terms_boundary_add_terms_boundary_success_2():
+    testdata = {"base":{"ope":">",
+                        "val":2000,
+                        "result":"2000>"
+                        },
+                "add":{"ope":"<=",
+                       "val":700,
+                       "result":"700<=:2000>"
+                       }
+                }
+    assert_add_terms_to_boundary(testdata["base"], testdata["add"])
+
+def test_postage_data_shipping_terms_boundary_add_terms_boundary_success_3():
+    testdata = {"base":{"ope":"<=",
+                        "val":0,
+                        "result":"0<="
+                        },
+                "add":{"ope":">=",
+                       "val":1000,
+                       "result":"0<=:1000>="
+                       }
+                }
+    assert_add_terms_to_boundary(testdata["base"], testdata["add"])
+
+def test_postage_data_shipping_terms_boundary_add_terms_boundary_ng_1():
+    testdata = {"base":{"ope":">",
+                        "val":1000,
+                        "result":"1000>"
+                        },
+                "add":{"ope":"<",
+                       "val":1200,
+                       "result":"1000>"
+                       }
+                }
+    assert_add_terms_to_boundary(testdata["base"], testdata["add"])
+
+def test_postage_data_shipping_terms_boundary_add_terms_boundary_ng_2():
+    testdata = {"base":{"ope":">",
+                        "val":1000,
+                        "result":"1000>"
+                        },
+                "add":{"ope":">",
+                       "val":500,
+                       "result":"500>"
+                       }
+                }
+    assert_add_terms_to_boundary(testdata["base"], testdata["add"])
+
+def test_postage_data_shipping_terms_boundary_add_terms_boundary_ng_3():
+    testdata = {"base":{"ope":"<",
+                        "val":1800,
+                        "result":"1800<"
+                        },
+                "add":{"ope":"<=",
+                       "val":1500,
+                       "result":"1800<"
+                       }
+                }
+    assert_add_terms_to_boundary(testdata["base"], testdata["add"])

@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 
 from sqlalchemy.orm import Session
@@ -22,6 +23,8 @@ class SystemStatusLogName(Enum):
     STOP = (5, "停止")
     DB_ORGANIZE = (6, "データベース整理")
     ALL_DATA_UPDATE = (7, "一括更新")
+    AUTO_ALL_DATA_UPDATE = (8, "自動一括更新")
+    ONLINE_STORE_UPDATE = (9, "店舗情報更新")
 
     def __init__(self, id:int, text :str):
         self.id = id
@@ -42,3 +45,17 @@ class SystemStatusLogAccess:
     @classmethod
     def get_all(cls, db :Session):
         return SystemStatusLogQuery.get_all(db=db)
+    
+    @classmethod
+    def get_count_by_systemstatus_and_datetime_range(cls,
+                                                     db :Session,
+                                                     syssts_name_list :list[SystemStatusLogName],
+                                                     start_time :datetime,
+                                                     end_time :datetime,
+                                                     ):
+        ssn_list = [syssts_name.jtext for syssts_name in syssts_name_list]
+        return SystemStatusLogQuery.get_count_by_systemstatus_and_datetime_range(db,
+                                                                                 status_list=ssn_list,
+                                                                                 start=start_time,
+                                                                                 end=end_time
+                                                                                 )

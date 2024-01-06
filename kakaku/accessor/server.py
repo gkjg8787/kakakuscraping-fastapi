@@ -13,8 +13,12 @@ from sqlalchemy import (
     delete,
     update,
     func,
+    between,
 )
 from sqlalchemy.orm import Session
+from accessor.util import (
+    utc_to_jst_datetime_for_query,
+)
 
 class ProcStatusQuery:
     @staticmethod
@@ -176,7 +180,22 @@ class SystemStatusLogQuery:
         if limit > 0:
             stmt = stmt.limit(limit)
         return db.scalars(stmt).all()
-        
+    
+    @classmethod
+    def get_count_by_systemstatus_and_datetime_range(cls,
+                                                     db :Session,
+                                                     status_list :list[str],
+                                                     start :datetime,
+                                                     end :datetime
+                                                     ):
+        start_n = start.replace(tzinfo=None)
+        end_n = end.replace(tzinfo=None)
+        stmt = ( select(func.count(SystemStatusLog.log_id))
+                .where(SystemStatusLog.status.in_(status_list))
+                .where(between(utc_to_jst_datetime_for_query(SystemStatusLog.created_at), start_n, end_n))
+                )
+        return db.scalar(stmt)
+
     @classmethod
     def delete_amount_over_limit(cls, db :Session, limit :int):
         elem_cnt = cls.get_count_log(db)

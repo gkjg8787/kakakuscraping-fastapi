@@ -39,17 +39,18 @@ class ParseProc:
         logger = self.getLogger()
         for pi in self.paproclist:
             pi.proc.terminate()
-            logger.info(get_filename() + 'parseproc terminate id=' + str(pi.id))
+            logger.info(get_filename() + ' parseproc terminate id=' + str(pi.id))
         self.paproclist.clear()
 
     def runParseProc(self, id):
         logger = self.getLogger()
         logger.info(get_filename() + ' start parseproc id=' + str(id))
-        db = next(get_session())
-        psa = manager_util.writeProcStart(db, pnum=id, name=ProcName.PARSE)
+        with next(get_session()) as db:
+            psa = manager_util.writeProcStart(db, pnum=id, name=ProcName.PARSE)
         if (self.dlproc == None):
             logger.error(get_filename() + ' dlproc None')
-            manager_util.writeProcFault(db, psa=psa)
+            with next(get_session()) as db:
+                manager_util.writeProcFault(db, psa=psa)
             return
         is_parse = False
         while True:
@@ -61,21 +62,15 @@ class ParseProc:
                     scm.sendTask(ScrOrder.DB_ORGANIZE_SYNC, "", "")
                     logger.info(get_filename() + " sendTask "+ ScrOrder.DB_ORGANIZE_LOG_2DAYS_CLEANER)
                     scm.sendTask(ScrOrder.DB_ORGANIZE_LOG_2DAYS_CLEANER, "", "")
-                    '''
-                    logger.info(get_filename() + " start db_organizer sync")
-                    db_organizer.start_func(db, orgcmd=db_organizer.DBOrganizerCmd.SYNC_PRICELOG)
-                    logger.info(get_filename() + " end db_organizer sync")
-                    logger.info(get_filename() + " start db_organizer pricelog_2days cleaner")
-                    db_organizer.start_func(db, orgcmd=db_organizer.DBOrganizerCmd.PRICELOG_2DAYS_CLEANER)
-                    logger.info(get_filename() + " end db_organizer pricelog_2days cleaner")
-                    '''
                 else:
-                    manager_util.writeProcWaiting(db, psa=psa)
+                    with next(get_session()) as db:
+                        manager_util.writeProcWaiting(db, psa=psa)
                     time.sleep(0.1)
                 continue
-            manager_util.writeProcActive(db, psa=psa)
-            logger.info(get_filename() + ' pid=' + str(id) + ' start Parse url='+ task.url)
-            getAndWrite.startParse(db=db, url=task.url, item_id=task.itemid, fname=task.dlhtml, logger=logger)
+            with next(get_session()) as db:
+                manager_util.writeProcActive(db, psa=psa)
+                logger.info(get_filename() + ' pid=' + str(id) + ' start Parse url='+ task.url)
+                getAndWrite.startParse(db=db, url=task.url, item_id=task.itemid, fname=task.dlhtml, logger=logger)
             is_parse = True
             logger.info(get_filename() + ' pid=' + str(id) + ' end Parse url='+ task.url)
 
