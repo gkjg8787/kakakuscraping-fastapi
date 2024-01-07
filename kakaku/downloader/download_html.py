@@ -39,6 +39,8 @@ def __getUrlHtml(url, opt=RequestOpt()):
     #res.encoding = res.apparent_encoding
     if res.encoding.upper() == 'windows-31j'.upper():
         res.encoding = 'SHIFT_JIS'
+    elif res.encoding.upper() == "ISO-8859-1".upper():
+        res.encoding = res.apparent_encoding
     return True, res.text
 
 if __name__ == '__main__':

@@ -1,7 +1,11 @@
 import re
-from html_parser import htmlparse
+
 from bs4 import BeautifulSoup
 
+from html_parser import htmlparse
+from itemcomb import postage_data as posd
+
+DEFAULT_STORENAME = "ゲオ"
 
 class GeoParse(htmlparse.ParseItems):
     def __init__(self, fp, id, date, url):
@@ -10,10 +14,9 @@ class GeoParse(htmlparse.ParseItems):
         self.iteminfo.id = id
         self.iteminfo.timeStamp = date
         self.iteminfo.url = url
-        self.iteminfo.storename = "ゲオ"
+        self.iteminfo.storename = DEFAULT_STORENAME
         self.parseItem(self.soup, self.iteminfo)
         
-    
     def parseItem(self, soup, iteminfo):
         iteminfo.isSuccess = self.existPage(soup)
         if not iteminfo.isSuccess:
@@ -71,7 +74,6 @@ class GeoParse(htmlparse.ParseItems):
                 return False
         return True
         
-    
     def isUsed(self, soup):
         q = r'.goodsspec_ .icon_ .labelSituation'
         elem = soup.select(q)
@@ -110,4 +112,65 @@ class GeoParse(htmlparse.ParseItems):
     def getItems(self):
         return (self.iteminfo,)
     
+class GeoGuideParse:
+    pos_list :list[htmlparse.ParseStorePostage]
 
+    def __init__(self, fp):
+        soup = BeautifulSoup(fp, "html.parser")
+        self.pos_list = self.parse_guide(soup)
+    
+    def get_ParseStorePostage(self):
+        return self.pos_list
+    
+    def parse_guide(self, soup :BeautifulSoup):
+        p_list = soup.select_one("#id1").find_next_sibling("section").select("dd p")
+        basic_postage :int | None = None
+        boundary_val :int | None = None
+        reverse_boundary_ope :int | None = None
+        for p in p_list:
+            target_text = re.sub("\s+", "", p.text.replace(",", ""))
+            cw_m = re.findall(r"全国一律([1-9][0-9]+)円", target_text)
+            if cw_m:
+                basic_postage = int(cw_m[0])
+                continue
+
+            fs_m = re.findall(r"([1-9][0-9]+)円(以上).+で送料(無料)", target_text)
+            if not fs_m:
+                continue
+            if not fs_m[0][0]\
+                or not fs_m[0][1]\
+                or not fs_m[0][2]:
+                continue
+            boundary_val = int(fs_m[0][0])
+            reverse_boundary_ope = posd.ShippingTermsBoundary.reverse_operator("<=")
+        if basic_postage is None:
+            return None
+        if not boundary_val:
+            return [self.create_parsestorepostage(boundary_ope="<=",
+                                                  boundary_val=0,
+                                                  postage=basic_postage
+                                                  )
+                    ]
+        psp = htmlparse.ParseStorePostage()
+        psp.storename = DEFAULT_STORENAME
+        ppt = htmlparse.ParsePostageTerms()
+        ppt.boundary = posd.ShippingTermsBoundary.create_boundary_of_db(lower_ope="<=",
+                                                                        lower_val=0,
+                                                                        upper_ope=reverse_boundary_ope,
+                                                                        upper_val=boundary_val
+                                                                        )
+        ppt.postage = basic_postage
+        psp.add_terms(ppt)
+        return [psp]
+    
+    def create_parsestorepostage(self, boundary_ope :str, boundary_val :int, postage :int):
+        psp = htmlparse.ParseStorePostage()
+        psp.storename = DEFAULT_STORENAME
+        ppt = htmlparse.ParsePostageTerms()
+        ppt.boundary = posd.ShippingTermsBoundary.create_boundary_of_db(lower_ope=boundary_ope,
+                                                                        lower_val=boundary_val
+                                                                        )
+        ppt.postage = postage
+        psp.add_terms(ppt)
+        return psp
+        

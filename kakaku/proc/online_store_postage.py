@@ -14,6 +14,8 @@ from html_parser import (
     htmlparse,
     surugaya_html_parse,
     netoff_html_parse,
+    bookoff_html_parse,
+    geo_html_parse,
 )
 
 def get_filename():
@@ -265,6 +267,16 @@ def update_store_of_specific_url(db :Session,
             "url":"https://www.netoff.co.jp/guide/delivery.jsp",
             "parser":netoff_html_parse.NetoffDeliveryParse,
             "insert_proc_type":posd.InsertProcType.NETOFF_SHIPPING_SURCHARGE,
+        },
+        "bookoff":{
+            "url":"https://www.bookoffonline.co.jp/files/user-guide/order.html",
+            "parser":bookoff_html_parse.BookoffOrderParse,
+            "insert_proc_type":posd.InsertProcType.BOOKOFF_SHIPPING_TERMS,
+        },
+        "geo":{
+            "url":"https://ec.geo-online.co.jp/shop/pages/guide.aspx",
+            "parser":geo_html_parse.GeoGuideParse,
+            "insert_proc_type":posd.InsertProcType.GEO_SHIPPING_TERMS,
         }
     }
     for name, val in update_stores.items():

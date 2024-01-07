@@ -8,6 +8,8 @@ class InsertProcType(Enum):
     MAKEPURE_TOOL = auto()
     SURUGAYA_MAILORDER_FEE = auto()
     NETOFF_SHIPPING_SURCHARGE = auto()
+    BOOKOFF_SHIPPING_TERMS = auto()
+    GEO_SHIPPING_TERMS = auto()
 
 class BoundaryOperator(Enum):
     GT = ("gt", "<", "より大きい")
