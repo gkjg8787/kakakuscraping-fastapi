@@ -533,15 +533,14 @@ class OnlineStoreQuery:
                                 pos_dict_list :list[dict],
                                 ):
         osp_list :list[OnlineStorePostage] = []
-        terms_id = start_terms_id
-        pre_pref_id = None
+        pref_id_to_terms_id :dict[int, int] = {}
         for dic in pos_dict_list:
-            if not pre_pref_id:
-                pre_pref_id = dic["pref_id"]
-            elif pre_pref_id == dic["pref_id"]:
-                terms_id += 1
+            if int(dic["pref_id"]) in pref_id_to_terms_id:
+                terms_id = pref_id_to_terms_id[int(dic["pref_id"])] + 1
             else:
                 terms_id = start_terms_id
+            pref_id_to_terms_id[int(dic["pref_id"])] = terms_id
+
             osp = OnlineStorePostage(shop_id=shop_id,
                                     pref_id=dic["pref_id"],
                                     terms_id=terms_id,
@@ -552,7 +551,6 @@ class OnlineStoreQuery:
                                     )
             osp_list.append(osp)
             db.add(osp)
-            pre_pref_id = dic["pref_id"]
             
         if not osp_list:
             return

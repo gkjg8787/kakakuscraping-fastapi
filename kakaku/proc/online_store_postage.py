@@ -252,28 +252,29 @@ def get_and_update_specific_url(db :Session,
                                                     pos_dict_list=pos_dict_list
                                                     )
 
-def update_surugaya_shiharai_postage(db :Session,
-                                     logger :cmnlog.logging.Logger
-                                     ):
-    target_url = "https://www.suruga-ya.jp/man/qa/hanbai_qa/shiharai.html"
-    get_and_update_specific_url(db,
-                                logger=logger,
-                                url=target_url,
-                                parser=surugaya_html_parse.SurugayaShiharaiParse,
-                                insert_proc_type=posd.InsertProcType.SURUGAYA_MAILORDER_FEE
-                                )
-
-
-def update_netoff_delivery_postage(db :Session,
-                                   logger :cmnlog.logging.Logger
-                                   ):
-    target_url = "https://www.netoff.co.jp/guide/delivery.jsp"
-    get_and_update_specific_url(db,
-                                logger=logger,
-                                url=target_url,
-                                parser=netoff_html_parse.NetoffDeliveryParse,
-                                insert_proc_type=posd.InsertProcType.NETOFF_SHIPPING_SURCHARGE
-                                )
+def update_store_of_specific_url(db :Session,
+                                 logger :cmnlog.logging.Logger,
+                                 ):
+    update_stores = {
+        "surugaya":{
+            "url":"https://www.suruga-ya.jp/man/qa/hanbai_qa/shiharai.html",
+            "parser":surugaya_html_parse.SurugayaShiharaiParse,
+            "insert_proc_type":posd.InsertProcType.SURUGAYA_MAILORDER_FEE,
+        },
+        "netoff":{
+            "url":"https://www.netoff.co.jp/guide/delivery.jsp",
+            "parser":netoff_html_parse.NetoffDeliveryParse,
+            "insert_proc_type":posd.InsertProcType.NETOFF_SHIPPING_SURCHARGE,
+        }
+    }
+    for name, val in update_stores.items():
+        logger.info(f"{get_filename()} update {name} specific url")
+        get_and_update_specific_url(db,
+                                    logger=logger,
+                                    url=val["url"],
+                                    parser=val["parser"],
+                                    insert_proc_type=val["insert_proc_type"]
+                                    )
 
 def update_online_store_postage(db :Session):
     logger = getLogger()
@@ -288,8 +289,5 @@ def update_online_store_postage(db :Session):
     logger.info(f"{get_filename()} update store postage")
     logger.info(f"{get_filename()} update surugaya makepure")
     update_surugaya_makepure_store_postage(db=db, sn_list=sn_list, logger=logger)
-    logger.info(f"{get_filename()} update surugaya shiharai")
-    update_surugaya_shiharai_postage(db=db, logger=logger)
-    logger.info(f"{get_filename()} update netoff delivery")
-    update_netoff_delivery_postage(db=db, logger=logger)
+    update_store_of_specific_url(db=db, logger=logger)
     logger.info(f"{get_filename()} end update_onilne_store_postage")

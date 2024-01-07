@@ -124,23 +124,24 @@ class NetoffDeliveryParse:
             text_list = l.text.split("\n")
             pref_list :list[str] = []
             for text in text_list:
-                if "北海道・沖縄を除く" in text:
+                target_text = re.sub("\s+", "", text)
+                if "北海道・沖縄を除く" in target_text:
                     pref_list = []
                     for prefname in prefecture.PrefectureName.get_all_prefecturename():
                         if "北海道" == prefname or "沖縄県" in prefname:
                             continue
                         pref_list.append(prefname)
                     continue
-                if "北海道" == text:
+                if "北海道" == target_text:
                     pref_list = ["北海道"]
                     continue
-                if "沖縄" == text:
+                if "沖縄" == target_text:
                     pref_list = ["沖縄県"]
                     continue
-                m = re.findall(r"ご注文1件につき([1-9][0-9]+)円", re.sub("\s+", "", text))
+                m = re.findall(r"ご注文1件につき([1-9][0-9]+)円", target_text)
                 if not m:
                     continue
-                psp = self.create_common_shipping_terms(int(m[0]))
+                psp :htmlparse.ParseStorePostage = self.create_common_shipping_terms(int(m[0]))
                 psp.set_prefectures(pref_list)
                 results.append(psp)
         return results
