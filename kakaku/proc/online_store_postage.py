@@ -67,6 +67,8 @@ def get_upper_limit_of_common(db_dict_list :dict):
         ret = posd.ShippingTermsBoundary.get_list_of_boundary_value_and_operation(db_dic["boundary"])
         if not ret:
             continue
+        if int(ret[0]["boundary_val"]) == 0:
+            continue
         limit_ope = posd.ShippingTermsBoundary.reverse_operator(ret[0]["boundary_ope"])
         return {"boundary_ope":limit_ope, "boundary_val":ret[0]["boundary_val"]} 
     return {}
@@ -126,6 +128,9 @@ def update_after_confirming(db :Session,
         return
     db_pref_dict = get_db_prefecture_dict(db=db)
     # 共通の送料無料条件があればその条件の閾値を上限として取得する
+    if not storename in db_dict:
+        logger.warning(f"{get_filename()} not match storename in db data, storename={storename}")
+        return
     common_fixed_boundary = create_common_fixed_boundary(storename_db_dict=db_dict[storename])
     add_db_data_list :list[dict] = []
     for prefpos in update_data.prefectures_postage:
@@ -295,6 +300,7 @@ def update_online_store_postage(db :Session):
     if not sn_list:
         logger.info(f"{get_filename()} no today's storename")
         return
+    sn_list = list(dict.fromkeys(sn.strip() for sn in sn_list))
     logger.info(f"{get_filename()} delete old store postage")
     store.OnlineStoreQuery.delete_postage_by_not_in_storename_list(db=db, storename_list=sn_list)
     store.DailyOnlineShopInfoQuery.delete(db=db, delete_older_than_today=True)

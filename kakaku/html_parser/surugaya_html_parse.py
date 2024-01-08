@@ -102,7 +102,7 @@ class SurugayaProduct_Other(AB_SurugayaParse):
         elem = storeitem.select(q)
         if len(elem) == 0:
             return ''
-        return re.sub(r"\s+", " ", elem[0].text)
+        return re.sub(r"\s+", " ", str(elem[0].text).strip())
 
 class SurugayaProduct(AB_SurugayaParse):
     def __init__(self, soup, id, date, url):
