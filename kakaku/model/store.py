@@ -78,7 +78,7 @@ class Prefecture(Base):
 class DailyOnlineShopInfo(Base):
     __tablename__ = "daily_online_shop_info"
     shop_id : Mapped[int] = mapped_column(primary_key=True)
-    shop_name : Mapped[int]
+    shop_name : Mapped[str]
     url : Mapped[str]
     insert_proc_type :Mapped[int]
     created_at : Mapped[datetime] = mapped_column(server_default=func.CURRENT_TIMESTAMP())
