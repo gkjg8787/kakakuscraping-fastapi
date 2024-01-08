@@ -44,15 +44,28 @@ def get_db_postage_dict(db :Session, storename_list :list[str]):
             res_dict_list[stname] = [dic]
     return res_dict_list
 
-def get_db_prefecture_dict(db :Session):
-    db_ret = store.PrefectureQuery.get_all(db=db)
-    if not db_ret:
-        return {}
-    result :dict = {}
-    for r in db_ret:
-        result[r.name] = r
-    return result
-
+class PrefInfo:
+    name_to_id :dict[str, int]
+    id_to_name :dict[int, str]
+    def __init__(self, db :Session):
+        self.name_to_id = {}
+        self.id_to_name = {}
+        db_ret = store.PrefectureQuery.get_all(db=db)
+        if not db_ret:
+            return
+        for p in db_ret:
+            self.name_to_id[p.name] = p.pref_id
+            self.id_to_name[p.pref_id] = p.name
+    
+    def get_name(self, id :int):
+        if not id in self.id_to_name:
+            return None
+        return self.id_to_name[id]
+    
+    def get_id(self, name :str):
+        if not name in self.name_to_id:
+            return None
+        return self.name_to_id[name]
 
 def get_upper_limit_of_common(db_dict_list :dict):
     for db_dic in db_dict_list:
@@ -114,6 +127,7 @@ def create_common_fixed_boundary(storename_db_dict :dict):
 def update_after_confirming(db :Session,
                             storename :str,
                             db_dict :dict,
+                            prefinfo :PrefInfo,
                             update_data_list :list[spu.StoreShippingInfo],
                             search_word :str,
                             logger :cmnlog.logging.Logger
@@ -126,17 +140,11 @@ def update_after_confirming(db :Session,
     if not update_data.prefectures_postage:
         logger.debug(f"{get_filename()} no prefectures postage")
         return
-    db_pref_dict = get_db_prefecture_dict(db=db)
     # 共通の送料無料条件があればその条件の閾値を上限として取得する
-    if not storename in db_dict:
-        logger.warning(f"{get_filename()} not match storename in db data, storename={storename}")
-        return
     common_fixed_boundary = create_common_fixed_boundary(storename_db_dict=db_dict[storename])
     add_db_data_list :list[dict] = []
     for prefpos in update_data.prefectures_postage:
-        pref_id = db_pref_dict[prefpos.name].pref_id
-        #if pref_id == const_value.NONE_PREF_ID:
-        #    continue
+        pref_id = prefinfo.get_id(prefpos.name)
         if prefpos.get_postage() is None:
             continue
         #条件が一致するもの以外は削除し、一致するものがないなら追加
@@ -174,25 +182,59 @@ def update_after_confirming(db :Session,
                                     pos_dict_list=add_db_data_list
                                     )
 
+def needs_update_by_campaign_msg(db_list :list[dict], prefinfo :PrefInfo):
+    fix_ptn = re.compile(r"([1-9][0-9]+)円?(未満)\s+?([1-9][0-9]+)円?[^～]")
+    range_ptn = re.compile(r"([1-9][0-9]+)円?(未満)\s+?([1-9][0-9]+)円?～([1-9][0-9]+)円?")
+    for db_data in db_list:
+        if not db_data["campaign_msg"]:
+            continue
+        if not db_data["pref_id"]:
+            continue
+        if prefinfo.get_name(int(db_data["pref_id"])) != prefecture.PrefectureName.get_country_wide_name():
+            continue
+        target_text = str(db_data["campaign_msg"]).replace(",", "")
+        m = re.findall(range_ptn, target_text)
+        if m:
+            return True
+        m = re.findall(fix_ptn, target_text)
+        if not m:
+            return True
+        return False
+    return True
+
+
+
 def update_surugaya_makepure_store_postage(db :Session,
                                            sn_list :list[str],
                                            logger :cmnlog.logging.Logger
                                            ):
     pref_list = prefecture.PrefectureName.get_all_prefecturename()
     db_dict = get_db_postage_dict(db=db, storename_list=sn_list)
+    prefinfo = PrefInfo(db)
     skip_storenames = ["駿河屋", "ゲオ", "ブックオフ", "ネットオフ"]
+    online_update_post_wait_time = 1
     for storename in sn_list:
         if storename in skip_storenames:
              continue
+        if not storename in db_dict:
+            logger.warning(f"{get_filename()} not match storename in db data, storename={storename}")
+            continue
+        if not needs_update_by_campaign_msg(db_dict[storename], prefinfo=prefinfo):
+            continue
         word = spu.convert_storename_to_search_storename(storename)
         if not word:
             continue
-        rets = spu.get_shippingResult(db=db, storename=word, prefectures=pref_list).get_list()
+        rets = spu.get_shippingResult(db=db,
+                                      storename=word,
+                                      prefectures=pref_list,
+                                      post_wait_time=online_update_post_wait_time
+                                      ).get_list()
         if not rets:
             continue
         update_after_confirming(db=db,
                                 storename=storename,
                                 db_dict=db_dict,
+                                prefinfo=prefinfo,
                                 update_data_list=rets,
                                 search_word=word,
                                 logger=logger

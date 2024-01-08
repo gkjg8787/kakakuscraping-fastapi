@@ -124,7 +124,7 @@ class NetoffDeliveryParse:
             text_list = l.text.split("\n")
             pref_list :list[str] = []
             for text in text_list:
-                target_text = re.sub("\s+", "", text)
+                target_text = re.sub(r"\s", "", text)
                 if "北海道・沖縄を除く" in target_text:
                     pref_list = []
                     for prefname in prefecture.PrefectureName.get_all_prefecturename():
