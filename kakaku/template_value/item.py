@@ -37,7 +37,6 @@ import parameter_parser.store as pps
 
 from proc.scrapingmanage import sendTask
 from proc.sendcmd import ScrOrder
-from proc.system_status import SystemStatusAccess, SystemStatus
 
 from proc import get_sys_status, system_status
 
@@ -47,7 +46,7 @@ from itemcomb.prefecture import PrefectureName
 
 
 
-def is_update_process_alive(db :Session):
+def can_item_update(db :Session):
     syssts = get_sys_status.getSystemStatus(db)
     if syssts == system_status.SystemStatus.FAULT.name \
         or syssts == system_status.SystemStatus.STOP.name \
@@ -122,7 +121,7 @@ class UpdateAllItemUrlPostContext(BaseTemplateValue):
 
     def __init__(self, request, db :Session):
         super().__init__(request=request)
-        if not is_update_process_alive(db):
+        if not can_item_update(db):
             self.errmsg = "更新できない状態です。サーバを確認して下さい。"
             return
         self.update_all_data()    
@@ -529,7 +528,7 @@ class UpdateItemUrlPostContext(BaseTemplateValue):
         super().__init__(request=request)
         if upurlform.item_id:
             self.item_id = upurlform.item_id
-        if not is_update_process_alive(db):
+        if not can_item_update(db):
             self.errmsg = "更新できない状態です。サーバを確認して下さい。"
             return
         if upurlform.is_valid():
@@ -555,7 +554,7 @@ class UpdateItemAllUrlPostContext(BaseTemplateValue):
             self.return_user = True
         if upurlform.item_id:
             self.item_id = upurlform.item_id
-        if not is_update_process_alive(db):
+        if not can_item_update(db):
             self.errmsg = "更新できない状態です。サーバを確認して下さい。"
             return
         if upurlform.is_valid():
@@ -864,9 +863,9 @@ class ItemAnalysisContext(BaseTemplateValue):
         self.url_store_count_average = result.get_url_store_count_average()
 
     def isUpdateSystemStatus(self, db :Session) -> bool:
-        syssts = SystemStatusAccess()
+        syssts = system_status.SystemStatusAccess()
         syssts.update(db=db)
-        if SystemStatus.DATA_UPDATE == syssts.getStatus():
+        if system_status.SystemStatus.DATA_UPDATE == syssts.getStatus():
             return True
         return False
     
@@ -1634,3 +1633,20 @@ class OnlineStoreCopyContext(BaseTemplateValue):
             if not dic["boundary"]:
                 return True
         return False
+
+class OnlineStoreUpdateContext(BaseTemplateValue):
+    errmsg :str = ""
+
+    def __init__(self, request, db :Session):
+        super().__init__(request=request)
+        self.update_online_store(db)
+    
+    def update_online_store(self, db :Session):
+        syssts = get_sys_status.getSystemStatus(db)
+        if syssts == system_status.SystemStatus.DATA_UPDATE.name:
+            self.errmsg = "サーバが更新中です。店舗情報を更新できません。"
+            return
+        if syssts != system_status.SystemStatus.ACTIVE.name:
+            self.errmsg = "更新できない状態です。サーバを確認して下さい。"
+            return 
+        sendTask(ScrOrder.UPDATE_ONLINE_STORE_POSTAGE, "", "")

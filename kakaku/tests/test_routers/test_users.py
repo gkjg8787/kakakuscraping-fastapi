@@ -830,3 +830,36 @@ def test_read_users_online_stores(test_db):
     is_html(response.text)
     assert '自動取得した店舗一覧' in response.text
     assert '0件' in response.text
+
+def test_read_users_online_stores_copy_ng(test_db):
+    response = client.get(f'{prefix}/onlinestores/cp/')
+    assert response.status_code == 422
+
+def test_read_users_online_stores_copy_overwrite(test_db):
+    db_test_data.add_data_store(test_db)
+    db_test_data.add_online_store_data_set_1(test_db)
+    params = {filter_name.FilterQueryName.PREF.value:"東京都",
+              filter_name.FilterQueryName.OSCTYPE.value:filter_name.OnlineStoreCopyTypeName.OVERWRITE.id,
+              }
+    response = client.get(f'{prefix}/onlinestores/cp/', params=params)
+    assert response.status_code == 200
+    is_html(response.text)
+    drop_test_db()
+
+def test_read_users_online_stores_copy_fillblank(test_db):
+    db_test_data.add_data_store(test_db)
+    db_test_data.add_online_store_data_set_1(test_db)
+    params = {filter_name.FilterQueryName.PREF.value:"東京都",
+              filter_name.FilterQueryName.OSCTYPE.value:filter_name.OnlineStoreCopyTypeName.FILL_BLANK.id,
+              }
+    response = client.get(f'{prefix}/onlinestores/cp/', params=params)
+    assert response.status_code == 200
+    is_html(response.text)
+    drop_test_db()
+
+def test_read_users_online_stores_update(test_db):
+    response = client.get(f'{prefix}/onlinestores/update/')
+    assert response.status_code == 200
+    is_html(response.text)
+    assert "更新できない状態です" in response.text
+

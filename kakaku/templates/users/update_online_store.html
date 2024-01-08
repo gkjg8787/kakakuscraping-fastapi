@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
+    <title>店舗情報の取得</title>
+    {%- if not errmsg %}
+    <meta http-equiv="refresh" content=" 2; url={{ url_for('read_users_online_stores') }}">
+    {%- endif %}
+{% endblock %}
+
+{% block body %}
+    <h1>店舗情報の取得</h1>
+    {%- if errmsg %}
+      <p>{{ errmsg }}</p>
+    {%- else %}
+      <p>
+        店舗情報の取得を開始中です。
+        <br>2秒後に戻ります。
+      </p>
+    {%- endif %}
+    <p><a href="{{ url_for('read_users_online_stores') }}" class="plain-link">自動取得した店舗一覧へ戻る</a></p>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
+{% endblock %}

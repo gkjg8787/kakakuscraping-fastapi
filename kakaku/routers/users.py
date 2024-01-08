@@ -433,7 +433,6 @@ def read_users_urls_view(request: Request,
                           db :Session = Depends(get_session)
                           ):
     ulc = template_value.item.UrlListContext(request=request, db=db, ufq=ufq)
-
     context = dict(ulc)
     return templates.TemplateResponse(
         "users/url_list.html"
@@ -461,7 +460,6 @@ def read_users_stores(request: Request,
                       db :Session = Depends(get_session)
                       ):
     ulc = template_value.item.StoreListContext(request=request, db=db, slfp=slfq)
-
     context = dict(ulc)
     return templates.TemplateResponse(
         "users/store_list.html"
@@ -473,7 +471,6 @@ def read_users_stores_postage_edit(request: Request,
                       db :Session = Depends(get_session)
                       ):
     ulc = template_value.item.EditShippingConditionContext(request=request, db=db)
-
     context = dict(ulc)
     return templates.TemplateResponse(
         "users/edit_shipping_condition.html"
@@ -495,7 +492,6 @@ async def read_users_stores_postage_edit_result(request: Request,
                 stores.append(store)
     escf.set_store_list(stores)
     ulc = template_value.item.EditShippingConditionResult(request=request, db=db, escf=escf)
-
     context = dict(ulc)
     return templates.TemplateResponse(
         "users/edit_shipping_condition_result.html"
@@ -508,7 +504,6 @@ def read_users_store_delete(request: Request,
                             db :Session = Depends(get_session)
                             ):
     ulc = template_value.item.DeleteStoreInitContext(request=request, db=db, dsf=dsf)
-
     context = dict(ulc)
     return templates.TemplateResponse(
         "users/del_shipping_condition.html"
@@ -521,7 +516,6 @@ def read_users_store_delete_result(request: Request,
                                    db :Session = Depends(get_session)
                                   ):
     ulc = template_value.item.DeleteStoreContext(request=request, db=db, dsf=dsf)
-
     context = dict(ulc)
     return templates.TemplateResponse(
         "users/del_shipping_condition.html"
@@ -534,7 +528,6 @@ def read_users_online_stores(request: Request,
                       db :Session = Depends(get_session)
                       ):
     oslc = template_value.item.OnlineStoreListContext(request=request, db=db, slfp=slfq)
-
     context = dict(oslc)
     return templates.TemplateResponse(
         "users/online_store_list.html"
@@ -547,9 +540,19 @@ def read_users_online_stores_copy(request: Request,
                       db :Session = Depends(get_session)
                       ):
     oscc = template_value.item.OnlineStoreCopyContext(request=request, db=db, oscq=oscq)
-
     context = dict(oscc)
     return templates.TemplateResponse(
         "users/copy_online_store_list_result.html"
+        ,context
+        )
+
+@router.get("/onlinestores/update/", response_class=HTMLResponse)
+def read_users_online_stores_update(request: Request,
+                                    db :Session = Depends(get_session)
+                                    ):
+    oscc = template_value.item.OnlineStoreUpdateContext(request=request, db=db)
+    context = dict(oscc)
+    return templates.TemplateResponse(
+        "users/update_online_store.html"
         ,context
         )
