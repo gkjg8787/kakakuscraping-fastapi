@@ -579,7 +579,25 @@ class OnlineStoreQuery:
                     )
         db.execute(stmt)
         db.commit()
-    
+    @classmethod
+    def delete_postage(cls,
+                       db :Session,
+                       insert_proc_type_list :list[int] = [],
+                       delete_older_than_today :bool = False
+                       ):
+        stmt = (delete(OnlineStorePostage)
+                )
+        if insert_proc_type_list:
+            stmt = (stmt
+                    .where(OnlineStorePostage.insert_proc_type.in_(insert_proc_type_list))
+                    )
+        if delete_older_than_today:
+            stmt = (stmt
+                    .where(utc_to_jst_date_for_query(OnlineStorePostage.created_at) < get_jst_date_for_query())
+                    )
+        db.execute(stmt)
+        db.commit()
+
     @classmethod
     def delete_postage_by_not_in_storename_list(cls,
                                                 db :Session,

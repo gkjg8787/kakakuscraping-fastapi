@@ -133,21 +133,18 @@ def update_after_confirming(db :Session,
                             logger :cmnlog.logging.Logger
                             ):
     if len(update_data_list) > 1:
-        # 2つ以上の店舗のデータが取得できてしまった時ログ掃き出し（検索ワードが広すぎ）
         shopnames = [upd.shop_name for upd in update_data_list]
         logger.warning(f"{get_filename()} get online store postage many len={len(update_data_list)}, searchword={search_word}, shopname={shopnames}")
     update_data = update_data_list[0]
     if not update_data.prefectures_postage:
         logger.debug(f"{get_filename()} no prefectures postage")
         return
-    # 共通の送料無料条件があればその条件の閾値を上限として取得する
     common_fixed_boundary = create_common_fixed_boundary(storename_db_dict=db_dict[storename])
     add_db_data_list :list[dict] = []
     for prefpos in update_data.prefectures_postage:
         pref_id = prefinfo.get_id(prefpos.name)
         if prefpos.get_postage() is None:
             continue
-        #条件が一致するもの以外は削除し、一致するものがないなら追加
         pref_db_data_list = get_db_data_by_pref_id(pref_id=pref_id, db_dict_list=db_dict[storename])
         same_terms_id = get_terms_id_of_same_terms(
                                             db_dict_list=pref_db_data_list,
@@ -155,15 +152,6 @@ def update_after_confirming(db :Session,
                                             postage=prefpos.get_postage()
                                             )
         if same_terms_id:
-            if len(pref_db_data_list) == 1:
-                continue
-            store.OnlineStoreQuery.delete_postage_by_storename_and_pref_id_and_not_in_terms_id(
-                    db=db,
-                    storename=storename,
-                    pref_id=pref_id,
-                    leave_terms_id_list=[same_terms_id],
-                    insert_proc_type_list=[posd.InsertProcType.MAKEPURE_TOOL.value]
-                )
             continue
         add_db_data :dict = {}
         add_db_data["boundary"] = common_fixed_boundary
@@ -344,6 +332,7 @@ def update_online_store_postage(db :Session):
         return
     sn_list = list(dict.fromkeys(sn.strip() for sn in sn_list))
     logger.info(f"{get_filename()} delete old store postage")
+    store.OnlineStoreQuery.delete_postage(db=db, delete_older_than_today=True)
     store.OnlineStoreQuery.delete_postage_by_not_in_storename_list(db=db, storename_list=sn_list)
     store.DailyOnlineShopInfoQuery.delete(db=db, delete_older_than_today=True)
     logger.info(f"{get_filename()} update store postage")
