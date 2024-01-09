@@ -611,29 +611,6 @@ class OnlineStoreQuery:
                 )
         db.execute(stmt)
         db.commit()
-    
-    @classmethod
-    def delete_postage_by_storename_and_pref_id_and_not_in_terms_id(cls,
-                                                                    db :Session,
-                                                                    storename :str,
-                                                                    pref_id :int,
-                                                                    leave_terms_id_list :list[int],
-                                                                    insert_proc_type_list :list[int] = []
-                                                                    ):
-        shop_id_q = (select(OnlineStore.shop_id)
-                   .where(OnlineStore.storename == storename)
-                   ).scalar_subquery()
-        stmt = (delete(OnlineStorePostage)
-                .where(OnlineStorePostage.shop_id == shop_id_q)
-                .where(OnlineStorePostage.pref_id == pref_id)
-                .where(OnlineStorePostage.terms_id.not_in(leave_terms_id_list))
-                )
-        if insert_proc_type_list:
-            stmt = (stmt
-                    .where(OnlineStorePostage.insert_proc_type.in_(insert_proc_type_list))
-                    )
-        db.execute(stmt)
-        db.commit()
 
     @classmethod
     def delete_postage_by_shop_id_and_insert_proc_type(cls,
