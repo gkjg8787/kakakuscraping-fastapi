@@ -1,17 +1,29 @@
 textarea.system_status_log {
     resize: none;
     min-width: 150px;
-    max-width: 350px;
+    max-width: 450px;
     width: 100%;
     min-height: 150px;
     max-height: 250px;
-    height: 40%;
-    overflow: auto; 
+    height: 60%;
+    overflow: auto;
+    margin-top: 10px; 
+}
+.auto_update_box {
+    border-top: 1px solid black;
+    width: 220px;
+    margin-top: 10px;
+}
+.auto_update_schedule {
+    margin-left: 12px;
 }
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
     textarea.system_status_log {
         background-color: black;
         color: white;
+    }
+    .auto_update_box {
+        border-color: white;
     }
   }

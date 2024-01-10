@@ -112,8 +112,8 @@ class TwoDigitHourFormat:
     
     @classmethod
     def convert_list_to_local_datetime_list(cls,
-                                      time_str_list :str,
-                                      logger :Logger,
+                                      time_str_list :list[str],
+                                      logger :Logger | None = None,
                                       convert_tomorrow :bool = False
                                       ):
         results :list[datetime] = []
@@ -125,10 +125,44 @@ class TwoDigitHourFormat:
         input_fmt = "%Y%m%d %H:%M%z"
         for upts in time_str_list:
             results.append(datetime.strptime(ns + upts + tz, input_fmt))
-        logger.debug(f'{get_filename()} updatelocaltime = {results}')
+        if logger:
+            logger.debug(f'{get_filename()} updatelocaltime = {results}')
         return results
-
     
+    @classmethod
+    def convert_list_to_AutoUpdateSchedule_list(cls,
+                                                timer_str_list :list[str],
+                                                timer_list :list[datetime],
+                                                ) -> list[AutoUpdateSchedule]:
+        aus = AutoUpdateStatus
+        if len(timer_str_list) == 1:
+            return [AutoUpdateSchedule(requirement=timer_str_list[0],
+                                       status=aus.NEXT.jname)]
+        reqs :list[AutoUpdateSchedule]= []
+        near = None
+        ln = cmn_util.utcTolocaltime(datetime.utcnow())
+        for ult in timer_list:
+            if ln < ult:
+                if not near or near > ult:
+                    near = ult
+            continue
+
+        s_fmt = "%H:%M"
+        nearstr = None
+        if near:
+            nearstr = near.strftime(s_fmt)
+        for ults in timer_str_list:
+            if not nearstr:
+                sts = aus.NONE.jname
+            else:
+                if nearstr == ults:
+                    sts = aus.NEXT.jname
+                elif nearstr < ults:
+                    sts = aus.WAIT.jname
+                else:
+                    sts = aus.NONE.jname
+            reqs.append(AutoUpdateSchedule(requirement=ults, status=sts))
+        return reqs
 
 class ItemAutoUpdateTimerFactory:
     @staticmethod
@@ -196,35 +230,9 @@ class ItemAutoUpdateTimer:
         return True
     
     def crate_AutoUpdateSchedule_list(self) -> list[AutoUpdateSchedule]:
-        aus = AutoUpdateStatus
-        if len(self.updatelocaltimestrs) == 1:
-            return [AutoUpdateSchedule(requirement=self.updatelocaltimestrs[0],
-                                       status=aus.NEXT.jname)]
-        reqs :list[AutoUpdateSchedule]= []
-        near = None
-        ln = cmn_util.utcTolocaltime(datetime.utcnow())
-        for ult in self.updatelocaltime:
-            if ln < ult:
-                if not near or near > ult:
-                    near = ult
-            continue
-
-        s_fmt = "%H:%M"
-        nearstr = None
-        if near:
-            nearstr = near.strftime(s_fmt)
-        for ults in self.updatelocaltimestrs:
-            if not nearstr:
-                sts = aus.NONE.jname
-            else:
-                if nearstr == ults:
-                    sts = aus.NEXT.jname
-                elif nearstr < ults:
-                    sts = aus.WAIT.jname
-                else:
-                    sts = aus.NONE.jname
-            reqs.append(AutoUpdateSchedule(requirement=ults, status=sts))
-        return reqs
+        return TwoDigitHourFormat.convert_list_to_AutoUpdateSchedule_list(timer_str_list=self.updatelocaltimestrs,
+                                                                        timer_list=self.updatelocaltime
+                                                                        )
     
     def createUpdateLocalTime(self, tomorrow=False):
         self.updatelocaltime = TwoDigitHourFormat.convert_list_to_local_datetime_list(self.updatelocaltimestrs,
@@ -301,6 +309,10 @@ class DailyOnlineStoreUpdate:
     logger :Logger
 
     def __init__(self, logger :Logger):
+        if not read_config.is_auto_update_online_store():
+            logger.info(f"{get_filename()} {__class__.__name__} set no autoupdate")
+            self.isAutoUpdate = False
+            return
         upts = read_config.get_auto_update_online_store_time()
         if not upts\
             or not type(upts) is list:

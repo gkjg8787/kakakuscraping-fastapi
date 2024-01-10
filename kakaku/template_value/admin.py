@@ -1,4 +1,4 @@
-
+from datetime import datetime
 from pathlib import Path
 import subprocess
 
@@ -9,16 +9,17 @@ from template_value import BaseTemplateValue
 from proc.system_status import SystemStatus, SystemStatusToJName
 from parameter_parser.admin import ProcCtrlForm
 from proc import get_sys_status
-from common.read_config import get_srcdir, is_auto_update_item
+from common import read_config
 from common.filter_name import (
     SystemCtrlBtnName,
     DashBoardPostName,
 )
 from common.util import utcTolocaltime
-from proc.auto_update import AutoUpdateOnOff
+from proc.auto_update import AutoUpdateOnOff, TwoDigitHourFormat
 from model.server import AutoUpdateSchedule
 from accessor.server import AutoUpdateScheduleQuery
 from proc.system_status_log import SystemStatusLogAccess
+from common.cmnlog import getLogger, LogName
 
 
 
@@ -31,8 +32,10 @@ class DashBoardTemplate(BaseTemplateValue):
     RESTART :str = SystemCtrlBtnName.RESTART.value
     syssts :str = SystemStatus.NONE.name
     sysstop :bool = True
-    autoupdate :str = AutoUpdateOnOff.OFF.jname
-    autoupdate_schedule :list[AutoUpdateSchedule] = []
+    item_autoupdate :str = AutoUpdateOnOff.OFF.jname
+    item_autoupdate_schedule :list[AutoUpdateSchedule] = []
+    online_store_autoupdate :str = AutoUpdateOnOff.OFF.jname
+    online_store_autoupdate_schedule :list[AutoUpdateSchedule] = []
     sysstatuslog :str = SYSTEM_STS_LOG_DEFAULT
 
     def __init__(self, request, db :Session):
@@ -44,10 +47,14 @@ class DashBoardTemplate(BaseTemplateValue):
         else:
             self.sysstop = False
 
-        if is_auto_update_item():
-            self.autoupdate = AutoUpdateOnOff.ON.jname
-            self.autoupdate_schedule = AutoUpdateScheduleQuery.get_schedules(db)
+        if read_config.is_auto_update_item():
+            self.item_autoupdate = AutoUpdateOnOff.ON.jname
+            self.item_autoupdate_schedule = AutoUpdateScheduleQuery.get_schedules(db)
         
+        if read_config.is_auto_update_online_store():
+            self.online_store_autoupdate = AutoUpdateOnOff.ON.jname
+            self.online_store_autoupdate_schedule = self.create_online_store_autoupdate_schedule()
+
         self.sysstatuslog = self.get_system_status_log_text(db)
 
     @classmethod
@@ -59,6 +66,33 @@ class DashBoardTemplate(BaseTemplateValue):
         if len(printlogs) > 0:
             return "\n".join(printlogs)
         return SYSTEM_STS_LOG_DEFAULT
+    
+    @classmethod
+    def create_online_store_autoupdate_schedule(cls):
+        results :list[AutoUpdateSchedule] = []
+        up_str_list :list[str] = TwoDigitHourFormat.convet_list_to_two_digit_hour_list(
+                                    read_config.get_auto_update_online_store_time(),
+                                    getLogger(LogName.CLIENT)
+                                    )
+        up_list :list[datetime] = TwoDigitHourFormat.convert_list_to_local_datetime_list(
+                                    time_str_list=up_str_list,
+                                    convert_tomorrow=cls.is_update_for_today_complete(up_str_list)
+                                    )
+        results = TwoDigitHourFormat.convert_list_to_AutoUpdateSchedule_list(
+                        timer_str_list=up_str_list,
+                        timer_list=up_list
+                    )
+        return results
+    
+    @classmethod
+    def is_update_for_today_complete(cls, timer_str_list :list[str]):
+        now = utcTolocaltime(datetime.utcnow()).strftime("%H:%M")
+        if len(timer_str_list) == 0:
+            return False
+        if now > sorted(timer_str_list, reverse=True)[0]:
+                return True
+        return False
+
 
 class BackServerCtrl:
     CMD_NAME = "proc_manage.py"
@@ -68,7 +102,7 @@ class BackServerCtrl:
         self.cmd_msg = pcf.proc_action
 
     def action(self):
-        base_path = str(get_srcdir())
+        base_path = str(read_config.get_srcdir())
         cmd = ["python3", str(Path(base_path, self.CMD_NAME))]
         if self.cmd_msg == SystemCtrlBtnName.STARTUP.value:
             cmd.append("start")

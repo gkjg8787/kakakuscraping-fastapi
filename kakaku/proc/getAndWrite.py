@@ -367,7 +367,11 @@ def get_next_act_to_online_storepostage(parsedata :htmlparse.ParseStorePostage,
                 return NextActOnlineUpdate.NONE
             return NextActOnlineUpdate.UPDATE
     return NextActOnlineUpdate.ADD
-            
+
+def is_fix_postage_of_campaign(pstorepos :htmlparse.ParseStorePostage):
+    return len(pstorepos.campaign_msg) > 0\
+        and len(pstorepos.terms) > 0\
+        and not pstorepos.target_prefectures
 
 def update_online_storepostage(db :Session, parseitems :htmlparse.ParseItems):
     if not parseitems.hasPostage():
@@ -384,6 +388,14 @@ def update_online_storepostage(db :Session, parseitems :htmlparse.ParseItems):
                 case NextActOnlineUpdate.NONE:
                     continue
                 case NextActOnlineUpdate.ADD:
+                    if is_fix_postage_of_campaign(pstorepos=pstorepos):
+                        store.OnlineStoreQuery.delete_postage_by_storename_and_pref_id(db,
+                                                                                       storename=storename,
+                                                                                       pref_id=const_value.NONE_PREF_ID,
+                                                                                       insert_proc_type_list=[
+                                                                                           posd.InsertProcType.MAKEPURE_TOOL.value
+                                                                                       ]
+                                                                                       )
                     add_online_storepostage(db=db, pstorepos=pstorepos, shop_id=None)
                     continue
                 case NextActOnlineUpdate.UPDATE:

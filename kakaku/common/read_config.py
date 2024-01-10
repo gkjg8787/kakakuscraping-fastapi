@@ -67,6 +67,9 @@ def get_auto_update_check_cycle_time():
 def get_auto_db_organizer_check_cycle_time():
     return settings.AUTO_DB_ORGANIZER_CYCLE_TIME
 
+def is_auto_update_online_store():
+    return settings.AUTO_UPDATE_ONLINE_STORE
+
 def get_auto_update_online_store_time():
     return settings.AUTO_UPDATE_ONLINE_STORE_TIME
 
