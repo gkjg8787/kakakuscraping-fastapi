@@ -445,8 +445,10 @@ class OnlineStoreQuery:
         return db.scalars(stmt).all()
     
     @classmethod
-    def get_onlinestore_all(cls, db :Session) -> list[OnlineStore] | None:
-        stmt = (select(OnlineStore))
+    def get_onlinestore_all_sorted_by_storename(cls, db :Session) -> list[OnlineStore] | None:
+        stmt = (select(OnlineStore)
+                .order_by(OnlineStore.storename)
+                )
         return db.scalars(stmt).all()
 
     @classmethod

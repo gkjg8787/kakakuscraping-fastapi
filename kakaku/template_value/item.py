@@ -1449,7 +1449,7 @@ class OnlineStoreListContext(BaseTemplateValue):
         return None 
 
     def create_storelist(self, db :Session, fq :dict):
-        oslist = ac_store.OnlineStoreQuery.get_onlinestore_all(db)
+        oslist = ac_store.OnlineStoreQuery.get_onlinestore_all_sorted_by_storename(db)
         if not oslist:
             return []
         results :list[pps.TemplatesStore] = []
