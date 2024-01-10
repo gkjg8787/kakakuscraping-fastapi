@@ -40,6 +40,6 @@
         <input type="hidden" name="{{ POST_ITEM_ID }}" value="{{ add_item_id }}">
         <input type="hidden" name="{{ POST_SEARCH_QUERY }}" value="{{ search_query }}">
         <p><input type="submit" value="送信"></p>
-        <p><a href="{{ url_for('read_search') }}{{ search_query }}" class="plain-link">戻る</a></p>
+        <p><a href="{{ url_for('read_search') }}{{ search_query }}" class="plain-link">検索へ戻る</a></p>
     </form>
 {% endblock %}

@@ -18,10 +18,10 @@
         <p>本当に{{ groupname }}を削除しますか？
         <p><input type="submit" value="削除"></p>
     </form>
-    <p><a href="{{ url_for('read_users_groups_edit') }}?{{ GROUPID_NAME }}={{ gid }}" class="plain-link">戻る</a></p>
+    <p><a href="{{ url_for('read_users_groups_edit') }}?{{ GROUPID_NAME }}={{ gid }}" class="plain-link">グループへ戻る</a></p>
     {% else %}
     <p>グループ名 : {{ groupname }}</p>
     <p>削除しました。<br>3秒後、戻ります。</p>
-    <p><a href="{{ url_for('read_users') }}" class="plain-link">戻る</a>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a>
     {% endif %}
 {% endblock %}

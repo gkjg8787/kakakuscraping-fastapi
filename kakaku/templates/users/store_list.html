@@ -16,6 +16,8 @@
         {%- endif %}
     </div>
     <p><a href="{{ url_for('read_users_online_stores') }}" class="like_button_link">自動取得した店舗一覧</a></p>
+    <p><a href="{{ url_for('read_select_item_price_combination') }}" class="like_button_link">アイテムの価格計算</a></p>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
     <h3>フィルタ</h3>
     <p>
     {%- with ITEMACT_NAME = CONFIGUREDTERMS_NAME, actstslist = confstslist, fquery = fquery %}

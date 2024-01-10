@@ -7,6 +7,7 @@
 
 {% block body %}
     <h1>登録URL一覧</h1>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
     <h3>フィルタ</h3>
     <div>
         <p>
@@ -56,5 +57,5 @@
         </tr>
         {%- endfor %}
     </table>
-    <p><a href="{{ url_for('read_users') }}" class="plain-link">戻る</a></p>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
 {% endblock %}

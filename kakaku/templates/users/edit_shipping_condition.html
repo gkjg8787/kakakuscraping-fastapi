@@ -13,6 +13,8 @@
     {%- if errmsg %}
     <p style="color:red;">{{ errmsg }}</p>
     {%- endif %}
+    <p><a href="{{ url_for('read_users_stores') }}" class="plain-link">店舗一覧へ戻る</a></p>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
     {%- with 
         item_id_list = item_id_list,
         store_list = store_list,

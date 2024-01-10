@@ -13,6 +13,7 @@
     {%- if errmsg %}
     <p style="color:red;">{{ errmsg }}</p>
     {%- endif %}
+    <p><a href="{{ url_for('read_select_item_price_combination') }}" class="plain-link">アイテム選択へ戻る</a></p>
     {%- with 
         item_id_list = item_id_list,
         store_list = store_list,
@@ -21,7 +22,7 @@
         post_url = url_for('read_item_price_combination_result'),
         post_button_text = "結果",
         back_url = url_for('read_select_item_price_combination'),
-        back_url_text = "選択へ戻る"
+        back_url_text = "アイテム選択へ戻る"
     %}
     {%- include "itemcomb/input_shipping_condition.html" %}
     {%- endwith %}

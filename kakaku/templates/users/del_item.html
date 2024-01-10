@@ -17,10 +17,10 @@
         <p>本当に{{ itemname }}を削除しますか？
         <p><input type="submit" value="削除"></p>
     </form>
-    <p><a href="{{ url_for('read_users_items_view',) }}?{{ ITEMID_Q_NAME }}={{ item_id }}" class="plain-link">戻る</a></p>
+    <p><a href="{{ url_for('read_users_items_view',) }}?{{ ITEMID_Q_NAME }}={{ item_id }}" class="plain-link">アイテム詳細へ戻る</a></p>
     {% else %}
     <p>アイテム名 : {{ itemname }}</p>
     <p>削除しました。<br>3秒後、戻ります。</p>
-    <p><a href="{{ url_for('read_users') }}" class="plain-link">戻る</a>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a>
     {% endif %}
 {% endblock %}
