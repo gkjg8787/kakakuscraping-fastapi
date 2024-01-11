@@ -581,6 +581,7 @@ class OnlineStoreQuery:
                     )
         db.execute(stmt)
         db.commit()
+
     @classmethod
     def delete_postage(cls,
                        db :Session,
@@ -626,6 +627,42 @@ class OnlineStoreQuery:
                 )
         db.execute(stmt)
         db.commit()
+    @classmethod
+    def delete_postage_by_shop_id_and_pref_id_list_and_insert_proc_type(cls,
+                                                                   db :Session,
+                                                                   shop_id :int,
+                                                                   pref_id_list :list[int],
+                                                                   insert_proc_type :int
+                                                                   ):
+        stmt = (delete(OnlineStorePostage)
+                .where(OnlineStorePostage.shop_id == shop_id)
+                .where(OnlineStorePostage.pref_id.in_(pref_id_list))
+                .where(OnlineStorePostage.insert_proc_type == insert_proc_type)
+                )
+        db.execute(stmt)
+        db.commit()
+
+    @classmethod
+    def update_postage_by_dict_list(cls,
+                                    db :Session,
+                                    shop_id :int,
+                                    pos_dict_list :list[dict]
+                                    ):
+        for pos_dict in pos_dict_list:
+            stmt = (update(OnlineStorePostage)
+                    .where(OnlineStorePostage.shop_id == shop_id)
+                    .where(OnlineStorePostage.pref_id == pos_dict["pref_id"])
+                    .where(OnlineStorePostage.terms_id == pos_dict["terms_id"])
+                    .where(OnlineStorePostage.insert_proc_type == pos_dict["insert_proc_type"])
+                    .values({"boundary":pos_dict["boundary"],
+                             "postage":pos_dict["postage"],
+                             "created_at":pos_dict["created_at"]
+                             }
+                             )
+                    )
+            db.execute(stmt)
+        db.commit()
+
 
     @classmethod
     def get_todays_storenames(cls, db :Session):
@@ -633,6 +670,7 @@ class OnlineStoreQuery:
                 .where(utc_to_jst_date_for_query(PriceLog_2days.created_at) == get_jst_date_for_query())
                 )
         return db.scalars(stmt).all()
+    
 
 class PrefectureQuery:
     @classmethod

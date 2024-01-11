@@ -1,5 +1,6 @@
 import os
 import re
+from datetime import datetime
 
 from accessor.read_sqlalchemy import Session
 from accessor import store
@@ -122,7 +123,24 @@ def create_common_fixed_boundary(storename_db_dict :dict):
     return posd.ShippingTermsBoundary.create_boundary_of_db(lower_ope=pref_common_boundary["boundary_ope"],
                                                             lower_val=pref_common_boundary["boundary_val"],
                                                             )
-        
+
+def create_pos_dict(pref_id :int,
+                    boundary :str,
+                    postage :int,
+                    terms_id :int | None = None,
+                    created_at :datetime | None = None
+                    ):
+    add_db_data :dict = {}
+    add_db_data["boundary"] = boundary
+    add_db_data["postage"] = postage
+    add_db_data["pref_id"] = pref_id
+    add_db_data["campaign_msg"] = ""
+    add_db_data["insert_proc_type"] = posd.InsertProcType.MAKEPURE_TOOL.value
+    if terms_id:
+        add_db_data["terms_id"] = terms_id
+    if created_at:
+        add_db_data["created_at"] = created_at
+    return add_db_data
 
 def update_after_confirming(db :Session,
                             storename :str,
@@ -141,6 +159,9 @@ def update_after_confirming(db :Session,
         return
     common_fixed_boundary = create_common_fixed_boundary(storename_db_dict=db_dict[storename])
     add_db_data_list :list[dict] = []
+    update_db_data_list :list[dict] = []
+    delete_db_data_set :set[int] = []
+    nowdate = datetime.utcnow()
     for prefpos in update_data.prefectures_postage:
         pref_id = prefinfo.get_id(prefpos.name)
         if prefpos.get_postage() is None:
@@ -153,18 +174,63 @@ def update_after_confirming(db :Session,
                                             )
         if same_terms_id:
             continue
-        add_db_data :dict = {}
-        add_db_data["boundary"] = common_fixed_boundary
-        add_db_data["postage"] = prefpos.get_postage()
-        add_db_data["pref_id"] = pref_id
-        add_db_data["campaign_msg"] = ""
-        add_db_data["insert_proc_type"] = posd.InsertProcType.MAKEPURE_TOOL.value
-        add_db_data_list.append(add_db_data)
+        if pref_db_data_list:
+            if len(pref_db_data_list) == 1\
+                and pref_db_data_list[0]["insert_proc_type"] == posd.InsertProcType.MAKEPURE_TOOL.value:
+                update_db_data_list.append(create_pos_dict(pref_id=pref_id,
+                                                            boundary=common_fixed_boundary,
+                                                            postage=prefpos.get_postage(),
+                                                            terms_id=pref_db_data_list[0]["terms_id"],
+                                                            created_at=nowdate
+                                                            )
+                                            )
+                continue
+            if len(pref_db_data_list) > 1:
+                count = 0
+                target_terms_id = None
+                for pref_db_data in pref_db_data_list:
+                    if pref_db_data["insert_proc_type"] == posd.InsertProcType.MAKEPURE_TOOL.value:
+                        count += 1
+                        target_terms_id = pref_db_data["terms_id"]
+                if count == 1:
+                    update_db_data_list.append(create_pos_dict(pref_id=pref_id,
+                                                                boundary=common_fixed_boundary,
+                                                                postage=prefpos.get_postage(),
+                                                                terms_id=target_terms_id,
+                                                                created_at=nowdate
+                                                                )
+                                                )
+                    continue
+                if count > 1:
+                    delete_db_data_set.add(pref_id)
+                    add_db_data_list.append(create_pos_dict(pref_id=pref_id,
+                                                boundary=common_fixed_boundary,
+                                                postage=prefpos.get_postage(),
+                                                )
+                                            )
+                    continue
+
+        add_db_data_list.append(create_pos_dict(pref_id=pref_id,
+                                                boundary=common_fixed_boundary,
+                                                postage=prefpos.get_postage(),
+                                                )
+                                )
     
-    if not add_db_data_list:
-        return
+    
     shop_id = store.OnlineStoreQuery.get_shop_id(db=db, storename=storename)
-    store.OnlineStoreQuery.add_postage_by_dict_list(db=db,
+    if delete_db_data_set:
+        store.OnlineStoreQuery.delete_postage_by_shop_id_and_pref_id_list_and_insert_proc_type(db=db,
+                                                                                           shop_id=shop_id,
+                                                                                           pref_id_list=list(delete_db_data_set),
+                                                                                           insert_proc_type=posd.InsertProcType.MAKEPURE_TOOL.value
+                                                                                           )
+    if update_db_data_list:
+        store.OnlineStoreQuery.update_postage_by_dict_list(db=db,
+                                                        shop_id=shop_id,
+                                                        pos_dict_list=update_db_data_list
+                                                        )
+    if add_db_data_list:
+        store.OnlineStoreQuery.add_postage_by_dict_list(db=db,
                                     shop_id=shop_id,
                                     start_terms_id=const_value.NONE_PREF_ID,
                                     pos_dict_list=add_db_data_list
@@ -189,8 +255,6 @@ def needs_update_by_campaign_msg(db_list :list[dict], prefinfo :PrefInfo):
             return True
         return False
     return True
-
-
 
 def update_surugaya_makepure_store_postage(db :Session,
                                            sn_list :list[str],
