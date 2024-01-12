@@ -7,12 +7,13 @@ from itemcomb.surugaya_postage.const_value import (
     SHIPPING_FEE_URL,
     DEFAULT_PREF,
 )
+REQUESTS_TIMEOUT = (3.5, 7.0)
 
 def getRawShippingFee(tenpo_cd):
     payload = {'tenpo_cd':tenpo_cd }
     url = SHIPPING_FEE_URL
     try:
-        res = requests.post(url=url, data=payload, timeout=3.5)
+        res = requests.post(url=url, data=payload, timeout=REQUESTS_TIMEOUT)
     except Timeout:
         print('Error Status Code' + str(res.status_code))
         return None

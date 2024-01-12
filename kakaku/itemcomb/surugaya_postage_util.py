@@ -91,11 +91,12 @@ class ShippingResult:
 def get_shippingResult(db :Session,
                        storename :str,
                        prefectures :list[str]  | None = None,
-                       post_wait_time :float = MIN_POST_WAIT_TIME
+                       post_wait_time :float = MIN_POST_WAIT_TIME,
+                       exact :bool = False
                        ):
     ret = funcstart(db=db,
                     storename=storename,
-                    exact=False,
+                    exact=exact,
                     post_wait_time=post_wait_time,
                     prefectures=prefectures
                     )

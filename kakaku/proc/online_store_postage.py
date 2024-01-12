@@ -1,6 +1,7 @@
 import os
 import re
 from datetime import datetime
+import difflib
 
 from accessor.read_sqlalchemy import Session
 from accessor import store
@@ -142,18 +143,36 @@ def create_pos_dict(pref_id :int,
         add_db_data["created_at"] = created_at
     return add_db_data
 
+def get_update_data_near_storename(storename :str,
+                                      update_data_list :list[spu.StoreShippingInfo],
+                                     ):
+    update_data = update_data_list[0]
+    near_r = 0
+    base_r = 1.0
+    for upd in update_data_list:
+        r = difflib.SequenceMatcher(None, storename, upd.shop_name)
+        if r.ratio() == base_r:
+            update_data = upd
+            break
+        if r.ratio() > near_r:
+            update_data = upd
+            near_r = r.ratio()
+    return update_data
+
 def update_after_confirming(db :Session,
                             storename :str,
                             db_dict :dict,
                             prefinfo :PrefInfo,
                             update_data_list :list[spu.StoreShippingInfo],
-                            search_word :str,
                             logger :cmnlog.logging.Logger
                             ):
     if len(update_data_list) > 1:
         shopnames = [upd.shop_name for upd in update_data_list]
-        logger.warning(f"{get_filename()} get online store postage many len={len(update_data_list)}, searchword={search_word}, shopname={shopnames}")
-    update_data = update_data_list[0]
+        logger.warning(f"{get_filename()} get online store postage many len={len(update_data_list)}, searchword={storename}, shopname={shopnames}")
+        update_data = get_update_data_near_storename(storename, update_data_list)
+    else:
+        update_data = update_data_list[0]
+
     if not update_data.prefectures_postage:
         logger.debug(f"{get_filename()} no prefectures postage")
         return
@@ -273,22 +292,20 @@ def update_surugaya_makepure_store_postage(db :Session,
             continue
         if not needs_update_by_campaign_msg(db_dict[storename], prefinfo=prefinfo):
             continue
-        word = spu.convert_storename_to_search_storename(storename)
-        if not word:
-            continue
         rets = spu.get_shippingResult(db=db,
-                                      storename=word,
+                                      storename=storename,
                                       prefectures=pref_list,
-                                      post_wait_time=online_update_post_wait_time
+                                      post_wait_time=online_update_post_wait_time,
+                                      exact=True
                                       ).get_list()
         if not rets:
+            logger.warning(f"{get_filename()} not result of makepure tool storename={storename}")
             continue
         update_after_confirming(db=db,
                                 storename=storename,
                                 db_dict=db_dict,
                                 prefinfo=prefinfo,
                                 update_data_list=rets,
-                                search_word=word,
                                 logger=logger
                                 )
 
@@ -398,6 +415,7 @@ def update_online_store_postage(db :Session):
     logger.info(f"{get_filename()} delete old store postage")
     store.OnlineStoreQuery.delete_postage(db=db, delete_older_than_today=True)
     store.OnlineStoreQuery.delete_postage_by_not_in_storename_list(db=db, storename_list=sn_list)
+    store.OnlineStoreQuery.delete_store_by_not_in_storename_list(db=db, storename_list=sn_list)
     store.DailyOnlineShopInfoQuery.delete(db=db, delete_older_than_today=True)
     logger.info(f"{get_filename()} update store postage")
     logger.info(f"{get_filename()} update surugaya makepure")

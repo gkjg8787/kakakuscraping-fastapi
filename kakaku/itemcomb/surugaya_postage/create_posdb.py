@@ -7,6 +7,7 @@ from itemcomb.surugaya_postage.const_value import (
     header,
     SHOPLIST_URL,
 )
+from downloader import download_html
 from itemcomb.postage_data import InsertProcType
 
 from accessor.read_sqlalchemy import Session
@@ -16,19 +17,17 @@ from accessor.store import (
 )
 
 def downLoadHtml(url):
-    res = requests.get(url=url, headers=header, cookies=None)
+    res = requests.get(url=url, headers=header, cookies=None, timeout=(3.5, 7.0))
     if res.status_code != requests.codes.ok :
         print('Error Status Code ' + str(res.status_code))
         return
     res.encoding = res.apparent_encoding
-    charset = res.encoding
-    #print('charset='+charset)
-
     text = res.text
     return text
 
 def getMakepureHtml():
-    return downLoadHtml(SHOPLIST_URL)
+    ok, res = download_html.getUrlHtml(SHOPLIST_URL)
+    return res
 
 
 def is_todays_data_dailyonlineshopinfo(db :Session):

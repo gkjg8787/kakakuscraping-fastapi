@@ -413,7 +413,7 @@ def is_update_makepure_postage_shop(up_data :htmlparse.ParseShopIDInfo,
                                     db_data :store.DailyOnlineShopInfo,
                                     now :datetime.datetime
                                     ):
-    if spu.convert_storename_to_search_storename(up_data.storename) != db_data.shop_name:
+    if up_data.storename != db_data.shop_name:
         return True
     if up_data.url != db_data.url:
         return True
@@ -428,7 +428,7 @@ def create_DailyOnlineShopInfo_from_ParseShopIDInfo(psii :htmlparse.ParseShopIDI
                                                     ):
     return store.DailyOnlineShopInfo(
                                 shop_id=psii.shop_id,
-                                shop_name=spu.convert_storename_to_search_storename(psii.storename),
+                                shop_name=psii.storename,
                                 url=psii.url,
                                 insert_proc_type=posd.InsertProcType.ITEM_UPDATE.value,
                                 created_at=now

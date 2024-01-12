@@ -560,6 +560,16 @@ class OnlineStoreQuery:
         for osp in osp_list:
             db.refresh(osp)
     
+    @classmethod
+    def delete_store_by_not_in_storename_list(cls,
+                                              db :Session,
+                                              storename_list :list[str],
+                                              ):
+        stmt = (delete(OnlineStore)
+                .where(OnlineStore.storename.not_in(storename_list))
+                )
+        db.execute(stmt)
+        db.commit()
     
     @classmethod
     def delete_postage_by_storename_and_pref_id(cls,

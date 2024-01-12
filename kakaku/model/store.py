@@ -65,7 +65,6 @@ class OnlineStorePostage(Base):
                 ")"
                 )
 
-
 class Prefecture(Base):
     __tablename__ = "prefecture"
 

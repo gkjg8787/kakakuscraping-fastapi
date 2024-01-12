@@ -7,8 +7,10 @@ from common import read_config
 from downloader.requestoption import RequestOpt
 from downloader import justbeforeconfig
 import requests
+from requests.exceptions import Timeout
 
 dirpath = read_config.get_dl_temp_dir()
+REQUESTS_TIMEOUT = (3.5, 9.0)
 
 def downLoadHtml(url):
     retbool, text = __getUrlHtml(url)
@@ -30,7 +32,14 @@ def getUrlHtml(url, opt=None):
 def __getUrlHtml(url, opt=RequestOpt()):
     isverify = justbeforeconfig.isVerifyURL(url)
     try:
-        res = requests.get(url=url, headers=opt.getHeader(), cookies=opt.getCookieJar(), verify=isverify)
+        res = requests.get(url=url,
+                           headers=opt.getHeader(),
+                           cookies=opt.getCookieJar(),
+                           verify=isverify,
+                           timeout=REQUESTS_TIMEOUT
+                           )
+    except Timeout:
+        return False, 'Timeout Error Status Code ' + str(res.status_code)
     except Exception as e:
         return False, 'requests Error {}'.format(e)
     if res.status_code != requests.codes.ok:

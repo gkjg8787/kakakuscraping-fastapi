@@ -138,13 +138,13 @@ def test_convert_storename_to_search_storename():
         },
         {storename:"駿河屋 町田旭町店",
          answer:"町田旭町"
-         },
+        },
         {storename:"駿河屋",
          answer:""
-         },
-         {storename:"ブックエコ中間店",
+        },
+        {storename:"ブックエコ中間店",
           answer:"ブックエコ中間"
-         }
+        },
     ]
     for sn_dic in storename_dict_list:
         ret = spu.convert_storename_to_search_storename(storename=sn_dic[storename])
