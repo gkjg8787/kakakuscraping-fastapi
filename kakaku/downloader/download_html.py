@@ -39,7 +39,7 @@ def __getUrlHtml(url, opt=RequestOpt()):
                            timeout=REQUESTS_TIMEOUT
                            )
     except Timeout:
-        return False, 'Timeout Error Status Code ' + str(res.status_code)
+        return False, 'Timeout Error'
     except Exception as e:
         return False, 'requests Error {}'.format(e)
     if res.status_code != requests.codes.ok:

@@ -15,10 +15,10 @@ def getRawShippingFee(tenpo_cd):
     try:
         res = requests.post(url=url, data=payload, timeout=REQUESTS_TIMEOUT)
     except Timeout:
-        print('Error Status Code' + str(res.status_code))
+        #print('Timeout Error')
         return None
     if res.status_code != requests.codes.ok:
-        print('Error Status Code' + str(res.status_code))
+        #print('Error Status Code' + str(res.status_code))
         return None
     res.encoding = res.apparent_encoding
     #charset = res.encoding
@@ -67,7 +67,6 @@ def searchPrefecturePostage(jdict :dict, prefecture=DEFAULT_PREF):
 
     #print(res)
     return res
-
 
 def getPrefecturePostage(tenpo_cd, prefs):
     jsontext = getRawShippingFee(tenpo_cd)

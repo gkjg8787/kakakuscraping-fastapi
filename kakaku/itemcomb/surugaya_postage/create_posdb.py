@@ -16,15 +16,6 @@ from accessor.store import (
     DailyOnlineShopInfo
 )
 
-def downLoadHtml(url):
-    res = requests.get(url=url, headers=header, cookies=None, timeout=(3.5, 7.0))
-    if res.status_code != requests.codes.ok :
-        print('Error Status Code ' + str(res.status_code))
-        return
-    res.encoding = res.apparent_encoding
-    text = res.text
-    return text
-
 def getMakepureHtml():
     ok, res = download_html.getUrlHtml(SHOPLIST_URL)
     return res
