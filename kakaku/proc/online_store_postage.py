@@ -24,7 +24,7 @@ def get_filename():
     return os.path.basename(__file__)
 
 def getLogger():
-    return cmnlog.getLogger(cmnlog.LogName.MANAGER)
+    return cmnlog.getLogger(cmnlog.LogName.PARSE)
 
 def get_db_postage_dict(db :Session, storename_list :list[str]):
     db_pos_list = store.OnlineStoreQuery.get_postage_including_none_by_storename_list(db=db,

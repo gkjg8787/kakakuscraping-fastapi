@@ -24,11 +24,7 @@ from common.read_config import (
     get_back_server_queue_timeout,
 )
 from accessor.server import OrganizeLogQuery
-from proc import (
-    db_organizer,
-    online_store_postage
-)
-
+from proc import db_organizer
 from proc.auto_update import TimerProc
 
 from .queuemanager import (
@@ -37,8 +33,6 @@ from .queuemanager import (
     server_pswd,
 )
 from itemcomb.prefecture import PrefectureDBSetting
-
-QUEUE_TIMEOUT = int(get_back_server_queue_timeout()) #5
 
 
 dlproc :DlProc | None = None
@@ -94,19 +88,8 @@ def startQueue():
     manager.shutdown()
     logger.info(get_filename() + ' manager end')
 
-def start_db_organize(db :Session, cmdstr :str):
-    SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.DB_ORGANIZE)
-    if cmdstr == sendcmd.ScrOrder.DB_ORGANIZE_DAYS:
-        db_organizer.start_func(db=db, orgcmd=db_organizer.DBOrganizerCmd.ALL)
-    elif cmdstr == sendcmd.ScrOrder.DB_ORGANIZE_SYNC:
-        db_organizer.start_func(db=db, orgcmd=db_organizer.DBOrganizerCmd.SYNC_PRICELOG)
-    elif cmdstr == sendcmd.ScrOrder.DB_ORGANIZE_LOG_2DAYS_CLEANER:
-        db_organizer.start_func(db=db, orgcmd=db_organizer.DBOrganizerCmd.PRICELOG_2DAYS_CLEANER)
-    elif cmdstr == sendcmd.ScrOrder.DB_ORGANIZE_LOG_CLEANER:
-        db_organizer.start_func(db=db, orgcmd=db_organizer.DBOrganizerCmd.PRICELOG_CLEANER)
-    return
-
 def scrapingURL(task, db :Session):
+    global parseproc, dlproc
     logger = getLogger(cmnlog.LogName.MANAGER)
     match task.cmdstr:
         case sendcmd.ScrOrder.UPDATE:
@@ -122,22 +105,22 @@ def scrapingURL(task, db :Session):
             SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.ALL_DATA_UPDATE)
             updateAllItems.updateAllitems(db, dlproc)
             return
-        case sendcmd.ScrOrder.DB_ORGANIZE_SYNC:
-            start_db_organize(db, cmdstr=task.cmdstr)
-            return
-        case sendcmd.ScrOrder.DB_ORGANIZE_DAYS:
-            start_db_organize(db, cmdstr=task.cmdstr)
+        case sendcmd.ScrOrder.DB_ORGANIZE_SYNC\
+            | sendcmd.ScrOrder.DB_ORGANIZE_DAYS:
+            SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.DB_ORGANIZE)
+            parseproc.direct_task_q.put(task.cmdstr)
             return
         case sendcmd.ScrOrder.UPDATE_ONLINE_STORE_POSTAGE:
             SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.ONLINE_STORE_UPDATE)
-            online_store_postage.update_online_store_postage(db=db)
+            parseproc.direct_task_q.put(task.cmdstr)
             return
 
 def check_db_organize(db :Session):
     ret = OrganizeLogQuery.get_log(db, name=db_organizer.DBOrganizerCmd.PRICELOG_CLEANER.name)
     if not ret \
         or (ret and not util.isLocalToday(util.utcTolocaltime(ret.created_at))):
-        start_db_organize(db, cmdstr=sendcmd.ScrOrder.DB_ORGANIZE_DAYS)
+        SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.DB_ORGANIZE)
+        parseproc.direct_task_q.put(sendcmd.ScrOrder.DB_ORGANIZE_DAYS)
     return
 
 def waitTask(task, result):
@@ -149,7 +132,7 @@ def waitTask(task, result):
         check_db_organize(db)
         PrefectureDBSetting.init_setting(db=db)
         manager_util.writeProcWaiting(db, psa=psa)
-        SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.ACTIVE)
+    QUEUE_TIMEOUT = float(get_back_server_queue_timeout())
     while True:
         try:
             t = task.get(timeout=QUEUE_TIMEOUT)
@@ -175,10 +158,9 @@ def waitTask(task, result):
 
 def createSubProc():
     global dlproc, parseproc, timerproc
-    dlproc = DlProc()
     parseproc = ParseProc()
+    dlproc = DlProc(retq=parseproc.parse_task_q)
     timerproc = TimerProc()
-    parseproc.setDlProc(dlproc)
     parseproc.start()
     timerproc.start()
 

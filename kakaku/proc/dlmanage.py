@@ -13,7 +13,7 @@ from proc.proc_status import ProcName
 from accessor.read_sqlalchemy import get_session
 from proc import manager_util
 
-QUEUE_TIMEOUT = int(get_back_server_queue_timeout()) #5
+QUEUE_TIMEOUT = float(get_back_server_queue_timeout()) #5
 
 
 def get_filename():
@@ -26,9 +26,9 @@ class DlTask:
         self.itemid = itemid
 
 class DlProc:
-    def __init__(self):
+    def __init__(self, retq :Queue):
         self.dlproclist = dict()
-        self.taskretq = Queue()
+        self.taskretq = retq
     
     def getLogger(self, pid=-1):
         logname = cmnlog.LogName.DOWNLOAD
