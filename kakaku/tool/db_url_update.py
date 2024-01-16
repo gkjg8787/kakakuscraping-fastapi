@@ -7,11 +7,7 @@ sys.path.append(parent_dir)
 
 
 from sqlalchemy import (
-    select,
-    insert,
-    delete,
     update,
-    union,
     func,
 )
 from sqlalchemy.orm import Session

@@ -2,9 +2,10 @@
 
 from common import filter_name
 from common.util import dbtimeTodatetime
-
+from common import const_value
 from accessor.item import (
     NewestQuery,
+    ItemQuery,
     UrlQuery,
 )
 from tests.test_sqlalchemy import (
@@ -996,3 +997,53 @@ def test_get_storename_newest_data_exist_data_filter_zaiko_off(test_db):
     results = NewestQuery.get_storename_newest_data(test_db, filter=filter_dict)
     assert len(results) == 5
     delete_item_and_store_model(test_db)
+
+###############################
+# Delete URL
+###############################
+
+def test_delete_all_related_by_url(test_db):
+    add_data_set_1(test_db)
+    url_id = 1
+    results = NewestQuery.get_raw_newest_data_all(test_db)
+    check_item_id = None
+    assert len(results) == 8
+    for ni in results:
+        if ni.url_id == url_id:
+            check_item_id = int(ni.item_id)
+            break
+    assert check_item_id
+    UrlQuery.delete_all_related_by_url(test_db, url_id=url_id)
+    ret = UrlQuery.get_urlinitem(test_db, url_id=url_id, item_id=check_item_id)
+    assert not ret
+    results = ItemQuery.get_pricelog_2days_by_url_id(test_db, url_id=url_id)
+    assert not results
+    results = ItemQuery.get_pricelog_by_url_id(test_db, url_id=url_id)
+    assert not results
+    delete_item_model(test_db)
+
+def test_update_by_deleting_url(test_db):
+    add_data_set_1(test_db)
+    url_id = 1
+    results = NewestQuery.get_raw_newest_data_all(test_db)
+    check_item_id = None
+    assert len(results) == 8
+    for ni in results:
+        if ni.url_id == url_id:
+            check_item_id = int(ni.item_id)
+            break
+    assert check_item_id
+    
+    NewestQuery.update_by_deleting_url(test_db, url_id=url_id)
+    results = NewestQuery.get_raw_newest_data_all(test_db)
+    assert len(results) == 8
+    for ni in results:
+        if ni.item_id == check_item_id:
+            assert not ni.url_id
+            assert ni.newestprice == const_value.INIT_PRICE
+            assert not ni.salename
+            assert str(ni.onsale) == "0"
+            assert str(ni.taxin) == "0"
+            assert int(ni.trendrate) == 0
+            break
+    delete_item_model(test_db)

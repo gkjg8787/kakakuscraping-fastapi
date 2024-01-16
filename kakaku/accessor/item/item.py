@@ -655,6 +655,26 @@ class NewestQuery:
             return stmt
         return stmt
     
+    @classmethod
+    def update_by_deleting_url(cls, db :Session, url_id :int):
+        stmt = (update(NewestItem)
+                .where(NewestItem.url_id == url_id)
+                .values(url_id=None,
+                        newestprice=const_value.INIT_PRICE,
+                        storename="",
+                        taxin="0",
+                        onsale="0",
+                        salename=None,
+                        trendrate = 0
+                        )
+                )
+        db.execute(stmt)
+        db.commit()
+    
+    @classmethod
+    def get_raw_newest_data_all(cls, db :Session):
+        return db.scalars(select(NewestItem)).all()
+    
 class GroupQuery:
 
     @classmethod
@@ -844,6 +864,14 @@ class ItemQuery:
     def get_pricelog_2days_by_url_id(cls, db :Session, url_id :int):
         stmt = ( select(PriceLog_2days)
                 .where(PriceLog_2days.url_id == url_id)
+                )
+        res = db.scalars(stmt).all()
+        return res
+
+    @classmethod
+    def get_pricelog_by_url_id(cls, db :Session, url_id :int):
+        stmt = ( select(PriceLog)
+                .where(PriceLog.url_id == url_id)
                 )
         res = db.scalars(stmt).all()
         return res
@@ -1299,7 +1327,14 @@ class OldItemQuery:
                 )
         db.execute(stmt)
         db.commit()
-       
+    
+    @classmethod
+    def delete_pricelog_by_url(cls, db :Session, url_id :int):
+        stmt = (delete(PriceLog)
+                .where(PriceLog.url_id == url_id)
+                )
+        db.execute(stmt)
+        db.commit()
 
 
 class UrlQuery:
@@ -1504,6 +1539,30 @@ class UrlQuery:
             return stmt
     
         return stmt
+    
+    @classmethod
+    def get_url_id_by_url(cls, db :Session, url :str):
+        return db.scalar(select(Url.url_id).where(Url.urlpath == url))
+    
+    @classmethod
+    def delete_all_related_by_url(cls, db :Session, url_id :int):
+        delete_pricelog = (delete(PriceLog)
+                          .where(PriceLog.url_id == url_id)
+                          )
+        db.execute(delete_pricelog)
+        delete_pricelog_2days = (delete(PriceLog_2days)
+                                 .where(PriceLog_2days.url_id == url_id)
+                                 )
+        db.execute(delete_pricelog_2days)
+        delete_urlinitem = (delete(UrlInItem)
+                            .where(UrlInItem.url_id == url_id)
+                            )
+        db.execute(delete_urlinitem)
+        delete_url = (delete(Url)
+                .where(Url.url_id == url_id)
+                )
+        db.execute(delete_url)
+        db.commit()
     
 class AnalysisQuery:
     @classmethod
