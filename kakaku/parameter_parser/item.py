@@ -19,7 +19,7 @@ from common.filter_name import (
 )
 from common.templates_string import HTMLOption
 
-from common import const_value
+from common import const_value, read_config
 from common.util import is_num
 from accessor.item import GroupQuery
 from sqlalchemy.orm import Session
@@ -722,6 +722,8 @@ class OnlineStoreListFilterQuery:
             self.confed = confed
         if is_valid_pref(pref):
             self.pref = pref
+        elif "all" != pref:
+            self.pref = str(read_config.get_default_shipping_prefecture_name())
         if store and store.isdigit():
             self.store = store
     

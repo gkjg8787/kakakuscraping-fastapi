@@ -1418,14 +1418,14 @@ class OnlineStoreListContext(BaseTemplateValue):
         return results
     
     def create_selected_pref_list(self, pref_dict :dict[int, str], fq :dict):
-        selected_id = None
+        pref_name_q = None
         if filter_name.FilterQueryName.PREF.value in fq:
-            selected_id = self.get_pref_id_in_pref_dict(pref_dict, fq[filter_name.FilterQueryName.PREF.value])
+            pref_name_q = fq[filter_name.FilterQueryName.PREF.value]
         results :List[IdTextSelected] = []    
         for pref_id, prefname in pref_dict.items():
             its = IdTextSelected(id=pref_id, text=prefname)
-            if selected_id\
-                and pref_id == selected_id:
+            if pref_name_q\
+                and prefname == pref_name_q:
                 its.selected = templates_string.HTMLOption.SELECTED.value
             results.append(its)
         return results
@@ -1441,12 +1441,6 @@ class OnlineStoreListContext(BaseTemplateValue):
                 its.selected = templates_string.HTMLOption.SELECTED.value
             results.append(its)
         return results
-    
-    def get_pref_id_in_pref_dict(self, pref_dict :dict[int, str], prefname :str):
-        for key, val in pref_dict.items():
-            if val == prefname:
-                return key
-        return None 
 
     def create_storelist(self, db :Session, fq :dict):
         oslist = ac_store.OnlineStoreQuery.get_onlinestore_all_sorted_by_storename(db)

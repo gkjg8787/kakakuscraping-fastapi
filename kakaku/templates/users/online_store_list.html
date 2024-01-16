@@ -40,7 +40,7 @@
     </p>
     <form action="" method="get" accept-charset="utf-8">
         <div>送付先：<select name="{{ PREF_NAME }}" onchange="submit(this.form)">
-            <option value="">全て</option>
+            <option value="all">全て</option>
             {%- for pref in pref_list %}
             <option value="{{ pref.text }}" {{ pref.selected }}>{{ pref.text }}</option>
             {%- endfor %}
