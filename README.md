@@ -9,9 +9,10 @@
      + ゲオオンラインストア
 + アイテムやグループとしてまとめて一覧で管理することができます。
 + 複数のアイテムを送料込みの価格でどこの店で購入すると安いかを計算しサポートします。
++ 詳細は[Wiki](https://github.com/gkjg8787/kakakuscraping-fastapi/wiki)を参照してください。
 
 ### 対応するデータベース
-[対応するデータベース](docs/database/SUPPORTED-DB.md)を参照してください。
+[対応するデータベース](https://github.com/gkjg8787/kakakuscraping-fastapi/wiki/Database)を参照してください。
 
 ### dockerで動かす
 0. 前提：dockerをインストール済み
@@ -45,5 +46,5 @@
   + 対象サイトがエラーを返した場合は取得に失敗します。
   + 対象サイトのHTML構造が変わると取得できません。
   + 対象サイトのドメインが変わった際は既存のものは更新されません。URLを削除し、再登録する必要があります。<br>
-  toolを使って変更することができます。[データベースのUPDATEについて](docs/database/UPDATED.md)を参照してください。
+  toolを使って変更することができます。[登録URL変更](https://github.com/gkjg8787/kakakuscraping-fastapi/wiki/Tool#%E7%99%BB%E9%8C%B2url%E5%A4%89%E6%9B%B4)を参照してください。
   + 1つのアイテムに沢山のURLを登録すると価格計算が終わらないかもしれません。

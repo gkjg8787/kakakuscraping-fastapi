@@ -1,9 +1,0 @@
-## 対応するデータベース
-+ 以下のデータベースに対応します。
-  + SQLite
-  + PostgreSQL
-### 対応するデータベースの変更方法
-+ defaultはSQLiteです。PostgreSQLへ変更する場合は[PostgreSQLへの変更](postgresql/SETTING.md)を参照
-+ PostgreSQLからSQLiteへ変更する場合は[SQLiteへの変更](sqlite/SETTING.md)を参照
-### 注意事項
-+ データベースに使用するドライバは同期のみ対応です。非同期には対応していません。
