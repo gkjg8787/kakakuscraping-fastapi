@@ -10,42 +10,47 @@ from sqlalchemy.pool import NullPool
 from common import read_config
 
 dbconf = read_config.get_databases()
-url_obj = URL.create(**dbconf['default'])
-is_echo = dbconf['is_echo']
+url_obj = URL.create(**dbconf["default"])
+is_echo = dbconf["is_echo"]
 engine = create_engine(url_obj, echo=is_echo)
 SessionLocal = scoped_session(
     sessionmaker(autocommit=False, autoflush=False, bind=engine)
 )
 
-class DBName(Enum):
-    SQLITE = 'sqlite'
-    POSTGRESQL = 'postgresql'
 
-def __get_target_dbconf(settingname :Union[str, None] = None):
+class DBName(Enum):
+    SQLITE = "sqlite"
+    POSTGRESQL = "postgresql"
+
+
+def __get_target_dbconf(settingname: Union[str, None] = None):
     if settingname is None:
-        return dbconf['default']
-    if 'default' == settingname \
-        or 'old_db' == settingname:
+        return dbconf["default"]
+    if "default" == settingname or "old_db" == settingname:
         return dbconf[settingname]
 
-def is_sqlite(settingname :Union[str, None] = None):
+
+def is_sqlite(settingname: Union[str, None] = None):
     targetconf = __get_target_dbconf(settingname)
-    if 'drivername' in targetconf\
-        and DBName.SQLITE.value in targetconf['drivername']:
+    if "drivername" in targetconf and DBName.SQLITE.value in targetconf["drivername"]:
         return True
     return False
 
-def is_postgre(settingname :Union[str, None] = None):
+
+def is_postgre(settingname: Union[str, None] = None):
     targetconf = __get_target_dbconf(settingname)
-    if 'drivername' in targetconf\
-        and DBName.POSTGRESQL.value in targetconf['drivername']:
+    if (
+        "drivername" in targetconf
+        and DBName.POSTGRESQL.value in targetconf["drivername"]
+    ):
         return True
     return False
+
 
 def getEngine():
     return engine
 
-# Dependency
+
 def get_session():
     ses = SessionLocal()
     try:
@@ -53,8 +58,12 @@ def get_session():
     finally:
         ses.close()
 
+
 def get_old_db_engine():
-    return create_engine(URL.create(**dbconf['old_db']), echo=is_echo, poolclass=NullPool)
+    return create_engine(
+        URL.create(**dbconf["old_db"]), echo=is_echo, poolclass=NullPool
+    )
+
 
 def get_old_db_session():
     old_db_ses = scoped_session(
@@ -65,6 +74,7 @@ def get_old_db_session():
         yield ses
     finally:
         ses.close()
+
 
 @event.listens_for(engine, "connect")
 def connect(dbapi_connection, connection_record):

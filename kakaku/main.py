@@ -1,4 +1,4 @@
-from fastapi import Depends, FastAPI, status, Request
+from fastapi import FastAPI, status, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 
@@ -21,6 +21,7 @@ app.include_router(admin.router)
 
 
 @app.get("/")
-async def root(request :Request):
-    return RedirectResponse(url=request.url_for("read_users")
-                            ,status_code=status.HTTP_302_FOUND)
+async def root(request: Request):
+    return RedirectResponse(
+        url=request.url_for("read_users"), status_code=status.HTTP_302_FOUND
+    )

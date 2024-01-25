@@ -1,8 +1,8 @@
 from abc import ABCMeta, abstractmethod
 
-class RWCache(metaclass=ABCMeta):
 
-    def __init__(self, group=''):
+class RWCache(metaclass=ABCMeta):
+    def __init__(self, group=""):
         pass
 
     @abstractmethod

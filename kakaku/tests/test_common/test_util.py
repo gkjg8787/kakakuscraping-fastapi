@@ -9,52 +9,67 @@ from tests.test_db import test_db
 
 
 def test_isLocalToday_by_dbtime(test_db):
-    stmt = (select(func.now()) #postgres
-            )
+    stmt = select(func.now())  # postgres
     ret = test_db.scalar(stmt)
     assert util.isLocalToday(util.utcTolocaltime(ret))
+
 
 def test_isLocalToday_alchemy_tolocal(test_db):
     if not is_postgre():
         return
-    stmt = (select(func.now().op('AT TIME ZONE')('Asia/Tokyo')))
+    stmt = select(func.now().op("AT TIME ZONE")("Asia/Tokyo"))
     ret = test_db.scalar(stmt)
     assert util.isLocalToday(ret)
 
+
 def test_is_today_true():
     now = datetime.utcnow()
-    print(f'now={now}')
+    print(f"now={now}")
     assert util.isToday(now)
+
 
 def test_is_today_false_yesterday():
     yesterday = datetime.utcnow() - timedelta(1)
-    print(f'yesterday={yesterday}')
+    print(f"yesterday={yesterday}")
     assert not util.isToday(yesterday)
+
 
 def test_is_today_false_2days_ago():
     two_ago = datetime.utcnow() - timedelta(2)
-    print(f'2days_ago={two_ago}')
+    print(f"2days_ago={two_ago}")
     assert not util.isToday(two_ago)
+
 
 def test_is_local_today_true():
     now = util.utcTolocaltime(datetime.utcnow())
-    print(f'now={now}')
+    print(f"now={now}")
     assert util.isLocalToday(now)
+
 
 def test_is_local_today_false_yesterday():
     yesterday = util.utcTolocaltime(datetime.utcnow() - timedelta(1))
-    print(f'yesterday={yesterday}')
+    print(f"yesterday={yesterday}")
     assert not util.isLocalToday(yesterday)
+
 
 def test_is_local_today_false_2days_ago():
     two_ago = util.utcTolocaltime(datetime.utcnow() - timedelta(2))
-    print(f'2days_ago={two_ago}')
+    print(f"2days_ago={two_ago}")
     assert not util.isLocalToday(two_ago)
+
 
 def test_is_local_today_datetime():
     now = datetime.utcnow()
-    utcd = datetime(now.year, now.month, now.day, now.hour, now.minute, now.second, tzinfo=timezone.utc)
+    utcd = datetime(
+        now.year,
+        now.month,
+        now.day,
+        now.hour,
+        now.minute,
+        now.second,
+        tzinfo=timezone.utc,
+    )
     locd = util.utcTolocaltime(utcd)
     isloc = util.isLocalToday(locd)
-    print(f'ori={utcd}, loc={locd}, isloc={isloc}')
+    print(f"ori={utcd}, loc={locd}, isloc={isloc}")
     assert isloc

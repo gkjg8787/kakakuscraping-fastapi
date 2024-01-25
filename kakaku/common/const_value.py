@@ -1,8 +1,4 @@
-
-
 INIT_PRICE = -1
 NONE_ID = -1
 INIT_TERMS_ID = 1
 NONE_PREF_ID = 1
-
-

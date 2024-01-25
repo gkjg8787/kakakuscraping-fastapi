@@ -15,79 +15,89 @@ from tests.test_routers.test_common import (
 )
 
 client = TestClient(app)
-prefix = '/admin'
+prefix = "/admin"
 
-def check_status_waittime(jstsname :str, waittime :int = 0):
-    #db = next(get_session())
-    #sysstr = get_sys_status.getSystemStatus(db)
-    #if syssts.SystemStatusToJName.get_jname(sysstr) != jstsname:
+
+def check_status_waittime(jstsname: str, waittime: int = 0):
+    # db = next(get_session())
+    # sysstr = get_sys_status.getSystemStatus(db)
+    # if syssts.SystemStatusToJName.get_jname(sysstr) != jstsname:
     time.sleep(waittime)
     response = client.get(
-        f'{prefix}/dashboard/',
+        f"{prefix}/dashboard/",
     )
     assert response.status_code == 200
     is_html(response.text)
-    assert '管理画面' in response.text
-    assert f'ステータス：{jstsname}' in response.text
+    assert "管理画面" in response.text
+    assert f"ステータス：{jstsname}" in response.text
+
 
 def test_read_admin_dashboard_stop():
     check_status_waittime(
         syssts.SystemStatusToJName.get_jname(syssts.SystemStatus.STOP.name)
-        )
+    )
+
 
 def test_read_admin_dashboard_svchg_no_data():
     response = client.post(
-        f'{prefix}/dashboard/svchg/',
+        f"{prefix}/dashboard/svchg/",
     )
     assert response.status_code == 422
 
+
 def post_startup_check():
     response = client.post(
-        f'{prefix}/dashboard/svchg/',
-        data={filter_name.DashBoardPostName.SYSTEM_CTRL_BTN.value:filter_name.SystemCtrlBtnName.STARTUP.value},
+        f"{prefix}/dashboard/svchg/",
+        data={
+            filter_name.DashBoardPostName.SYSTEM_CTRL_BTN.value: filter_name.SystemCtrlBtnName.STARTUP.value
+        },
     )
-    #check_redirect(response, [ RedirectCheckValue(status_code=302, location=f'{prefix}/dashboard/') ])
+    # check_redirect(response, [ RedirectCheckValue(status_code=302, location=f'{prefix}/dashboard/') ])
     assert response.status_code == 200
-    assert 'サーバ状態の更新' in response.text
+    assert "サーバ状態の更新" in response.text
     check_status_waittime(
         syssts.SystemStatusToJName.get_jname(syssts.SystemStatus.ACTIVE.name),
-        waittime=3
-        )
+        waittime=3,
+    )
+
 
 def test_read_admin_dashboard_svchg_startup_and_stop():
     post_startup_check()
 
     response = client.post(
-        f'{prefix}/dashboard/svchg/',
-        data={filter_name.DashBoardPostName.SYSTEM_CTRL_BTN.value:filter_name.SystemCtrlBtnName.STOP.value},
+        f"{prefix}/dashboard/svchg/",
+        data={
+            filter_name.DashBoardPostName.SYSTEM_CTRL_BTN.value: filter_name.SystemCtrlBtnName.STOP.value
+        },
     )
-    #check_redirect(response, [ RedirectCheckValue(status_code=302, location=f'{prefix}/dashboard/') ])
+    # check_redirect(response, [ RedirectCheckValue(status_code=302, location=f'{prefix}/dashboard/') ])
     assert response.status_code == 200
-    assert 'サーバ状態の更新' in response.text
+    assert "サーバ状態の更新" in response.text
     check_status_waittime(
-        syssts.SystemStatusToJName.get_jname(syssts.SystemStatus.STOP.name),
-        waittime=3
-        )
+        syssts.SystemStatusToJName.get_jname(syssts.SystemStatus.STOP.name), waittime=3
+    )
+
 
 def test_read_admin_dashboard_svchg_startup_and_restart():
     post_startup_check()
 
     response = client.post(
-        f'{prefix}/dashboard/svchg/',
-        data={filter_name.DashBoardPostName.SYSTEM_CTRL_BTN.value:filter_name.SystemCtrlBtnName.RESTART.value},
+        f"{prefix}/dashboard/svchg/",
+        data={
+            filter_name.DashBoardPostName.SYSTEM_CTRL_BTN.value: filter_name.SystemCtrlBtnName.RESTART.value
+        },
     )
-    #check_redirect(response, [ RedirectCheckValue(status_code=302, location=f'{prefix}/dashboard/') ])
+    # check_redirect(response, [ RedirectCheckValue(status_code=302, location=f'{prefix}/dashboard/') ])
     assert response.status_code == 200
-    assert 'サーバ状態の更新' in response.text
+    assert "サーバ状態の更新" in response.text
     check_status_waittime(
         syssts.SystemStatusToJName.get_jname(syssts.SystemStatus.ACTIVE.name),
-        waittime=4
-        )
-
-    response = client.post(
-        f'{prefix}/dashboard/svchg/',
-        data={filter_name.DashBoardPostName.SYSTEM_CTRL_BTN.value:filter_name.SystemCtrlBtnName.STOP.value},
+        waittime=4,
     )
 
-
-
+    response = client.post(
+        f"{prefix}/dashboard/svchg/",
+        data={
+            filter_name.DashBoardPostName.SYSTEM_CTRL_BTN.value: filter_name.SystemCtrlBtnName.STOP.value
+        },
+    )

@@ -1,4 +1,3 @@
-
 from accessor.read_sqlalchemy import Session
 from accessor.store import PrefectureQuery
 
@@ -54,13 +53,14 @@ class PrefectureName:
         "沖縄県",
     ]
     COUNTRYWIDE_PREF_NAME = "共通"
+
     def __init__(self) -> None:
         pass
 
     @classmethod
     def get_all_prefecturename(cls):
         return cls.PREF_ALL.copy()
-    
+
     @classmethod
     def get_country_wide_name(cls):
         return cls.COUNTRYWIDE_PREF_NAME
@@ -68,23 +68,22 @@ class PrefectureName:
 
 class PrefectureDBSetting:
     @classmethod
-    def init_setting(cls, db :Session):
+    def init_setting(cls, db: Session):
         pref_init_list = [PrefectureName.get_country_wide_name()]
         pref_init_list.extend(PrefectureName.get_all_prefecturename())
-        db_pref_list = PrefectureQuery.get_by_prefname_list(db,
-                                                            prefname_list=pref_init_list
-                                                            )
+        db_pref_list = PrefectureQuery.get_by_prefname_list(
+            db, prefname_list=pref_init_list
+        )
         if db_pref_list and len(pref_init_list) == len(db_pref_list):
             return
         if not db_pref_list:
             PrefectureQuery.add_all(db=db, prefname_list=pref_init_list)
             return
-        add_list :list[str] = []
+        add_list: list[str] = []
         db_prefname_list = [pref.name for pref in db_pref_list]
         for prefname in pref_init_list:
             if prefname in db_prefname_list:
                 continue
             add_list.append(prefname)
-        
-        PrefectureQuery.add_all(db=db, prefname_list=add_list)
 
+        PrefectureQuery.add_all(db=db, prefname_list=add_list)

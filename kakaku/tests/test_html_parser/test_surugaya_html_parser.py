@@ -6,6 +6,7 @@ other_fpath = os.path.dirname(__file__) + "/data/surugaya_other.html"
 shiharai_fpath = os.path.dirname(__file__) + "/data/shiharai.html"
 other_url = "https://www.suruga-ya.jp/product/other/128002938"
 
+
 def test_surugaya_makepure_postage_storepostage():
     with open(other_fpath, encoding="utf-8") as fp:
         sp = surugaya_html_parse.SurugayaParse(fp, 1, "2023-12-21 00:00:01", other_url)
@@ -18,7 +19,10 @@ def test_surugaya_makepure_postage_storepostage():
                 assert len(spp.terms) == 0
             if spp.storename == "駿河屋 アルパーク北棟店":
                 assert len(spp.target_prefectures) == 0
-                assert spp.campaign_msg == "キャンペーン 2023/08/26 00:00 ～ 2024/08/26 23:59 2,000円未満 500～1,200円 2,000円以上 送料無料"
+                assert (
+                    spp.campaign_msg
+                    == "キャンペーン 2023/08/26 00:00 ～ 2024/08/26 23:59 2,000円未満 500～1,200円 2,000円以上 送料無料"
+                )
                 assert len(spp.terms) == 1
                 assert spp.terms[0].boundary == "2000<="
                 assert spp.terms[0].postage == 0
@@ -32,6 +36,7 @@ def test_surugaya_makepure_postage_storepostage():
                 assert spp.terms[1].postage == 385
                 assert spp.terms[2].boundary == "1500<="
                 assert spp.terms[2].postage == 0
+
 
 def test_surugaya_makepure_postage_shopidinfo():
     with open(other_fpath, encoding="utf-8") as fp:
@@ -57,6 +62,7 @@ def test_surugaya_makepure_postage_shopidinfo():
                 assert val.shop_id == 400469
                 assert val.url == base_url + "400469"
 
+
 def test_surugaya_shiharai_parse():
     with open(shiharai_fpath, encoding="utf-8") as fp:
         sp = surugaya_html_parse.SurugayaShiharaiParse(fp)
@@ -80,4 +86,3 @@ def test_surugaya_shiharai_parse():
                 assert psp.terms[2].boundary == "10000<="
                 assert psp.terms[2].postage == "0"
                 continue
-            

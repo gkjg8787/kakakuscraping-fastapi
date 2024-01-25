@@ -1,8 +1,10 @@
 from enum import Enum
 
+
 class HTMLOption(Enum):
-    SELECTED = 'selected'
-    CHECKED = 'checked'
+    SELECTED = "selected"
+    CHECKED = "checked"
+
 
 class ItemCombSelectValue(Enum):
-    NO_SELECTED = '未選択'
+    NO_SELECTED = "未選択"

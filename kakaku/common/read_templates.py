@@ -1,4 +1,3 @@
-
 from fastapi.templating import Jinja2Templates
 
 
@@ -10,8 +9,6 @@ from common.util import isLocalToday
 templates = Jinja2Templates(directory="templates")
 
 
-
-
 def isSupportDomain(urlpath) -> bool:
     """Custom filter"""
     suplist = get_support_url().values()
@@ -20,17 +17,14 @@ def isSupportDomain(urlpath) -> bool:
         return True
     return False
 
+
 def isLowestPrice(price, lowestprice) -> bool:
     try:
-        if int(price) - int(lowestprice) <= 100 \
-            or ((price/lowestprice)-1) <= 0:
+        if int(price) - int(lowestprice) <= 100 or ((price / lowestprice) - 1) <= 0:
             return True
         return False
     except Exception:
         return False
-
-
-
 
 
 templates.env.filters["isSupportDomain"] = isSupportDomain

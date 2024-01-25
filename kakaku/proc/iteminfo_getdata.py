@@ -3,12 +3,14 @@ import re
 from scrapingmanage import sendTask
 from sendcmd import ScrOrder
 
+
 def urlCheck(url):
-    pattern = "https?://[\w/:%#\$&\?\(\)~\.=\+\-]+"
+    pattern = r"https?://[\w/:%#\$&\?\(\)~\.=\+\-]+"
     if re.match(pattern, url):
         return True
     else:
         return False
+
 
 def main():
     argslen = len(sys.argv)
@@ -16,7 +18,7 @@ def main():
         print("ERROR PARAMETER_NUM")
         sys.exit()
     if ScrOrder.UPDATE_ACT_ALL == sys.argv[1]:
-        sendTask(ScrOrder.UPDATE_ACT_ALL, '', '')
+        sendTask(ScrOrder.UPDATE_ACT_ALL, "", "")
         return
     if urlCheck(sys.argv[1]):
         url = sys.argv[1]
@@ -29,5 +31,6 @@ def main():
 
     sendTask(ScrOrder.UPDATE, url, id)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
