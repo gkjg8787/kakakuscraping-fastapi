@@ -11,6 +11,7 @@ from common.filter_name import (
     FilterOnOff,
     StoreListSortName,
     StoreTermsConfiguredFilterName,
+    ItemPurchaseSortName,
     UrlSortName,
     ExtractStoreSortName,
     TemplatePostName,
@@ -563,6 +564,42 @@ class AnalysisBaseQuery:
         if is_valid_id(atid):
             self.atid = atid
 
+
+class ItemPurchaseFilterQuery:
+    act: str = ""
+    psort: str = ""
+
+    def __init__(
+        self,
+        act: str = "",
+        psort: str = "",
+    ):
+        if act and act.isdigit() and ActFilterName.hasValue(int(act)):
+            self.act = act
+        else:
+            self.act = str(ActFilterName.ACT.id)
+
+        if psort and psort.isdigit() and ItemPurchaseSortName.hasId(int(psort)):
+            self.psort = psort
+
+    def get_filter_dict(self) -> dict:
+        results = {}
+        if self.act:
+            results[FilterQueryName.ACT.value] = self.act
+        if self.psort:
+            results[FilterQueryName.PSORT.value] = self.psort
+        return results
+
+def get_item_purchase_sort_list(f: Dict) -> List:
+    results = [
+        TemplatesItemSort(name=i.qname, id=i.id, text=i.jname) for i in ItemPurchaseSortName
+    ]
+    if FilterQueryName.PSORT.value not in f:
+        return results
+    for r in results:
+        if int(r.id) == int(f[FilterQueryName.PSORT.value]):
+            r.selected = HTMLOption.SELECTED.value
+    return results
 
 class UrlListFilterQuery:
     act: str = ""

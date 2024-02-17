@@ -9,6 +9,8 @@ table td {
     border: solid 1px;
     text-align: center;
     background: #eee;
+    max-width :300px;
+    overflow-wrap:break-word;
 }
 table tr:nth-child(odd) td {
     background: #fff;
@@ -19,6 +21,7 @@ table.recent_table th {
 }
 table.recent_table td {
     width: 350px;
+    max-width: 350px;
     font-size : 12px;
 }
 table.url_table th {

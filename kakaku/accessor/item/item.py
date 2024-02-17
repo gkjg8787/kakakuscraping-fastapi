@@ -21,6 +21,7 @@ from common.filter_name import (
     FilterQueryName as fqn,
     ActFilterName,
     ItemSortName,
+    ItemPurchaseSortName,
     UrlSortName,
     ExtractStoreSortName,
     FilterOnOff,
@@ -58,6 +59,19 @@ from html_parser.htmlparse import ParseItemInfo
 class UrlActive(Enum):
     ACTIVE = "True"
     INACTIVE = "False"
+
+
+def get_act_filter(filter: dict) -> Optional[UrlActive]:
+    if (
+        fqn.ACT.value not in filter.keys()
+        or int(filter[fqn.ACT.value]) == ActFilterName.ALL.id
+    ):
+        return None
+    if int(filter[fqn.ACT.value]) == ActFilterName.ACT.id:
+        return UrlActive.ACTIVE
+    if int(filter[fqn.ACT.value]) == ActFilterName.INACT.id:
+        return UrlActive.INACTIVE
+    return None
 
 
 class NewestQuery:
@@ -1100,6 +1114,45 @@ class ItemQuery:
         )
         return db.execute(stmt).all()
 
+    @classmethod
+    def get_item_and_url_localtime(cls, db: Session, filter: dict):
+        isactive = get_act_filter(filter)
+        stmt = (
+            select(
+                Item.item_id,
+                Item.name,
+                Url.url_id,
+                Url.urlpath,
+                UrlInItem.active,
+                utc_to_jst_datetime_for_query(Item.created_at).label("created_at"),
+            )
+            .select_from(Item)
+            .join(UrlInItem, UrlInItem.item_id == Item.item_id, isouter=True)
+            .join(Url, UrlInItem.url_id == Url.url_id, isouter=True)
+        )
+        if isactive:
+            stmt = stmt.where(UrlInItem.active == isactive.value)
+        stmt = cls.__set_purchasesort_filter(filter=filter, stmt=stmt)
+        return db.execute(stmt).all()
+
+    @classmethod
+    def __set_purchasesort_filter(cls, filter: dict, stmt):
+        if fqn.PSORT.value not in filter.keys() or int(filter[fqn.PSORT.value]) < 0:
+            stmt = stmt.order_by(Item.item_id.asc())
+            return stmt
+        fnum = int(filter[fqn.PSORT.value])
+        if fnum == ItemPurchaseSortName.OLD_ITEM.id:
+            stmt = stmt.order_by(Item.item_id.asc())
+            return stmt
+        if fnum == ItemPurchaseSortName.NEW_ITEM.id:
+            stmt = stmt.order_by(Item.item_id.desc())
+            return stmt
+        if fnum == ItemPurchaseSortName.ITEM_NAME.id:
+            stmt = stmt.order_by(Item.name.asc())
+            return stmt
+
+        return stmt
+
 
 class OrganizerQuery:
     @classmethod
@@ -1364,7 +1417,7 @@ class UrlQuery:
 
     @classmethod
     def get_url_and_item_comb_list_in_local_time(cls, db: Session, filter: dict):
-        isactive = cls.get_act_filter(filter)
+        isactive = get_act_filter(filter)
 
         url_uniq = select(PriceLog.url_id.distinct().label("url_id"), PriceLog.uniqname)
         if isactive:
@@ -1393,19 +1446,6 @@ class UrlQuery:
         stmt = cls.__set_urlsort_filter(filter, stmt)
 
         return db.execute(stmt).all()
-
-    @staticmethod
-    def get_act_filter(filter: dict) -> Optional[UrlActive]:
-        if (
-            fqn.ACT.value not in filter.keys()
-            or int(filter[fqn.ACT.value]) == ActFilterName.ALL.id
-        ):
-            return None
-        if int(filter[fqn.ACT.value]) == ActFilterName.ACT.id:
-            return UrlActive.ACTIVE
-        if int(filter[fqn.ACT.value]) == ActFilterName.INACT.id:
-            return UrlActive.INACTIVE
-        return None
 
     @classmethod
     def __set_urlsort_filter(cls, filter: dict, stmt):

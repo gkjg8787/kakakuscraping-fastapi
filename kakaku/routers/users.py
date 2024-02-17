@@ -102,6 +102,17 @@ def read_users_analysis(
         return templates.TemplateResponse("users/item_analysis.html", context)
 
 
+@router.get("/items/purchase/", response_class=HTMLResponse)
+def read_users_items_purchase(
+    request: Request,
+    pfq: ppi.ItemPurchaseFilterQuery = Depends(),
+    db: Session = Depends(get_session),
+):
+    ulc = template_value.item.ItemPurchaseContext(request=request, db=db, pfq=pfq)
+    context = dict(ulc)
+    return templates.TemplateResponse("users/item_purchase_list.html", context)
+
+
 @router.post("/items/v/update/", response_class=HTMLResponse)
 def read_users_url_update(
     request: Request,

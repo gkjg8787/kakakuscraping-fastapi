@@ -1,5 +1,6 @@
 import os
 from url_search import siteSearchOpt
+from url_search import readoption
 from url_search.surugaya import surugayaURL
 from downloader import requestoption
 from html_parser import surugaya_search
@@ -11,14 +12,14 @@ from common.filter_name import FilterQueryName
 class SurugayaSearchOpt(siteSearchOpt.SiteSearchOpt):
     COOKIE_FNAME = "surugaya_safeoff_cookie.lwp"
 
-    def __init__(self, confopt):
+    def __init__(self, confopt: readoption.ReadSearchOpt):
         self.name = "surugaya"
         self.confopt = confopt
         self.site = surugayaURL.SurugayaURL(confopt)
         self.requestOpt = requestoption.RequestOpt()
         self.parser = surugaya_search.SearchSurugaya()
 
-    def setSearchWord(self, word):
+    def setSearchWord(self, word: str):
         self.site.setWord(word)
 
     def setParamOpt(self, paramopt):

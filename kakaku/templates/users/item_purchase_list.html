@@ -1,0 +1,67 @@
+{% extends "layout.html" %}
+
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
+    <title>買取URL一覧</title>
+{% endblock %}
+
+{% block body %}
+    <h1>買取URL一覧</h1>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
+    <h3>フィルタ</h3>
+    <div>
+        <p>
+        {%- with ITEMACT_NAME = ITEMACT_NAME, actstslist = actstslist, fquery = fquery %}
+        {%- include "users/item_act_filter.html" %}
+        {%- endwith %}
+        </p>
+        <p>
+        {%- with ITEMSORT_NAME = SORT_NAME, itemSortList = itemsortlist, fquery = fquery %}
+        {%- include "users/item_sort_filter.html" %}
+        {%- endwith %}
+        </p>
+    </div>
+    <p>
+        件数
+        {{ res_length }}件
+    </p>
+    <table class="purchase_list_table">
+        <tr>
+            <th>item_id</th>
+            <th>アイテム名</th>
+            <th>url_id</th>
+            <th>買取URL</th>
+            <th>アイテムURL</th>
+            <th>登録日</th>
+            <th>ACTIVE状態</th>
+        </tr>
+        {%- for row in res %}
+        <tr>
+            <td>{{ row["item_id"] }}</td>
+            <td>{{ row["name"] }}</td>
+            <td>{{ row["url_id"] }}</td>
+            <td>
+                {%if row['purchase_url'] | isSupportDomain %}
+                    <a href="{{ row['purchase_url']}}" target="_blank" rel="noopener noreferrer">{{ row['purchase_url']}}</a>
+                {% else %}    
+                    {{ row['purchase_url'] }}
+                {% endif %}
+            </td>
+            <td> 
+                {%if row['urlpath'] | isSupportDomain %}
+                    <a href="{{ row['urlpath']}}" target="_blank" rel="noopener noreferrer">{{ row['urlpath']}}</a>
+                {% else %}    
+                    {{ row['urlpath'] }}
+                {% endif %}
+            </td>
+            <td>{{ row["created_at"] }}</td>
+            <td>{{ row["active"] }}</td>
+            <td class="noborder nobreak">
+                <a href="{{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ row['item_id'] }}"
+                 target="_blank" rel="noopener noreferrer" class="like_button_link">アイテム詳細</a>
+            </td>
+        </tr>
+        {%- endfor %}
+    </table>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
+{% endblock %}

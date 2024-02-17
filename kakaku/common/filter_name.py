@@ -26,6 +26,7 @@ class FilterQueryName(AutoLowerName):
     PRMAX = auto()
     CONFED = auto()
     OSCTYPE = auto()
+    PSORT = auto()
 
 
 @unique
@@ -175,6 +176,34 @@ class StoreListSortName(Enum):
     NEW_STORE = (2, "登録が新しい")
     NAME_ASC = (3, "店名昇")
     NAME_DESC = (4, "店名降")
+
+    def __init__(self, id: int, text: str):
+        self.id = id
+        self.qname = self.name.lower()
+        self.jname = text
+
+    @classmethod
+    def hasId(cls, id: int) -> bool:
+        for isn in cls:
+            if isn.id == id:
+                return True
+        return False
+
+
+@unique
+class ItemPurchaseSortName(Enum):
+    OLD_ITEM = (
+        1,
+        "登録が古い",
+    )
+    NEW_ITEM = (
+        2,
+        "登録が新しい",
+    )
+    ITEM_NAME = (
+        5,
+        "アイテム名",
+    )
 
     def __init__(self, id: int, text: str):
         self.id = id

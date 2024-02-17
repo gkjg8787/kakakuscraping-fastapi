@@ -1,6 +1,7 @@
 from typing import List, Dict, Optional
 from datetime import datetime
 import copy
+import re
 
 from dateutil.relativedelta import relativedelta
 from pydantic import BaseModel
@@ -35,6 +36,7 @@ from proc.scrapingmanage import sendTask
 from proc.sendcmd import ScrOrder
 from proc import get_sys_status, system_status
 from itemcomb.prefecture import PrefectureName
+from url_search.surugaya import surugayaURL
 
 
 def can_item_update(db: Session):
@@ -688,9 +690,9 @@ class EditGroupContext(BaseTemplateValue):
             for k, v in row._mapping.items():
                 dic[k] = v
                 if "item_id" == k and v in group_item_id_list:
-                    dic[
+                    dic[templates_string.HTMLOption.CHECKED.value] = (
                         templates_string.HTMLOption.CHECKED.value
-                    ] = templates_string.HTMLOption.CHECKED.value
+                    )
             results.append(dic)
         return results
 
@@ -902,6 +904,82 @@ class ItemAnalysisContext(BaseTemplateValue):
                 iap.selected = templates_string.HTMLOption.SELECTED.value
             analysisPeriodList.append(iap)
         return analysisPeriodList
+
+
+class ItemPurchaseContext(BaseTemplateValue):
+    res: list
+    res_length: int = 0
+    ITEMACT_NAME: str = filter_name.FilterQueryName.ACT.value
+    actstslist: list
+    fquery: dict
+    ITEMID_Q_NAME: str = filter_name.ItemDetailQueryName.ITEMID.value
+    SORT_NAME: str = filter_name.FilterQueryName.PSORT.value
+    itemsortlist: list
+
+    def __init__(self, request, db: Session, pfq: ppi.ItemPurchaseFilterQuery):
+        fd = pfq.get_filter_dict()
+        super().__init__(
+            request=request,
+            res=[],
+            actstslist=ppi.get_actstslist(fd),
+            fquery=fd,
+            itemsortlist=ppi.get_item_purchase_sort_list(fd),
+        )
+        self.res = self.create_item_list(
+            dbdata=ItemQuery.get_item_and_url_localtime(db, filter=fd),
+            domain=read_config.get_support_url()["surugaya"],
+        )
+        self.res_length = len(self.res)
+
+    def create_item_list(self, dbdata: list, domain: str):
+        results_dict: dict[int, dict] = {}
+        no_surugaya_id_dict: dict[int, int] = {}
+
+        for data in dbdata:
+            data_dic = dict(data._mapping.items())
+            item_id = int(data_dic["item_id"])
+            if item_id not in results_dict:
+                results_dict[item_id] = copy.deepcopy(data_dic)
+                if domain in data_dic["urlpath"]:
+                    surugaya_id = self.parse_surugaya_id(data_dic["urlpath"])
+                else:
+                    surugaya_id = ""
+                if surugaya_id:
+                    results_dict[item_id]["purchase_url"] = (
+                        surugayaURL.SurugayaPurchaseURL(
+                            surugaya_item_id=surugaya_id
+                        ).createURL()
+                    )
+                else:
+                    results_dict[item_id]["purchase_url"] = (
+                        surugayaURL.SurugayaPurchaseURL(
+                            word=data_dic["name"]
+                        ).createURL()
+                    )
+                    no_surugaya_id_dict[item_id] = 1
+                continue
+            if item_id in results_dict:
+                if (
+                    item_id in no_surugaya_id_dict
+                    and domain in data_dic["urlpath"]
+                ):
+                    surugaya_id = self.parse_surugaya_id(data_dic["urlpath"])
+                    if surugaya_id:
+                        results_dict[item_id]["purchase_url"] = (
+                            surugayaURL.SurugayaPurchaseURL(
+                                surugaya_item_id=surugaya_id
+                            ).createURL()
+                        )
+                        no_surugaya_id_dict.pop(item_id)
+                continue
+        return results_dict.values()
+
+    def parse_surugaya_id(self, urlpath: str) -> str:
+        ptn = r"(other|detail)/([0-9]+)"
+        m = re.search(ptn, urlpath)
+        if m:
+            return m[2]
+        return ""
 
 
 class UrlListContext(BaseTemplateValue):

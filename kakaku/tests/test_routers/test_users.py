@@ -769,6 +769,14 @@ def test_read_users_analysis(test_db):
     drop_test_db()
 
 
+def test_read_users_item_purchase_no_data(test_db):
+    response = client.get(f"{prefix}/items/purchase/")
+    assert response.status_code == 200
+    is_html(response.text)
+    assert "買取URL一覧" in response.text
+    assert "0件" in response.text
+
+
 def test_read_users_urls_view_no_data(test_db):
     response = client.get(f"{prefix}/urls/v/")
     assert response.status_code == 200
