@@ -1,7 +1,6 @@
 from typing import List, Dict, Optional, Type
 from datetime import datetime
 import copy
-import re
 
 
 from dateutil.relativedelta import relativedelta
@@ -134,22 +133,53 @@ class UpdateAllItemUrlPostContext(BaseTemplateValue):
         self.updateSuccess = True
 
 
-class IdTextSelected:
+class IdTextSelected(BaseModel):
     id: int
     selected: str = ""
     text: str
 
-    def __init__(self, id: int, text: str):
-        self.id = id
-        self.text = text
+
+class ItemUrl(BaseModel):
+    url_id: int
+    item_url: str
+    act_status: str
+
+    def update(self, itemurl: Type["ItemUrl"]):
+        self.item_url = itemurl.item_url
+        self.act_status = itemurl.act_status
 
 
-class ItemDetailContext(BaseTemplateValue):
-    loglist: List
+class ItemPurchaseUrl(BaseModel):
+    itemurls: list[ItemUrl]
+    purchase_url: str
+    itemurls_num: int = 0
+
+    def __init__(self, itemurls: list[ItemUrl], purchase_url: str):
+        super().__init__(itemurls=itemurls, purchase_url=purchase_url)
+        self.itemurls_num = len(itemurls)
+
+    def update(self, itemurl: ItemUrl):
+        ret = self.get_itemurl(itemurl.url_id)
+        if ret:
+            ret.update(itemurl)
+            return
+        self.itemurls.append(itemurl)
+        self.itemurls_num = len(self.itemurls)
+
+    def get_itemurl(self, url_id: int):
+        for itemurl in self.itemurls:
+            if url_id == itemurl.url_id:
+                return itemurl
+        return None
+
+
+class ItemDetailContext(BaseModel):
+    loglist: list
     loglist_length: int = 0
-    items: Dict
-    urllist: List
-    timePeriodList: List[IdTextSelected] = []
+    items: dict
+    urllist: list
+    purchase_urllist: list[ItemPurchaseUrl]
+    timePeriodList: list[IdTextSelected]
     ITEMID_Q_NAME: str = filter_name.ItemDetailQueryName.ITEMID.value
     TIME_PERIOD_Q_NAME: str = filter_name.ItemDetailQueryName.PERIODID.value
     POST_ITEM_ID: str = filter_name.TemplatePostName.ITEM_ID.value
@@ -158,12 +188,13 @@ class ItemDetailContext(BaseTemplateValue):
     ACTIVE_VALUE: str = UrlActive.ACTIVE.value
     SEARCH_WORD_NAME: str = filter_name.FilterQueryName.WORD.value
 
-    def __init__(self, request, idq: ppi.ItemDetailQuery, db: Session):
+    def __init__(self, idq: ppi.ItemDetailQuery, db: Session):
         super().__init__(
-            request=request,
             loglist=[],
             items={},
             urllist=[],
+            purchase_urllist=[],
+            timePeriodList=[],
         )
         if not idq.itemid:
             return
@@ -178,12 +209,16 @@ class ItemDetailContext(BaseTemplateValue):
         self.loglist = ItemQuery.get_item_pricelog_by_item_id_1year(
             db,
             item_id=itemid,
-            result_limit=None,  # self.item_data_max_cnt,
+            result_limit=None,
             days=-day,
         )
         if self.loglist:
             self.loglist_length = len(self.loglist)
         self.urllist = UrlQuery.get_urlinfo_by_item_id(db, item_id=itemid)
+        if self.urllist:
+            self.purchase_urllist = self.create_purchase_urllist(
+                urllist=self.urllist, itemname=dict(self.items._mapping.items())["name"]
+            )
         self.timePeriodList = self.create_time_period_list(periodid=periodid)
 
     def has_data(self) -> bool:
@@ -230,6 +265,28 @@ class ItemDetailContext(BaseTemplateValue):
             delta = now - date
             return delta.days
         return 1
+
+    def create_purchase_urllist(self, urllist: list, itemname: str):
+        results: dict[str, ItemPurchaseUrl] = {}
+        for url in urllist:
+            d = dict(url._mapping.items())
+            itemurl = ItemUrl(
+                url_id=d["url_id"],
+                item_url=d["urlpath"],
+                act_status=d["active"],
+            )
+            purchase_url = surugayaURL.SurugayaPurchaseURL.get_url(
+                urlpath=d["urlpath"], search_word=itemname
+            )
+            if purchase_url in results:
+                results[purchase_url].update(itemurl)
+                continue
+            ipu = ItemPurchaseUrl(
+                itemurls=[itemurl],
+                purchase_url=purchase_url,
+            )
+            results[purchase_url] = ipu
+        return list(results.values())
 
 
 class ItemDetailChartContext(BaseTemplateValue):
@@ -907,38 +964,27 @@ class ItemAnalysisContext(BaseTemplateValue):
         return analysisPeriodList
 
 
-class ItemPurchaseUrl(BaseModel):
-    url_id: int
-    item_url: str
-    purchase_url: str
-    act_status: str
-
-    def update(self, ipu: Type["ItemPurchaseUrl"]):
-        if ipu.url_id != self.url_id or ipu.item_url != self.item_url:
-            raise ValueError("not equal object")
-        self.purchase_url = ipu.purchase_url
-        self.act_status = ipu.act_status
-
-
 class ItemPurchaseData(BaseModel):
     item_id: int
     name: str
-    urls: dict[int, ItemPurchaseUrl]
+    urls: dict[str, ItemPurchaseUrl]
     created_at: datetime
-    urls_num: int = 0
 
     def save_item_purchase_url(self, ipu: ItemPurchaseUrl):
-        if ipu.url_id in self.urls.keys():
-            self.urls[ipu.url_id].update(ipu)
+        if ipu.purchase_url in self.urls.keys():
+            for itemurl in ipu.itemurls:
+                self.urls[ipu.purchase_url].update(itemurl)
         else:
-            self.urls[ipu.url_id] = ipu
-        self.urls_num = len(self.urls)
+            self.urls[ipu.purchase_url] = ipu
 
-    def has_item_purchase_url(self, ipu: ItemPurchaseUrl):
-        return ipu.url_id in self.urls
-    
     def get_url_list(self):
         return list(self.urls.values())
+
+    def get_rowspan(self):
+        result: int = 0
+        for url in self.urls.values():
+            result += len(url.itemurls)
+        return result
 
 
 class ItemPurchaseContext(BaseModel):
@@ -982,34 +1028,22 @@ class ItemPurchaseContext(BaseModel):
             else:
                 ipd = results_dict[item_id]
 
-            if domain in data_dic["urlpath"]:
-                surugaya_id = self.parse_surugaya_id(data_dic["urlpath"])
-            else:
-                surugaya_id = ""
-            if surugaya_id:
-                purchase_url = surugayaURL.SurugayaPurchaseURL(
-                    surugaya_item_id=surugaya_id
-                ).createURL()
-            else:
-                purchase_url = surugayaURL.SurugayaPurchaseURL(
-                    word=data_dic["name"]
-                ).createURL()
+            purchase_url = surugayaURL.SurugayaPurchaseURL.get_url(
+                urlpath=data_dic["urlpath"], search_word=data_dic["name"]
+            )
             ipu = ItemPurchaseUrl(
-                url_id=data_dic["url_id"],
-                item_url=data_dic["urlpath"],
+                itemurls=[
+                    ItemUrl(
+                        url_id=data_dic["url_id"],
+                        item_url=data_dic["urlpath"],
+                        act_status=data_dic["active"],
+                    )
+                ],
                 purchase_url=purchase_url,
-                act_status=data_dic["active"],
             )
             ipd.save_item_purchase_url(ipu)
             continue
         return results_dict.values()
-
-    def parse_surugaya_id(self, urlpath: str) -> str:
-        ptn = r"(other|detail)/([0-9]+)"
-        m = re.search(ptn, urlpath)
-        if m:
-            return m[2]
-        return ""
 
 
 class UrlListContext(BaseTemplateValue):

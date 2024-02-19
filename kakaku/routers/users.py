@@ -147,13 +147,14 @@ def read_users_items_view(
     idq: ppi.ItemDetailQuery = Depends(),
     db: Session = Depends(get_session),
 ):
-    idc = template_value.item.ItemDetailContext(request=request, idq=idq, db=db)
+    idc = template_value.item.ItemDetailContext(idq=idq, db=db)
     if not idc.has_data():
         return RedirectResponse(
             url=request.url_for("read_users"), status_code=status.HTTP_302_FOUND
         )
-    context = dict(idc)
-    return templates.TemplateResponse("users/itemview.html", context)
+    return templates.TemplateResponse(
+        request, name="users/itemview.html", context=idc.model_dump()
+    )
 
 
 @router.post("/items/v/addurl/", response_class=HTMLResponse)

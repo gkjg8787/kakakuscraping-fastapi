@@ -69,7 +69,7 @@
         <p><a href="{{ url_for('read_users') }}#item{{ items['item_id'] }}" class="plain-link">アイテム一覧へ戻る</a></p>
         <p><input type="button" onclick="window.close();" value="このタブを閉じる"></p>
     <h2>登録URL一覧</h2>
-    {% if urllist %}
+    {%- if urllist %}
     <p>
     <form action="{{ url_for('read_users_items_update') }}" method="post">
         <button type="submit" name="{{ POST_ITEM_ID }}" value="{{ items['item_id'] }}">一括情報取得</button>
@@ -78,10 +78,10 @@
     {% endif %}
     <table class="url_table">
         <tr>
-        <th>url_id</th>
-        <th>URL</th>
-        <th>活性状態</th>
-    </tr>
+            <th>url_id</th>
+            <th>URL</th>
+            <th>活性状態</th>
+        </tr>
     {% if urllist %}
         {% for row in urllist %}
             <tr>
@@ -127,6 +127,46 @@
         {% endfor %}
     {% endif %}
     </table>
+    {%- if purchase_urllist %}
+        <h2>買取URL一覧</h2>
+        <table class="url_table">
+            <tr>
+                <th>買取URL</th>
+                <th>url_id</th>
+                <th>URL</th>
+                <th>活性状態</th>
+            </tr>
+            {%- for purl in purchase_urllist %}
+            <tr>
+                {% set itemurls = purl.itemurls %}
+                <td rowspan="{{ purl.itemurls_num }}">
+                    {%- with url = purl.purchase_url %}
+                    {%- include "url_link.html" %}
+                    {%- endwith %}
+                </td>
+                {% set itemurl = itemurls[0] %}
+                <td>{{ itemurl.url_id }}</td>
+                <td>
+                    {%- with url = itemurl.item_url %}
+                    {%- include "url_link.html" %}
+                    {%- endwith %}
+                </td>
+                <td>{{ itemurl.act_status }}</td>
+            </tr>
+            {%- for itemurl in itemurls[1:] %}
+            <tr>
+                <td>{{ itemurl.url_id }}</td>
+                <td>
+                    {%- with url = itemurl.item_url %}
+                    {%- include "url_link.html" %}
+                    {%- endwith %}
+                </td>
+                <td>{{ itemurl.act_status }}</td>
+            </tr>
+            {%- endfor %}
+            {%- endfor %}
+        </table>
+    {%- endif %}
     <h2>取得データ一覧</h2>
     <p>
         <form method="get" action="">

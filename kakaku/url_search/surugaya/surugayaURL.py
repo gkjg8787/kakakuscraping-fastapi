@@ -1,4 +1,6 @@
+import re
 from urllib.parse import urlencode
+
 from url_search import readoption
 
 
@@ -70,28 +72,34 @@ class SurugayaURL:
 
 
 class SurugayaPurchaseURL:
-    individual_url = "https://www.suruga-ya.jp/kaitori/kaitori_detail/"
-    search_url = "https://www.suruga-ya.jp/kaitori/search_buy"
+    domain = "https://www.suruga-ya.jp"
+    individual_url = f"{domain}/kaitori/kaitori_detail/"
+    search_url = f"{domain}/kaitori/search_buy"
     word: str = ""
     surugaya_item_id: str = ""
 
-    def __init__(self, word: str = "", surugaya_item_id: str = ""):
-        if word and surugaya_item_id:
-            raise ValueError("only one of word or surugaya_item_id")
-        if not word and not surugaya_item_id:
-            raise ValueError("parameter is none")
-        if word:
-            self.word = word.strip()
-        if surugaya_item_id:
-            self.surugaya_item_id = surugaya_item_id.strip()
+    @classmethod
+    def is_my_domain(cls, urlpath: str):
+        return cls.domain in urlpath
 
-    def createURL(self):
-        if self.word:
-            options = {
-                "category": "",
-                "search_word": self.word,
-            }
-            return "%s?%s" % (self.search_url, urlencode(options))
-        if self.surugaya_item_id:
-            return self.individual_url + str(self.surugaya_item_id)
+    @classmethod
+    def get_url(cls, urlpath: str, search_word: str = ""):
+        surugaya_id = cls.parse_surugaya_id(urlpath=urlpath)
+        if surugaya_id:
+            return cls.individual_url + str(surugaya_id)
+
+        options = {
+            "category": "",
+            "search_word": search_word,
+        }
+        return "%s?%s" % (cls.search_url, urlencode(options))
+
+    @classmethod
+    def parse_surugaya_id(cls, urlpath: str) -> str:
+        if not cls.is_my_domain(urlpath=urlpath):
+            return ""
+        ptn = r"(other|detail)/([0-9]+)"
+        m = re.search(ptn, urlpath)
+        if m:
+            return m[2]
         return ""
