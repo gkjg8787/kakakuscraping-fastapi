@@ -32,35 +32,65 @@
             <th>url_id</th>
             <th>買取URL</th>
             <th>アイテムURL</th>
-            <th>登録日</th>
             <th>ACTIVE状態</th>
+            <th>登録日</th>
         </tr>
         {%- for row in res %}
         <tr>
-            <td>{{ row["item_id"] }}</td>
-            <td>{{ row["name"] }}</td>
-            <td>{{ row["url_id"] }}</td>
+            {%- if row.urls_num > 0 %}
+            <td rowspan="{{ row.urls_num }}">{{ row.item_id }}</td>
+            <td rowspan="{{ row.urls_num }}">{{ row.name }}</td>
+            {% set itemurl = row.get_url_list()[0] %}
+            <td>{{ itemurl.url_id }}</td>
             <td>
-                {%if row['purchase_url'] | isSupportDomain %}
-                    <a href="{{ row['purchase_url']}}" target="_blank" rel="noopener noreferrer">{{ row['purchase_url']}}</a>
-                {% else %}    
-                    {{ row['purchase_url'] }}
-                {% endif %}
+                {%- with url = itemurl.purchase_url %}
+                {%- include "url_link.html" %}
+                {%- endwith %}
             </td>
             <td> 
-                {%if row['urlpath'] | isSupportDomain %}
-                    <a href="{{ row['urlpath']}}" target="_blank" rel="noopener noreferrer">{{ row['urlpath']}}</a>
-                {% else %}    
-                    {{ row['urlpath'] }}
-                {% endif %}
+                {%- with url = itemurl.item_url %}
+                {%- include "url_link.html" %}
+                {%- endwith %}
             </td>
+            <td>{{ itemurl.act_status }}</td>
+            {%- else %}
+            <td>{{ row.item_id }}</td>
+            <td>{{ row.name }}</td>
+            <td>None</td>
+            <td>None</td>
+            <td>None</td>
+            <td>None</td>
+            {%- endif %}
+            {%- if row.urls_num > 0 %}
+            <td rowspan="{{ row.urls_num }}">{{ row["created_at"] }}</td>
+            <td rowspan="{{ row.urls_num }}" class="noborder nobreak">
+                <a href="{{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ row['item_id'] }}"
+                 target="_blank" rel="noopener noreferrer" class="like_button_link">アイテム詳細</a>
+            </td>
+            {%- else %}
             <td>{{ row["created_at"] }}</td>
-            <td>{{ row["active"] }}</td>
             <td class="noborder nobreak">
                 <a href="{{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ row['item_id'] }}"
                  target="_blank" rel="noopener noreferrer" class="like_button_link">アイテム詳細</a>
             </td>
+            {%- endif -%}
         </tr>
+        {%- for itemurl in row.get_url_list()[1:] %}
+        <tr>
+            <td>{{ itemurl.url_id }}</td>
+            <td>
+                {%- with url = itemurl.purchase_url %}
+                {%- include "url_link.html" %}
+                {%- endwith %}
+            </td>
+            <td> 
+                {%- with url = itemurl.item_url %}
+                {%- include "url_link.html" %}
+                {%- endwith %}
+            </td>
+            <td>{{ itemurl.act_status }}</td>
+        </tr>
+        {%- endfor %}
         {%- endfor %}
     </table>
     <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>

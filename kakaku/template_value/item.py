@@ -1,7 +1,8 @@
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Type
 from datetime import datetime
 import copy
 import re
+
 
 from dateutil.relativedelta import relativedelta
 from pydantic import BaseModel
@@ -906,8 +907,42 @@ class ItemAnalysisContext(BaseTemplateValue):
         return analysisPeriodList
 
 
-class ItemPurchaseContext(BaseTemplateValue):
-    res: list
+class ItemPurchaseUrl(BaseModel):
+    url_id: int
+    item_url: str
+    purchase_url: str
+    act_status: str
+
+    def update(self, ipu: Type["ItemPurchaseUrl"]):
+        if ipu.url_id != self.url_id or ipu.item_url != self.item_url:
+            raise ValueError("not equal object")
+        self.purchase_url = ipu.purchase_url
+        self.act_status = ipu.act_status
+
+
+class ItemPurchaseData(BaseModel):
+    item_id: int
+    name: str
+    urls: dict[int, ItemPurchaseUrl]
+    created_at: datetime
+    urls_num: int = 0
+
+    def save_item_purchase_url(self, ipu: ItemPurchaseUrl):
+        if ipu.url_id in self.urls.keys():
+            self.urls[ipu.url_id].update(ipu)
+        else:
+            self.urls[ipu.url_id] = ipu
+        self.urls_num = len(self.urls)
+
+    def has_item_purchase_url(self, ipu: ItemPurchaseUrl):
+        return ipu.url_id in self.urls
+    
+    def get_url_list(self):
+        return list(self.urls.values())
+
+
+class ItemPurchaseContext(BaseModel):
+    res: list[ItemPurchaseData]
     res_length: int = 0
     ITEMACT_NAME: str = filter_name.FilterQueryName.ACT.value
     actstslist: list
@@ -916,10 +951,9 @@ class ItemPurchaseContext(BaseTemplateValue):
     SORT_NAME: str = filter_name.FilterQueryName.PSORT.value
     itemsortlist: list
 
-    def __init__(self, request, db: Session, pfq: ppi.ItemPurchaseFilterQuery):
+    def __init__(self, db: Session, pfq: ppi.ItemPurchaseFilterQuery):
         fd = pfq.get_filter_dict()
         super().__init__(
-            request=request,
             res=[],
             actstslist=ppi.get_actstslist(fd),
             fquery=fd,
@@ -932,46 +966,42 @@ class ItemPurchaseContext(BaseTemplateValue):
         self.res_length = len(self.res)
 
     def create_item_list(self, dbdata: list, domain: str):
-        results_dict: dict[int, dict] = {}
-        no_surugaya_id_dict: dict[int, int] = {}
+        results_dict: dict[int, ItemPurchaseData] = {}
 
         for data in dbdata:
             data_dic = dict(data._mapping.items())
             item_id = int(data_dic["item_id"])
             if item_id not in results_dict:
-                results_dict[item_id] = copy.deepcopy(data_dic)
-                if domain in data_dic["urlpath"]:
-                    surugaya_id = self.parse_surugaya_id(data_dic["urlpath"])
-                else:
-                    surugaya_id = ""
-                if surugaya_id:
-                    results_dict[item_id]["purchase_url"] = (
-                        surugayaURL.SurugayaPurchaseURL(
-                            surugaya_item_id=surugaya_id
-                        ).createURL()
-                    )
-                else:
-                    results_dict[item_id]["purchase_url"] = (
-                        surugayaURL.SurugayaPurchaseURL(
-                            word=data_dic["name"]
-                        ).createURL()
-                    )
-                    no_surugaya_id_dict[item_id] = 1
-                continue
-            if item_id in results_dict:
-                if (
-                    item_id in no_surugaya_id_dict
-                    and domain in data_dic["urlpath"]
-                ):
-                    surugaya_id = self.parse_surugaya_id(data_dic["urlpath"])
-                    if surugaya_id:
-                        results_dict[item_id]["purchase_url"] = (
-                            surugayaURL.SurugayaPurchaseURL(
-                                surugaya_item_id=surugaya_id
-                            ).createURL()
-                        )
-                        no_surugaya_id_dict.pop(item_id)
-                continue
+                ipd = ItemPurchaseData(
+                    item_id=item_id,
+                    name=data_dic["name"],
+                    urls={},
+                    created_at=data_dic["created_at"],
+                )
+                results_dict[item_id] = ipd
+            else:
+                ipd = results_dict[item_id]
+
+            if domain in data_dic["urlpath"]:
+                surugaya_id = self.parse_surugaya_id(data_dic["urlpath"])
+            else:
+                surugaya_id = ""
+            if surugaya_id:
+                purchase_url = surugayaURL.SurugayaPurchaseURL(
+                    surugaya_item_id=surugaya_id
+                ).createURL()
+            else:
+                purchase_url = surugayaURL.SurugayaPurchaseURL(
+                    word=data_dic["name"]
+                ).createURL()
+            ipu = ItemPurchaseUrl(
+                url_id=data_dic["url_id"],
+                item_url=data_dic["urlpath"],
+                purchase_url=purchase_url,
+                act_status=data_dic["active"],
+            )
+            ipd.save_item_purchase_url(ipu)
+            continue
         return results_dict.values()
 
     def parse_surugaya_id(self, urlpath: str) -> str:
