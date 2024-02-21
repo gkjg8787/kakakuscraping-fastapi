@@ -50,10 +50,14 @@
             <td>{{ row["item_id"] }}</td>
             <td>{{ row["itemname"] }}</td>
             <td>{{ row["active"] }}</td>
+            {%- if row["item_id"] %}
             <td class="noborder nobreak">
                 <a href="{{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ row['item_id'] }}"
                  target="_blank" rel="noopener noreferrer" class="like_button_link">アイテム詳細</a>
             </td>
+            {%- else %}
+            <td class="noborder nobreak"></td>
+            {%- endif %}
         </tr>
         {%- endfor %}
     </table>
