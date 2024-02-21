@@ -54,10 +54,9 @@ class ItemSelectionContext(BaseTemplateValue):
     MIN_PRICE_RANGE: Optional[int] = None
     MAX_PRICE_RANGE: Optional[int] = None
 
-    def __init__(self, request, nfq: ppi.NewestFilterQuery, db: Session):
+    def __init__(self, nfq: ppi.NewestFilterQuery, db: Session):
         fd = nfq.get_filter_dict()
         super().__init__(
-            request=request,
             res=NewestQuery.get_newest_data(db, filter=fd),
             actstslist=ppi.get_actstslist(fd),
             itemSortList=ppi.get_item_sort_list(fd),
@@ -100,8 +99,8 @@ class ShippingConditionContext(BaseTemplateValue):
     POST_ITEM_ID: str = filter_name.TemplatePostName.ITEM_ID.value
     POST_STORENAME: str = filter_name.TemplatePostName.STORE_NAME.value
 
-    def __init__(self, request, scq: ppc.ShippingConditionQuery, db: Session):
-        super().__init__(request=request)
+    def __init__(self, scq: ppc.ShippingConditionQuery, db: Session):
+        super().__init__()
         if not scq.is_valid():
             self.errmsg = scq.errmsg
             return
@@ -113,7 +112,9 @@ class ShippingConditionContext(BaseTemplateValue):
         ):
             item_limit = int(conf_item_limit)
             if len(scq.item_id_list) > item_limit:
-                self.errmsg = f"選択したアイテム数が上限を超えています（上限：{item_limit}）"
+                self.errmsg = (
+                    f"選択したアイテム数が上限を超えています（上限：{item_limit}）"
+                )
                 return
         self.item_id_list = scq.item_id_list
         results = getAndRegistShippingTermsByItemId(db, itemids=self.item_id_list)
@@ -177,8 +178,8 @@ class ItemCombCalcResultContext(BaseTemplateValue):
     store_list: List = []
     proc_time: str = "0"
 
-    def __init__(self, request, icrf: ppc.ItemCombinationResultForm, db: Session):
-        super().__init__(request=request)
+    def __init__(self, icrf: ppc.ItemCombinationResultForm, db: Session):
+        super().__init__()
         if not icrf.is_valid() or len(icrf.store_list) == 0:
             return
         self.update_shippingterms_data(db, icrf=icrf)
@@ -284,8 +285,8 @@ class SearchShippingContext(BaseTemplateValue):
     search_result: List = []
     errmsg: str = ""
 
-    def __init__(self, request, ssq: ppc.SearchShippingQuery, db: Session):
-        super().__init__(request=request)
+    def __init__(self, ssq: ppc.SearchShippingQuery, db: Session):
+        super().__init__()
         if not ssq.pref:
             pref = DEFAULT_PREF
         else:

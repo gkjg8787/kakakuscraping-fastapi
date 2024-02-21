@@ -78,11 +78,10 @@ class NewestItemList(BaseTemplateValue):
     MIN_PRICE_RANGE: Optional[int] = None
     MAX_PRICE_RANGE: Optional[int] = None
 
-    def __init__(self, request, nfq: ppi.NewestFilterQuery, db: Session):
+    def __init__(self, nfq: ppi.NewestFilterQuery, db: Session):
         fd = nfq.get_filter_dict()
         super().__init__(
             topscrollid="",
-            request=request,
             res=NewestQuery.get_newest_data(db, filter=fd),
             actstslist=ppi.get_actstslist(fd),
             itemSortList=ppi.get_item_sort_list(fd),
@@ -121,8 +120,8 @@ class UpdateAllItemUrlPostContext(BaseTemplateValue):
     return_user: bool = True
     errmsg: str = ""
 
-    def __init__(self, request, db: Session):
-        super().__init__(request=request)
+    def __init__(self, db: Session):
+        super().__init__()
         if not can_item_update(db):
             self.errmsg = "更新できない状態です。サーバを確認して下さい。"
             return
@@ -173,7 +172,7 @@ class ItemPurchaseUrl(BaseModel):
         return None
 
 
-class ItemDetailContext(BaseModel):
+class ItemDetailContext(BaseTemplateValue):
     loglist: list
     loglist_length: int = 0
     items: dict
@@ -295,9 +294,8 @@ class ItemDetailChartContext(BaseTemplateValue):
     npjp: List
     item_id: int = const_value.NONE_ID
 
-    def __init__(self, request, idq: ppi.ItemDetailQuery, db: Session):
+    def __init__(self, idq: ppi.ItemDetailQuery, db: Session):
         super().__init__(
-            request=request,
             upjp=[],
             npjp=[],
         )
@@ -375,9 +373,8 @@ class AddItemUrlPostContext(BaseTemplateValue):
     POST_ITEM_NAME: str = filter_name.TemplatePostName.ITEM_NAME.value
     POST_URL_PATH: str = filter_name.TemplatePostName.URL_PATH.value
 
-    def __init__(self, request, adduform: ppi.AddItemUrlForm, db: Session):
+    def __init__(self, adduform: ppi.AddItemUrlForm, db: Session):
         super().__init__(
-            request=request,
             itemName=adduform.item_name,
             urlPath=adduform.url_path,
         )
@@ -400,10 +397,8 @@ class AddUrlInitContext(BaseTemplateValue):
     POST_URL_PATH: str = filter_name.TemplatePostName.URL_PATH.value
     ITEMID_Q_NAME: str = filter_name.ItemDetailQueryName.ITEMID.value
 
-    def __init__(self, request, adduform: ppi.AddUrlForm):
-        super().__init__(
-            request=request,
-        )
+    def __init__(self, adduform: ppi.AddUrlForm):
+        super().__init__()
         if not adduform.is_valid_init():
             self.errmsg = adduform.errmsg
             return
@@ -420,9 +415,8 @@ class AddUrlPostContext(BaseTemplateValue):
     POST_URL_PATH: str = filter_name.TemplatePostName.URL_PATH.value
     ITEMID_Q_NAME: str = filter_name.ItemDetailQueryName.ITEMID.value
 
-    def __init__(self, request, adduform: ppi.AddUrlForm, db: Session):
+    def __init__(self, adduform: ppi.AddUrlForm, db: Session):
         super().__init__(
-            request=request,
             urlPath=adduform.url_path,
         )
         if adduform.item_id != const_value.NONE_ID:
@@ -451,10 +445,8 @@ class UpdateItemNameInitContext(BaseTemplateValue):
     POST_ITEM_NAME: str = filter_name.TemplatePostName.ITEM_NAME.value
     ITEMID_Q_NAME: str = filter_name.ItemDetailQueryName.ITEMID.value
 
-    def __init__(self, request, upnameform: ppi.UpdateItemNameForm, db: Session):
-        super().__init__(
-            request=request,
-        )
+    def __init__(self, upnameform: ppi.UpdateItemNameForm, db: Session):
+        super().__init__()
         if upnameform.is_valid_init():
             self.item_id = upnameform.item_id
             item = ItemQuery.get_item(db, item_id=self.item_id)
@@ -476,10 +468,8 @@ class UpdateItemNamePostContext(BaseTemplateValue):
     POST_ITEM_NAME: str = filter_name.TemplatePostName.ITEM_NAME.value
     ITEMID_Q_NAME: str = filter_name.ItemDetailQueryName.ITEMID.value
 
-    def __init__(self, request, upnameform: ppi.UpdateItemNameForm, db: Session):
-        super().__init__(
-            request=request,
-        )
+    def __init__(self, upnameform: ppi.UpdateItemNameForm, db: Session):
+        super().__init__()
         if upnameform.is_valid():
             self.item_name = upnameform.item_name
             self.item_id = upnameform.item_id
@@ -507,10 +497,8 @@ class InActAllUrlPostContext(BaseTemplateValue):
     errmsg: str = ""
     ITEMID_Q_NAME: str = filter_name.ItemDetailQueryName.ITEMID.value
 
-    def __init__(self, request, inactform: ppi.InActAllUrlForm, db: Session):
-        super().__init__(
-            request=request,
-        )
+    def __init__(self, inactform: ppi.InActAllUrlForm, db: Session):
+        super().__init__()
         if inactform.is_valid():
             self.item_id = inactform.item_id
             self.inact_all_url(db)
@@ -531,8 +519,8 @@ class InActUrlPostContext(BaseTemplateValue):
     errmsg: str = ""
     ITEMID_Q_NAME: str = filter_name.ItemDetailQueryName.ITEMID.value
 
-    def __init__(self, request, inactform: ppi.InActUrlForm, db: Session):
-        super().__init__(request=request)
+    def __init__(self, inactform: ppi.InActUrlForm, db: Session):
+        super().__init__()
         if inactform.is_valid():
             self.item_id = inactform.item_id
             self.url_id = inactform.url_id
@@ -558,8 +546,8 @@ class ActUrlPostContext(BaseTemplateValue):
     errmsg: str = ""
     ITEMID_Q_NAME: str = filter_name.ItemDetailQueryName.ITEMID.value
 
-    def __init__(self, request, actform: ppi.ActUrlForm, db: Session):
-        super().__init__(request=request)
+    def __init__(self, actform: ppi.ActUrlForm, db: Session):
+        super().__init__()
         if actform.is_valid():
             self.item_id = actform.item_id
             self.url_id = actform.url_id
@@ -584,8 +572,8 @@ class UpdateItemUrlPostContext(BaseTemplateValue):
     errmsg: str = ""
     ITEMID_Q_NAME: str = filter_name.ItemDetailQueryName.ITEMID.value
 
-    def __init__(self, request, upurlform: ppi.UpdateItemUrlForm, db: Session):
-        super().__init__(request=request)
+    def __init__(self, upurlform: ppi.UpdateItemUrlForm, db: Session):
+        super().__init__()
         if upurlform.item_id:
             self.item_id = upurlform.item_id
         if not can_item_update(db):
@@ -608,8 +596,8 @@ class UpdateItemAllUrlPostContext(BaseTemplateValue):
     errmsg: str = ""
     ITEMID_Q_NAME: str = filter_name.ItemDetailQueryName.ITEMID.value
 
-    def __init__(self, request, upurlform: ppi.UpdateItemAllUrlForm, db: Session):
-        super().__init__(request=request)
+    def __init__(self, upurlform: ppi.UpdateItemAllUrlForm, db: Session):
+        super().__init__()
         if upurlform.return_user:
             self.return_user = True
         if upurlform.item_id:
@@ -635,8 +623,8 @@ class RemoveItemUrlPostContext(BaseTemplateValue):
     errmsg: str = ""
     ITEMID_Q_NAME: str = filter_name.ItemDetailQueryName.ITEMID.value
 
-    def __init__(self, request, remurlform: ppi.RemoveItemUrlForm, db: Session):
-        super().__init__(request=request)
+    def __init__(self, remurlform: ppi.RemoveItemUrlForm, db: Session):
+        super().__init__()
         if remurlform.is_valid():
             self.item_id = remurlform.item_id
             self.remove_data(db, url_id=remurlform.url_id)
@@ -658,8 +646,8 @@ class AddGroupPostContext(BaseTemplateValue):
     POST_GROUP_NAME: str = filter_name.TemplatePostName.GROUP_NAME.value
     GROUPID_NAME: str = filter_name.FilterQueryName.GID.value
 
-    def __init__(self, request, addgform: ppi.AddGroupForm, db: Session):
-        super().__init__(request=request)
+    def __init__(self, addgform: ppi.AddGroupForm, db: Session):
+        super().__init__()
         if addgform.is_valid():
             self.group_name = addgform.group_name
             self.add_group(db)
@@ -703,10 +691,9 @@ class EditGroupContext(BaseTemplateValue):
     MIN_PRICE_RANGE: Optional[int] = None
     MAX_PRICE_RANGE: Optional[int] = None
 
-    def __init__(self, request, nfqg: ppi.NewestFilterQueryForGroup, db: Session):
+    def __init__(self, nfqg: ppi.NewestFilterQueryForGroup, db: Session):
         fd = nfqg.get_filter_dict()
         super().__init__(
-            request=request,
             actstslist=ppi.get_actstslist(fd),
             itemSortList=ppi.get_item_sort_list(fd),
             groups=ppi.get_groups(db, f=fd),
@@ -780,8 +767,8 @@ class DeleteGroupInitContext(BaseTemplateValue):
     POST_GROUP_ID: str = filter_name.TemplatePostName.GROUP_ID.value
     GROUPID_NAME: str = filter_name.FilterQueryName.GID.value
 
-    def __init__(self, request, delgform: ppi.DeleteGroupForm, db: Session):
-        super().__init__(request=request)
+    def __init__(self, delgform: ppi.DeleteGroupForm, db: Session):
+        super().__init__()
         if delgform.is_valid():
             self.gid = delgform.group_id
             g = GroupQuery.get_group_by_group_id(db, gid=self.gid)
@@ -792,8 +779,8 @@ class DeleteGroupContext(DeleteGroupInitContext):
     errmsg: str = ""
     delSuccess: bool = False
 
-    def __init__(self, request, delgform: ppi.DeleteGroupForm, db: Session):
-        super().__init__(request=request, delgform=delgform, db=db)
+    def __init__(self, delgform: ppi.DeleteGroupForm, db: Session):
+        super().__init__(delgform=delgform, db=db)
         if delgform.is_valid():
             self.delete_group(db)
 
@@ -809,8 +796,8 @@ class RenameGroupNameInitContext(BaseTemplateValue):
     POST_GROUP_NAME: str = filter_name.TemplatePostName.GROUP_NAME.value
     GROUPID_NAME: str = filter_name.FilterQueryName.GID.value
 
-    def __init__(self, request, rgnform: ppi.RenameGroupNameInitForm, db: Session):
-        super().__init__(request=request)
+    def __init__(self, rgnform: ppi.RenameGroupNameInitForm, db: Session):
+        super().__init__()
         if rgnform.is_valid():
             self.gid = rgnform.group_id
             g = GroupQuery.get_group_by_group_id(db, gid=self.gid)
@@ -825,8 +812,8 @@ class RenameGroupNameContext(BaseTemplateValue):
     POST_GROUP_NAME: str = filter_name.TemplatePostName.GROUP_NAME.value
     GROUPID_NAME: str = filter_name.FilterQueryName.GID.value
 
-    def __init__(self, request, rgnform: ppi.RenameGroupNameForm, db: Session):
-        super().__init__(request=request)
+    def __init__(self, rgnform: ppi.RenameGroupNameForm, db: Session):
+        super().__init__()
         if rgnform.is_valid():
             self.gid = rgnform.group_id
             self.groupname = rgnform.groupname
@@ -844,8 +831,8 @@ class DeleteItemInitContext(BaseTemplateValue):
     errmsg: str = ""
     ITEMID_Q_NAME: str = filter_name.ItemDetailQueryName.ITEMID.value
 
-    def __init__(self, request, diform: ppi.DeleteItemForm, db: Session):
-        super().__init__(request=request)
+    def __init__(self, diform: ppi.DeleteItemForm, db: Session):
+        super().__init__()
         if diform.is_valid():
             self.item_id = diform.item_id
             self.itemname = ItemQuery.get_item(db, item_id=self.item_id).name
@@ -861,8 +848,8 @@ class DeleteItemContext(BaseTemplateValue):
     ITEMID_Q_NAME: str = filter_name.ItemDetailQueryName.ITEMID.value
     delSuccess: bool = False
 
-    def __init__(self, request, diform: ppi.DeleteItemForm, db: Session):
-        super().__init__(request=request)
+    def __init__(self, diform: ppi.DeleteItemForm, db: Session):
+        super().__init__()
         if not diform.is_valid():
             self.errmsg = diform.errmsg
             return
@@ -882,33 +869,22 @@ class ItemAnalysisPeriod(IdTextSelected):
 class ItemAnalysisContext(BaseTemplateValue):
     item_id: int = const_value.NONE_ID
     analysis_term_id: int = filter_name.AnalysisTermName.ONE_WEEK.id
-
     period_start: str = ""
     period_end: str = ""
-
     item_count: database_analysis.CountResult = None
     url_count: database_analysis.CountResult = None
-
     item_price: database_analysis.PriceResult = None
-
     url_download: database_analysis.UrlDownLoadResult = None
-
     store_count: database_analysis.CountResult = None
-
     store_most_common: database_analysis.StoreMostCommonResult = None
-
     url_store_count_average: database_analysis.UrlStoreCountAverageResult = None
-
     analysisPeriodList: list[ItemAnalysisPeriod] = []
-
     ITEMID_Q_NAME: str = filter_name.ItemDetailQueryName.ITEMID.value
     ANALYSIS_Q_NAME: str = filter_name.AnalysisQueryName.ATID.value
-
     errmsg: str = ""
 
-    def __init__(self, request, anaq: ppi.AnalysisBaseQuery, db: Session):
-        super().__init__(request=request)
-
+    def __init__(self, anaq: ppi.AnalysisBaseQuery, db: Session):
+        super().__init__()
         if anaq.itemid:
             self.item_id = int(anaq.itemid)
         if anaq.atid:
@@ -987,7 +963,7 @@ class ItemPurchaseData(BaseModel):
         return result
 
 
-class ItemPurchaseContext(BaseModel):
+class ItemPurchaseContext(BaseTemplateValue):
     res: list[ItemPurchaseData]
     res_length: int = 0
     ITEMACT_NAME: str = filter_name.FilterQueryName.ACT.value
@@ -1056,10 +1032,9 @@ class UrlListContext(BaseTemplateValue):
     URLSORT_NAME: str = filter_name.FilterQueryName.USORT.value
     urlSortList: list
 
-    def __init__(self, request, db: Session, ufq: ppi.UrlListFilterQuery):
+    def __init__(self, db: Session, ufq: ppi.UrlListFilterQuery):
         fd = ufq.get_filter_dict()
         super().__init__(
-            request=request,
             res=UrlQuery.get_url_and_item_comb_list_in_local_time(db, filter=fd),
             actstslist=ppi.get_actstslist(fd),
             fquery=fd,
@@ -1095,10 +1070,9 @@ class ExtractStoreItemListContext(BaseTemplateValue):
     MIN_PRICE_RANGE: Optional[int] = None
     MAX_PRICE_RANGE: Optional[int] = None
 
-    def __init__(self, request, esfq: ppi.ExtractStoreFilterQuery, db: Session):
+    def __init__(self, esfq: ppi.ExtractStoreFilterQuery, db: Session):
         fd = esfq.get_filter_dict()
         super().__init__(
-            request=request,
             res=self.get_extract_storename_newest_data(db, filter=fd),
             actstslist=ppi.get_actstslist(fd),
             esSortList=ppi.get_extract_store_sort_list(fd),
@@ -1195,10 +1169,9 @@ class StoreListContext(BaseTemplateValue):
     CONFIGUREDTERMS_NAME: str = filter_name.FilterQueryName.CONFED.value
     confstslist: list
 
-    def __init__(self, request, db: Session, slfp: ppi.StoreListFilterQuery):
+    def __init__(self, db: Session, slfp: ppi.StoreListFilterQuery):
         fq = slfp.get_filter_dict()
         super().__init__(
-            request=request,
             fquery=fq,
             storeSortList=ppi.get_store_sort_list(fq),
             confstslist=ppi.get_store_terms_configured_list(fq),
@@ -1241,9 +1214,8 @@ class EditShippingConditionContext(BaseTemplateValue):
     POST_ITEM_ID: str = filter_name.TemplatePostName.ITEM_ID.value
     POST_STORENAME: str = filter_name.TemplatePostName.STORE_NAME.value
 
-    def __init__(self, request, db: Session):
-        super().__init__(request=request)
-
+    def __init__(self, db: Session):
+        super().__init__()
         results = ac_store.StoreQuery.get_store_and_postage_all(db)
         if not results or len(results) == 0:
             self.errmsg = "店舗がありません"
@@ -1284,8 +1256,8 @@ class EditShippingConditionResult(BaseTemplateValue):
     insert_length: int = 0
     errmsg: str = ""
 
-    def __init__(self, request, db: Session, escf: ppi.EditShippingConditionForm):
-        super().__init__(request=request)
+    def __init__(self, db: Session, escf: ppi.EditShippingConditionForm):
+        super().__init__()
         results = ac_store.StoreQuery.get_store_and_postage_all(db)
         self.update_shippingterms_data(db, escf=escf, db_res=results)
 
@@ -1475,8 +1447,8 @@ class DeleteStoreInitContext(BaseTemplateValue):
     delete_list: list[StoreForListContext] = []
     POST_STORE_ID: str = filter_name.TemplatePostName.STORE_ID.value
 
-    def __init__(self, request, db: Session, dsf: ppi.DeleteStoreForm):
-        super().__init__(request=request)
+    def __init__(self, db: Session, dsf: ppi.DeleteStoreForm):
+        super().__init__()
         if not dsf.is_valid():
             self.errmsg = dsf.errmsg
             return
@@ -1506,8 +1478,8 @@ class DeleteStoreContext(BaseTemplateValue):
     errmsg: str = ""
     delSuccess: bool = False
 
-    def __init__(self, request, db: Session, dsf: ppi.DeleteStoreForm):
-        super().__init__(request=request)
+    def __init__(self, db: Session, dsf: ppi.DeleteStoreForm):
+        super().__init__()
         if not dsf.is_valid():
             self.errmsg = dsf.errmsg
             return
@@ -1571,10 +1543,9 @@ class OnlineStoreListContext(BaseTemplateValue):
     online_store_copy_type_list: list[IdTextSelected]
     pref_list_for_copy: list[IdTextSelected] = []
 
-    def __init__(self, request, db: Session, slfp: ppi.OnlineStoreListFilterQuery):
+    def __init__(self, db: Session, slfp: ppi.OnlineStoreListFilterQuery):
         fq = slfp.get_filter_dict()
         super().__init__(
-            request=request,
             fquery=fq,
             storeSortList=ppi.get_store_sort_list(fq),
             confstslist=ppi.get_store_terms_configured_list(fq),
@@ -1678,8 +1649,8 @@ class OnlineStoreCopyContext(BaseTemplateValue):
     insert_list: list[StoreForListContext] = []
     insert_length: int = 0
 
-    def __init__(self, request, db: Session, oscq: ppi.OnlineStoreCopyToMyQuery):
-        super().__init__(request=request)
+    def __init__(self, db: Session, oscq: ppi.OnlineStoreCopyToMyQuery):
+        super().__init__()
         self.insert_list = self.copy_online_store_postage_to_local(
             db,
             osct_id=oscq.online_store_copy_type,
@@ -1870,8 +1841,8 @@ class OnlineStoreCopyContext(BaseTemplateValue):
 class OnlineStoreUpdateContext(BaseTemplateValue):
     errmsg: str = ""
 
-    def __init__(self, request, db: Session):
-        super().__init__(request=request)
+    def __init__(self, db: Session):
+        super().__init__()
         self.update_online_store(db)
 
     def update_online_store(self, db: Session):

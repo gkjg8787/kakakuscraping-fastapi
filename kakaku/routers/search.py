@@ -18,11 +18,12 @@ templates = read_templates.templates
 
 @router.get("/", response_class=HTMLResponse)
 def read_search(request: Request, sfq: SearchFilterQuery = Depends()):
-    searchsite = template_value.search.SearchExternalSiteContext(
-        request=request, sfq=sfq
+    searchsite = template_value.search.SearchExternalSiteContext(sfq=sfq)
+    res = templates.TemplateResponse(
+        request=request,
+        name="search/item_search.html",
+        context=searchsite.get_context(),
     )
-    context = dict(searchsite)
-    res = templates.TemplateResponse("search/item_search.html", context)
     return res
 
 
@@ -32,9 +33,8 @@ def read_search_add(
     saform: SearchToAddForm = Depends(),
     db: Session = Depends(get_session),
 ):
-    stac = template_value.search.SearchToAddContext(
-        request=request, saform=saform, db=db
+    stac = template_value.search.SearchToAddContext(saform=saform, db=db)
+    res = templates.TemplateResponse(
+        request=request, name="search/add_search.html", context=stac.get_context()
     )
-    context = dict(stac)
-    res = templates.TemplateResponse("search/add_search.html", context)
     return res

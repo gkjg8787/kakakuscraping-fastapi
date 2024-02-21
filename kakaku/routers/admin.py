@@ -18,8 +18,10 @@ templates = read_templates.templates
 
 @router.get("/dashboard/", response_class=HTMLResponse)
 def read_admin_dashboard(request: Request, db: Session = Depends(get_session)):
-    dbt = DashBoardTemplate(request, db=db)
-    return templates.TemplateResponse("admin/controlpanel.html", dict(dbt))
+    dbt = DashBoardTemplate(db=db)
+    return templates.TemplateResponse(
+        request=request, name="admin/controlpanel.html", context=dbt.get_context()
+    )
 
 
 @router.post("/dashboard/svchg/")
@@ -28,5 +30,7 @@ def read_admin_dashboard_svchg(
 ):
     bsc = BackServerCtrl(pcf)
     background_tasks.add_task(bsc.action)
-    context = {"request": request, "errmsg": ""}
-    return templates.TemplateResponse("admin/svchg.html", context)
+    context = {"errmsg": ""}
+    return templates.TemplateResponse(
+        request=request, name="admin/svchg.html", context=context
+    )

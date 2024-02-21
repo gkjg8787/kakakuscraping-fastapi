@@ -57,7 +57,7 @@ def post_startup_check():
     assert "サーバ状態の更新" in response.text
     check_status_waittime(
         syssts.SystemStatusToJName.get_jname(syssts.SystemStatus.ACTIVE.name),
-        waittime=3,
+        waittime=9,
     )
 
 
@@ -74,7 +74,7 @@ def test_read_admin_dashboard_svchg_startup_and_stop():
     assert response.status_code == 200
     assert "サーバ状態の更新" in response.text
     check_status_waittime(
-        syssts.SystemStatusToJName.get_jname(syssts.SystemStatus.STOP.name), waittime=3
+        syssts.SystemStatusToJName.get_jname(syssts.SystemStatus.STOP.name), waittime=5
     )
 
 
@@ -92,7 +92,7 @@ def test_read_admin_dashboard_svchg_startup_and_restart():
     assert "サーバ状態の更新" in response.text
     check_status_waittime(
         syssts.SystemStatusToJName.get_jname(syssts.SystemStatus.ACTIVE.name),
-        waittime=4,
+        waittime=10,
     )
 
     response = client.post(

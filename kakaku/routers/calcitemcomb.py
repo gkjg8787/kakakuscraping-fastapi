@@ -27,9 +27,10 @@ def read_select_item_price_combination(
     nfq: NewestFilterQuery = Depends(),
     db: Session = Depends(get_session),
 ):
-    isc = ItemSelectionContext(request=request, nfq=nfq, db=db)
-    context = dict(isc)
-    return templates.TemplateResponse("itemcomb/item_selection.html", context)
+    isc = ItemSelectionContext(nfq=nfq, db=db)
+    return templates.TemplateResponse(
+        request=request, name="itemcomb/item_selection.html", context=isc.get_context()
+    )
 
 
 @router.get("/shipping/", response_class=HTMLResponse)
@@ -38,9 +39,12 @@ def read_input_shop_shipping_condition(
     scq: ShippingConditionQuery = Depends(),
     db: Session = Depends(get_session),
 ):
-    scc = ShippingConditionContext(request=request, scq=scq, db=db)
-    context = dict(scc)
-    return templates.TemplateResponse("itemcomb/shipping_condition.html", context)
+    scc = ShippingConditionContext(scq=scq, db=db)
+    return templates.TemplateResponse(
+        request=request,
+        name="itemcomb/shipping_condition.html",
+        context=scc.get_context(),
+    )
 
 
 @router.post("/result/", response_class=HTMLResponse)
@@ -58,9 +62,12 @@ async def read_item_price_combination_result(
                 store = f"{k}={s}"
                 stores.append(store)
     icr.set_store_list(stores)
-    iccrc = ItemCombCalcResultContext(request=request, icrf=icr, db=db)
-    context = dict(iccrc)
-    return templates.TemplateResponse("itemcomb/result_combination.html", context)
+    iccrc = ItemCombCalcResultContext(icrf=icr, db=db)
+    return templates.TemplateResponse(
+        request=request,
+        name="itemcomb/result_combination.html",
+        context=iccrc.get_context(),
+    )
 
 
 @router.get("/shipping/search/", response_class=HTMLResponse)
@@ -69,6 +76,7 @@ def read_input_search_shop_shipping(
     ssq: SearchShippingQuery = Depends(),
     db: Session = Depends(get_session),
 ):
-    ssc = SearchShippingContext(request=request, ssq=ssq, db=db)
-    context = dict(ssc)
-    return templates.TemplateResponse("itemcomb/search_shipping.html", context)
+    ssc = SearchShippingContext(ssq=ssq, db=db)
+    return templates.TemplateResponse(
+        request=request, name="itemcomb/search_shipping.html", context=ssc.get_context()
+    )

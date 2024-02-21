@@ -97,21 +97,21 @@ class SearchOptionSettings:
         dic = read_config.get_search_options_default()
         for key in dic.keys():
             if key.lower() == filter_name.FilterQueryName.CATEGORY.value:
-                self.optionlist[
-                    filter_name.FilterQueryName.CATEGORY
-                ] = self.create_category(dic[key])
+                self.optionlist[filter_name.FilterQueryName.CATEGORY] = (
+                    self.create_category(dic[key])
+                )
             if key.lower() == filter_name.FilterQueryName.ZAIKO.value:
                 self.optionlist[filter_name.FilterQueryName.ZAIKO] = self.create_zaiko(
                     dic[key]
                 )
             if key.lower() == filter_name.FilterQueryName.SAFES.value:
-                self.optionlist[
-                    filter_name.FilterQueryName.SAFES
-                ] = self.create_safesearch(dic[key])
+                self.optionlist[filter_name.FilterQueryName.SAFES] = (
+                    self.create_safesearch(dic[key])
+                )
             if key.lower() == filter_name.FilterQueryName.LISTVIEW.value:
-                self.optionlist[
-                    filter_name.FilterQueryName.LISTVIEW
-                ] = self.create_listview(dic[key])
+                self.optionlist[filter_name.FilterQueryName.LISTVIEW] = (
+                    self.create_listview(dic[key])
+                )
             if key.lower() == filter_name.FilterQueryName.STORE.value:
                 self.optionlist[filter_name.FilterQueryName.STORE] = self.create_store(
                     dic[key]
@@ -162,8 +162,8 @@ class SearchExternalSiteContext(BaseTemplateValue):
     POST_URL_PATH: str = filter_name.TemplatePostName.URL_PATH.value
     POST_SEARCH_QUERY: str = filter_name.TemplatePostName.SEARCH_QUERY.value
 
-    def __init__(self, request, sfq: SearchFilterQuery):
-        super().__init__(request=request)
+    def __init__(self, sfq: SearchFilterQuery):
+        super().__init__()
         optjson = self.get_option_json()
         fq = sfq.get_query_dict()
         soss = SearchOptionSettings()
@@ -359,8 +359,8 @@ class SearchToAddContext(BaseTemplateValue):
     POST_URL_PATH: str = filter_name.TemplatePostName.URL_PATH.value
     POST_SEARCH_QUERY: str = filter_name.TemplatePostName.SEARCH_QUERY.value
 
-    def __init__(self, request, saform: SearchToAddForm, db: Session):
-        super().__init__(request=request)
+    def __init__(self, saform: SearchToAddForm, db: Session):
+        super().__init__()
         if not saform.is_valid():
             self.errmsg = saform.errmsg
             return

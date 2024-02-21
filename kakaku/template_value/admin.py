@@ -38,8 +38,8 @@ class DashBoardTemplate(BaseTemplateValue):
     online_store_autoupdate_schedule: list[AutoUpdateSchedule] = []
     sysstatuslog: str = SYSTEM_STS_LOG_DEFAULT
 
-    def __init__(self, request, db: Session):
-        super().__init__(request=request)
+    def __init__(self, db: Session):
+        super().__init__()
         syssts = get_sys_status.getSystemStatus(db)
         self.syssts = SystemStatusToJName.get_jname(syssts)
         if syssts == SystemStatus.STOP.name:
@@ -75,11 +75,11 @@ class DashBoardTemplate(BaseTemplateValue):
         up_str_list: list[str] = TwoDigitHourFormat.convet_list_to_two_digit_hour_list(
             read_config.get_auto_update_online_store_time(), getLogger(LogName.CLIENT)
         )
-        up_list: list[
-            datetime
-        ] = TwoDigitHourFormat.convert_list_to_local_datetime_list(
-            time_str_list=up_str_list,
-            convert_tomorrow=cls.is_update_for_today_complete(up_str_list),
+        up_list: list[datetime] = (
+            TwoDigitHourFormat.convert_list_to_local_datetime_list(
+                time_str_list=up_str_list,
+                convert_tomorrow=cls.is_update_for_today_complete(up_str_list),
+            )
         )
         results = TwoDigitHourFormat.convert_list_to_AutoUpdateSchedule_list(
             timer_str_list=up_str_list, timer_list=up_list
