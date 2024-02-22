@@ -568,19 +568,22 @@ class AnalysisBaseQuery:
 class ItemPurchaseFilterQuery:
     act: str = ""
     psort: str = ""
+    gid: str = ""
 
     def __init__(
         self,
         act: str = "",
         psort: str = "",
+        gid: str = "",
     ):
         if act and act.isdigit() and ActFilterName.hasValue(int(act)):
             self.act = act
         else:
             self.act = str(ActFilterName.ACT.id)
-
         if psort and psort.isdigit() and ItemPurchaseSortName.hasId(int(psort)):
             self.psort = psort
+        if is_valid_id(gid):
+            self.gid = gid
 
     def get_filter_dict(self) -> dict:
         results = {}
@@ -588,11 +591,15 @@ class ItemPurchaseFilterQuery:
             results[FilterQueryName.ACT.value] = self.act
         if self.psort:
             results[FilterQueryName.PSORT.value] = self.psort
+        if self.gid:
+            results[FilterQueryName.GID.value] = self.gid
         return results
+
 
 def get_item_purchase_sort_list(f: Dict) -> List:
     results = [
-        TemplatesItemSort(name=i.qname, id=i.id, text=i.jname) for i in ItemPurchaseSortName
+        TemplatesItemSort(name=i.qname, id=i.id, text=i.jname)
+        for i in ItemPurchaseSortName
     ]
     if FilterQueryName.PSORT.value not in f:
         return results
@@ -600,6 +607,7 @@ def get_item_purchase_sort_list(f: Dict) -> List:
         if int(r.id) == int(f[FilterQueryName.PSORT.value]):
             r.selected = HTMLOption.SELECTED.value
     return results
+
 
 class UrlListFilterQuery:
     act: str = ""

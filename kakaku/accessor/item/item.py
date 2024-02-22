@@ -1132,8 +1132,18 @@ class ItemQuery:
         )
         if isactive:
             stmt = stmt.where(UrlInItem.active == isactive.value)
+        stmt = cls.__set_group_filter(filter=filter, stmt=stmt)
         stmt = cls.__set_purchasesort_filter(filter=filter, stmt=stmt)
         return db.execute(stmt).all()
+
+    @classmethod
+    def __set_group_filter(cls, filter: dict, stmt):
+        if fqn.GID.value not in filter.keys() or int(filter[fqn.GID.value]) < 0:
+            return stmt
+        stmt = stmt.join(GroupItem, GroupItem.item_id == Item.item_id).where(
+            GroupItem.group_id == int(filter[fqn.GID.value])
+        )
+        return stmt
 
     @classmethod
     def __set_purchasesort_filter(cls, filter: dict, stmt):

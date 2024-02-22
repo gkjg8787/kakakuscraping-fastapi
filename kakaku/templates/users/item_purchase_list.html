@@ -16,6 +16,11 @@
     <h3>フィルタ</h3>
     <div>
         <p>
+        {%- with GROUPID_NAME = GROUPID_NAME, groups = groups, fquery = fquery %}
+        {%- include "users/item_group_filter.html" %}
+        {%- endwith %}
+        </p>
+        <p>
         {%- with ITEMACT_NAME = ITEMACT_NAME, actstslist = actstslist, fquery = fquery %}
         {%- include "users/item_act_filter.html" %}
         {%- endwith %}

@@ -50,6 +50,13 @@ def can_item_update(db: Session):
     return True
 
 
+def get_gid_in_groups(gid: int, groups: list):
+    for g in groups:
+        if g.group_id == gid:
+            return gid
+    return filter_name.FilterDefault.GID
+
+
 class NewestItemList(BaseTemplateValue):
     topscrollid: str
     res: List
@@ -96,14 +103,9 @@ class NewestItemList(BaseTemplateValue):
 
         if filter_name.FilterQueryName.GID.value in self.fquery:
             gid = int(self.fquery[filter_name.FilterQueryName.GID.value])
-
-            def get_exist_gid(gid):
-                for g in self.groups:
-                    if g.group_id == gid:
-                        return gid
-                return filter_name.FilterDefault.GID
-
-            self.fquery[filter_name.FilterQueryName.GID.value] = get_exist_gid(gid)
+            self.fquery[filter_name.FilterQueryName.GID.value] = get_gid_in_groups(
+                gid=gid, groups=self.groups
+            )
 
         if filter_name.FilterQueryName.PRMIN.value in self.fquery:
             self.MIN_PRICE_RANGE = int(
@@ -703,14 +705,9 @@ class EditGroupContext(BaseTemplateValue):
 
         if filter_name.FilterQueryName.GID.value in self.fquery:
             gid = int(self.fquery[filter_name.FilterQueryName.GID.value])
-
-            def get_exist_gid(gid):
-                for g in self.groups:
-                    if g.group_id == gid:
-                        return gid
-                return filter_name.FilterDefault.GID
-
-            self.fquery[filter_name.FilterQueryName.GID.value] = get_exist_gid(gid)
+            self.fquery[filter_name.FilterQueryName.GID.value] = get_gid_in_groups(
+                gid=gid, groups=self.groups
+            )
             self.gfid = self.fquery[filter_name.FilterQueryName.GID.value]
             newest_list = NewestQuery.get_newest_data_for_edit_group(db, filter=fd)
             self.res = self.get_newest_list_add_seleted(
@@ -972,6 +969,8 @@ class ItemPurchaseContext(BaseTemplateValue):
     ITEMID_Q_NAME: str = filter_name.ItemDetailQueryName.ITEMID.value
     SORT_NAME: str = filter_name.FilterQueryName.PSORT.value
     itemsortlist: list
+    groups: list
+    GROUPID_NAME: str = filter_name.FilterQueryName.GID.value
 
     def __init__(self, db: Session, pfq: ppi.ItemPurchaseFilterQuery):
         fd = pfq.get_filter_dict()
@@ -980,7 +979,14 @@ class ItemPurchaseContext(BaseTemplateValue):
             actstslist=ppi.get_actstslist(fd),
             fquery=fd,
             itemsortlist=ppi.get_item_purchase_sort_list(fd),
+            groups=ppi.get_groups(db, f=fd),
         )
+        if filter_name.FilterQueryName.GID.value in self.fquery:
+            gid = int(self.fquery[filter_name.FilterQueryName.GID.value])
+            self.fquery[filter_name.FilterQueryName.GID.value] = get_gid_in_groups(
+                gid=gid, groups=self.groups
+            )
+
         self.res = self.create_item_list(
             dbdata=ItemQuery.get_item_and_url_localtime(db, filter=fd),
             domain=read_config.get_support_url()["surugaya"],
@@ -1087,14 +1093,9 @@ class ExtractStoreItemListContext(BaseTemplateValue):
 
         if filter_name.FilterQueryName.GID.value in self.fquery:
             gid = int(self.fquery[filter_name.FilterQueryName.GID.value])
-
-            def get_exist_gid(gid):
-                for g in self.groups:
-                    if g.group_id == gid:
-                        return gid
-                return filter_name.FilterDefault.GID
-
-            self.fquery[filter_name.FilterQueryName.GID.value] = get_exist_gid(gid)
+            self.fquery[filter_name.FilterQueryName.GID.value] = get_gid_in_groups(
+                gid=gid, groups=self.groups
+            )
 
         if filter_name.FilterQueryName.PRMIN.value in self.fquery:
             self.MIN_PRICE_RANGE = int(
