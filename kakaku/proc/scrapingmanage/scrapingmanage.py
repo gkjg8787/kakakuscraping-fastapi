@@ -4,10 +4,17 @@ import sys
 import queue
 
 
-from proc import sendcmd
-from proc import updateAllItems
-
 from common import cmnlog, util
+from common.read_config import (
+    get_back_server_queue_timeout,
+)
+from proc import (
+    sendcmd,
+    updateAllItems,
+    manager_util,
+    db_organizer,
+)
+from proc.auto_update import TimerProc
 from proc.dlmanage import DlProc
 from proc.parsemanage import ParseProc
 from proc.proc_status import ProcStatusAccess, ProcName
@@ -16,23 +23,15 @@ from proc.system_status_log import (
     SystemStatusLogName,
     update_to_active_for_systemstatuslog,
 )
-from proc import manager_util
-
+from proc.proc_task import DirectOrderTask
 from accessor.read_sqlalchemy import get_session, Session
-
-from common.read_config import (
-    get_back_server_queue_timeout,
-)
 from accessor.server import OrganizeLogQuery
-from proc import db_organizer
-from proc.auto_update import TimerProc
-
+from itemcomb.prefecture import PrefectureDBSetting
 from .queuemanager import (
     QueueManager,
     server_port,
     server_pswd,
 )
-from itemcomb.prefecture import PrefectureDBSetting
 
 
 dlproc: DlProc | None = None
@@ -94,7 +93,7 @@ def startQueue():
     logger.info(get_filename() + " manager end")
 
 
-def scrapingURL(task, db: Session):
+def scrapingURL(task: sendcmd.SendCmd, db: Session):
     global parseproc, dlproc
     logger = getLogger(cmnlog.LogName.MANAGER)
     match task.cmdstr:
@@ -117,13 +116,13 @@ def scrapingURL(task, db: Session):
             return
         case sendcmd.ScrOrder.DB_ORGANIZE_SYNC | sendcmd.ScrOrder.DB_ORGANIZE_DAYS:
             SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.DB_ORGANIZE)
-            parseproc.direct_task_q.put(task.cmdstr)
+            parseproc.put_task(DirectOrderTask(task.cmdstr))
             return
         case sendcmd.ScrOrder.UPDATE_ONLINE_STORE_POSTAGE:
             SystemStatusLogAccess.add(
                 db=db, sysstslog=SystemStatusLogName.ONLINE_STORE_UPDATE
             )
-            parseproc.direct_task_q.put(task.cmdstr)
+            parseproc.put_task(DirectOrderTask(task.cmdstr))
             return
 
 
@@ -133,7 +132,7 @@ def check_db_organize(db: Session):
     )
     if not ret or (ret and not util.isLocalToday(util.utcTolocaltime(ret.created_at))):
         SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.DB_ORGANIZE)
-        parseproc.direct_task_q.put(sendcmd.ScrOrder.DB_ORGANIZE_DAYS)
+        parseproc.put_task(DirectOrderTask(sendcmd.ScrOrder.DB_ORGANIZE_DAYS))
     return
 
 
@@ -149,12 +148,11 @@ def waitTask(task, result):
     QUEUE_TIMEOUT = float(get_back_server_queue_timeout())
     while True:
         try:
-            t = task.get(timeout=QUEUE_TIMEOUT)
+            t: sendcmd.SendCmd = task.get(timeout=QUEUE_TIMEOUT)
             logger.debug(get_filename() + " get task")
             if not psa.getStatus() == ProcStatusAccess.ACTIVE:
                 with next(get_session()) as db:
                     manager_util.writeProcActive(db, psa=psa)
-
             if t.cmdstr == sendcmd.ScrOrder.END:
                 logger.info(get_filename() + " get END")
                 break

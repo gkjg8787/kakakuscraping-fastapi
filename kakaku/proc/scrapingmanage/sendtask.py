@@ -16,7 +16,7 @@ def get_filename():
     return os.path.basename(__file__)
 
 
-def sendTask(cmdstr, url="", id=""):
+def sendTask(cmdstr: str, url="", id=""):
     logger = cmnlog.createLogger(cmnlog.LogName.CLIENT)
     logger.debug(get_filename() + " sendTask start")
     QueueManager.register("get_task_queue")

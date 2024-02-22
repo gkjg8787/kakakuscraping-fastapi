@@ -7,10 +7,10 @@ from urllib.parse import urlparse
 from downloader import download_html
 from common import cmnlog
 from common.read_config import get_back_server_queue_timeout
-from proc.proc_status import ProcName
-
 from accessor.read_sqlalchemy import get_session
 from proc import manager_util
+from proc.proc_status import ProcName
+from proc.proc_task import DownloadResultTask
 
 QUEUE_TIMEOUT = float(get_back_server_queue_timeout())  # 5
 
@@ -19,17 +19,9 @@ def get_filename():
     return os.path.basename(__file__)
 
 
-class DlTask:
-    dlhtml = ""
-
-    def __init__(self, url, itemid):
-        self.url = url
-        self.itemid = itemid
-
-
 class DlProc:
     def __init__(self, retq: Queue):
-        self.dlproclist = dict()
+        self.dlproclist: dict[str, DlInfo] = dict()
         self.taskretq = retq
 
     def getLogger(self, pid=-1):
@@ -108,7 +100,7 @@ class DlProc:
                 + parsed_url.netloc
             )
 
-        task = DlTask(url, itemid)
+        task = DownloadResultTask(url=url, itemid=itemid)
         self.dlproclist[parsed_url.netloc].taskq.put(task)
         self.dlproclist[parsed_url.netloc].updatePutTime()
         logger.info(get_filename() + " put task")
@@ -142,7 +134,7 @@ class DlProc:
 
 
 class DlInfo:
-    def __init__(self, id, proc, hostname, taskq):
+    def __init__(self, id: int, proc: Process, hostname: str, taskq: Queue):
         self.id = id
         self.proc = proc
         self.hostname = hostname

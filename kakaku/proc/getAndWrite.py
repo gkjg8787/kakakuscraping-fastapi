@@ -36,10 +36,10 @@ def logprint(text, isError, logger=None):
         print(text)
         return
     elif isError:
-        logger.error(__file__ + " " + text)
+        logger.error(__file__ + ", " + text)
         return
     else:
-        logger.info(__file__ + " " + text)
+        logger.info(__file__ + ", " + text)
         return
 
 
@@ -506,7 +506,14 @@ def update_makepure_postage_shop_list(db: Session, parseitems: htmlparse.ParseIt
 
 def startParse(db: Session, url: str, item_id, fname: str, logger=None) -> None:
     url_id = UrlQuery.add_url(db, urlpath=url)
-    gp = get_parse_data(fname, url_id, url)
+    try:
+        gp = get_parse_data(fname, url_id, url)
+    except FileNotFoundError as e:
+        logprint(f"{type(e)} fname={fname}, url_id={url_id}, url={url}", True, logger)
+    except AttributeError as e:
+        logprint(f"{type(e)} parse_type={type(gp)}, {e}", True, logger)
+    except Exception as e:
+        logprint(f"{e}", True, logger)
     if gp is None:
         logprint("ERROR UNSUPPORTED URL", True, logger)
         return

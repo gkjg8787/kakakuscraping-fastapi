@@ -4,12 +4,19 @@ from multiprocessing import Process, Queue
 import queue
 
 from common import cmnlog
-from proc import getAndWrite
+from proc import (
+    getAndWrite,
+    manager_util,
+    scrapingmanage as scm,
+    online_store_postage,
+    db_organizer,
+)
 from proc.proc_status import ProcName
-from proc import manager_util, scrapingmanage as scm
-from proc import online_store_postage
-from proc import db_organizer
 from proc.sendcmd import ScrOrder
+from proc.proc_task import (
+    DownloadResultTask,
+    DirectOrderTask,
+)
 from accessor.read_sqlalchemy import get_session, Session
 
 
@@ -20,8 +27,7 @@ def get_filename():
 class ParseProc:
     def __init__(self):
         self.parse_task_q = Queue()
-        self.paproclist = []
-        self.direct_task_q = Queue()
+        self.paproclist: list[ParseInfo] = []
 
     def getLogger(self):
         logname = cmnlog.LogName.PARSE
@@ -40,6 +46,9 @@ class ParseProc:
             logger.info(get_filename() + " parseproc terminate id=" + str(pi.id))
         self.paproclist.clear()
 
+    def put_task(self, task):
+        self.parse_task_q.put(task)
+
     def get_task(self, q: Queue, timeout: float):
         try:
             task = q.get(timeout=timeout)
@@ -52,17 +61,9 @@ class ParseProc:
         logger.info(get_filename() + " start parseproc id=" + str(id))
         with next(get_session()) as db:
             psa = manager_util.writeProcStart(db, pnum=id, name=ProcName.PARSE)
-
         is_parse = False
-        DIRECT_QUEUE_TIMEOUT = 0.5
         PARSE_QUEUE_TIMEOUT = 5
         while True:
-            task = self.get_task(q=self.direct_task_q, timeout=DIRECT_QUEUE_TIMEOUT)
-            if task:
-                with next(get_session()) as db:
-                    manager_util.writeProcActive(db, psa=psa)
-                    self.instruct_update_data(db=db, logger=logger, task=task)
-                continue
             task = self.get_task(q=self.parse_task_q, timeout=PARSE_QUEUE_TIMEOUT)
             if task is None:
                 if is_parse:
@@ -82,6 +83,15 @@ class ParseProc:
                         manager_util.writeProcWaiting(db, psa=psa)
                     time.sleep(0.1)
                 continue
+
+            if type(task) is DirectOrderTask:
+                with next(get_session()) as db:
+                    manager_util.writeProcActive(db, psa=psa)
+                    self.instruct_update_data(db=db, logger=logger, task=task)
+                continue
+
+            if type(task) is not DownloadResultTask:
+                continue
             with next(get_session()) as db:
                 manager_util.writeProcActive(db, psa=psa)
                 logger.info(
@@ -99,13 +109,15 @@ class ParseProc:
                 get_filename() + " pid=" + str(id) + " end Parse url=" + task.url
             )
 
-    def startParseSchedule(self, id):
+    def startParseSchedule(self, id: int):
         p = Process(target=self.runParseProc, args=(id,))
         p.start()
         return p
 
-    def instruct_update_data(self, db: Session, logger: cmnlog.logging.Logger, task):
-        match task:
+    def instruct_update_data(
+        self, db: Session, logger: cmnlog.logging.Logger, task: DirectOrderTask
+    ):
+        match task.cmdstr:
             case ScrOrder.DB_ORGANIZE_SYNC | ScrOrder.DB_ORGANIZE_DAYS:
                 logger.info(f"{get_filename()} db organize start")
                 self.start_db_organize(db, cmdstr=task)
@@ -136,6 +148,6 @@ class ParseProc:
 
 
 class ParseInfo:
-    def __init__(self, id, proc):
+    def __init__(self, id: int, proc: Process):
         self.id = id
         self.proc = proc
