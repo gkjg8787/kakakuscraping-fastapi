@@ -510,10 +510,13 @@ def startParse(db: Session, url: str, item_id, fname: str, logger=None) -> None:
         gp = get_parse_data(fname, url_id, url)
     except FileNotFoundError as e:
         logprint(f"{type(e)} fname={fname}, url_id={url_id}, url={url}", True, logger)
+        return
     except AttributeError as e:
-        logprint(f"{type(e)} parse_type={type(gp)}, {e}", True, logger)
+        logprint(f"{type(e)} url={url}, {e}", True, logger)
+        return
     except Exception as e:
         logprint(f"{e}", True, logger)
+        return
     if gp is None:
         logprint("ERROR UNSUPPORTED URL", True, logger)
         return
