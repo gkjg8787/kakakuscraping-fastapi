@@ -31,8 +31,9 @@ def ctrlbackserver(cmd: SystemCtrlBtnName):
 
 def is_auto_start_backserver():
     conf = get_auto_startup_backserver()
-    if "auto" in conf and conf["auto"]:
-        return True
+    for k in conf.keys():
+        if k.lower() == "auto" and conf[k]:
+            return True
     return False
 
 
