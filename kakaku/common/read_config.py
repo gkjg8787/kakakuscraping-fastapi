@@ -103,3 +103,7 @@ def get_auto_update_online_store_cycle_time():
 
 def get_default_shipping_prefecture_name():
     return settings.DEFAULT_SHIPPING_PREFECTURE
+
+
+def get_auto_startup_backserver():
+    return settings.AUTO_STARTUP_BACKSERVER

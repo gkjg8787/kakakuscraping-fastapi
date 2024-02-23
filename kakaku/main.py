@@ -8,7 +8,10 @@ from routers import (
     calcitemcomb,
     admin,
 )
-
+from parameter_parser.admin import ProcCtrlForm
+from template_value.admin import BackServerCtrl
+from common.filter_name import SystemCtrlBtnName
+from common.read_config import get_auto_startup_backserver
 
 app = FastAPI()
 
@@ -18,6 +21,33 @@ app.include_router(users.router)
 app.include_router(search.router)
 app.include_router(calcitemcomb.router)
 app.include_router(admin.router)
+
+
+def ctrlbackserver(cmd: SystemCtrlBtnName):
+    pcf = ProcCtrlForm(system_ctrl_btn=cmd.value)
+    bsc = BackServerCtrl(pcf)
+    bsc.action()
+
+
+def is_auto_start_backserver():
+    conf = get_auto_startup_backserver()
+    if "auto" in conf and conf["auto"]:
+        return True
+    return False
+
+
+@app.on_event("startup")
+async def startup_event():
+    if not is_auto_start_backserver():
+        return
+    ctrlbackserver(cmd=SystemCtrlBtnName.STARTUP)
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    if not is_auto_start_backserver():
+        return
+    ctrlbackserver(cmd=SystemCtrlBtnName.STOP)
 
 
 @app.get("/")
