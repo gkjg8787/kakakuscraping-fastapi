@@ -13,7 +13,7 @@ def getParser(filepath, url_id, date, url):
     fp = open(filepath, encoding="utf-8")
     parsed_url = urlparse(url)
     supdict = get_support_url()
-    if "sruugaya" in supdict and supdict["surugaya"] == parsed_url.netloc:
+    if "surugaya" in supdict and supdict["surugaya"] == parsed_url.netloc:
         return surugaya_html_parse.SurugayaParse(fp, url_id, date, url)
 
     if "netoff" in supdict and supdict["netoff"] == parsed_url.netloc:
