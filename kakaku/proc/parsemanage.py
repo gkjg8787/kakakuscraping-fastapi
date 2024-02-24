@@ -120,7 +120,7 @@ class ParseProc:
         match task.cmdstr:
             case ScrOrder.DB_ORGANIZE_SYNC | ScrOrder.DB_ORGANIZE_DAYS:
                 logger.info(f"{get_filename()} db organize start")
-                self.start_db_organize(db, cmdstr=task)
+                self.start_db_organize(db, cmdstr=task.cmdstr)
                 logger.info(f"{get_filename()} db organize end")
                 return
             case ScrOrder.UPDATE_ONLINE_STORE_POSTAGE:
