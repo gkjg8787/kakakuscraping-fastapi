@@ -11,6 +11,7 @@ from sqlalchemy import (
     func,
     between,
     and_,
+    case,
 )
 
 from sqlalchemy.sql import expression as exp
@@ -1427,13 +1428,21 @@ class UrlQuery:
 
     @classmethod
     def get_url_and_item_comb_list_in_local_time(cls, db: Session, filter: dict):
-        isactive = get_act_filter(filter)
-
-        url_uniq = select(PriceLog.url_id.distinct().label("url_id"), PriceLog.uniqname)
-        if isactive:
-            url_uniq = url_uniq.join(
-                UrlInItem, UrlInItem.url_id == PriceLog.url_id
-            ).where(UrlInItem.active == isactive.value)
+        url_uniq = select(
+            PriceLog.url_id,
+            case(
+                (
+                    func.length(func.trim(PriceLog.uniqname)) == 0,
+                    (
+                        select(PriceLog.uniqname)
+                        .where(PriceLog.url_id == PriceLog.url_id)
+                        .order_by(func.length(func.trim(PriceLog.uniqname)).desc())
+                        .limit(1)
+                    ),
+                ),
+                else_=PriceLog.uniqname,
+            ).label("uniqname"),
+        ).group_by(PriceLog.url_id)
         url_uniq = url_uniq.cte("url_uniq")
 
         stmt = (
@@ -1451,6 +1460,7 @@ class UrlQuery:
             .join(url_uniq, Url.url_id == url_uniq.c.url_id, isouter=True)
             .join(Item, UrlInItem.item_id == Item.item_id, isouter=True)
         )
+        isactive = get_act_filter(filter)
         if isactive:
             stmt = stmt.where(UrlInItem.active == isactive.value)
         stmt = cls.__set_urlsort_filter(filter, stmt)

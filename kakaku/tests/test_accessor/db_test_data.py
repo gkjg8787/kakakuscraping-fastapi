@@ -280,6 +280,107 @@ def add_data_set_1_plus_store(db):
     add_data_store(db)
 
 
+def add_data_of_multiple_uniqname_one_item(db):
+    item_list = [
+        {"item_id": 1, "name": "one_item"},
+    ]
+    url_list = [
+        {"url_id": 1, "urlpath": SURUGAYA_OTHER_GEDOSENKI},
+    ]
+    urlinitem_list = [
+        {"item_id": 1, "url_id": 1, "active": "True"},
+    ]
+    insert_item_dict_list(db, item_list=item_list)
+    insert_url_dict_list(db, url_list=url_list)
+    insert_urlinitem_dict_list(db, urlinitem_list=urlinitem_list)
+
+
+def add_data_set_2(db):
+    add_data_of_multiple_uniqname_one_item(db)
+    pricelog_list = [
+        {
+            "url_id": 1,
+            "created_at": dbtimeTodatetime("2023-08-22 10:00:00"),
+            "uniqname": "one_item",
+            "usedprice": 1500,
+            "newprice": -1,
+            "taxin": True,
+            "onsale": False,
+            "salename": None,
+            "issuccess": True,
+            "trendrate": 0,
+            "storename": SURUGAYA,
+        },
+        {
+            "url_id": 1,
+            "created_at": dbtimeTodatetime("2023-08-21 10:01:00"),
+            "uniqname": "one_other_item_name",
+            "usedprice": 1200,
+            "newprice": -1,
+            "taxin": True,
+            "onsale": False,
+            "salename": None,
+            "issuccess": True,
+            "trendrate": 0.177,
+            "storename": SURUGAYA,
+        },
+    ]
+    insert_pricelog_dict_list_sync(db, pldict_list=pricelog_list)
+
+
+def add_data_set_3(db):
+    add_data_of_multiple_uniqname_one_item(db)
+    pricelog_list = [
+        {
+            "url_id": 1,
+            "created_at": dbtimeTodatetime("2023-08-22 10:00:00"),
+            "uniqname": "  ",
+            "usedprice": 1500,
+            "newprice": -1,
+            "taxin": True,
+            "onsale": False,
+            "salename": None,
+            "issuccess": True,
+            "trendrate": 0,
+            "storename": SURUGAYA,
+        },
+        {
+            "url_id": 1,
+            "created_at": dbtimeTodatetime("2023-08-21 10:01:00"),
+            "uniqname": "one_other_item_name",
+            "usedprice": 1200,
+            "newprice": -1,
+            "taxin": True,
+            "onsale": False,
+            "salename": None,
+            "issuccess": True,
+            "trendrate": 0.177,
+            "storename": SURUGAYA,
+        },
+    ]
+    insert_pricelog_dict_list_sync(db, pldict_list=pricelog_list)
+
+
+def add_data_set_4(db):
+    add_data_of_multiple_uniqname_one_item(db)
+    pricelog_list = [
+        {
+            "url_id": 1,
+            "created_at": dbtimeTodatetime("2023-08-22 10:00:00"),
+            "uniqname": "  ",
+            "usedprice": 1500,
+            "newprice": -1,
+            "taxin": True,
+            "onsale": False,
+            "salename": None,
+            "issuccess": True,
+            "trendrate": 0,
+            "storename": SURUGAYA,
+        },
+    ]
+    insert_pricelog_dict_list_sync(db, pldict_list=pricelog_list)
+
+
 def add_data_store(db):
     storename_list = [
         {"store_id": 1, "storename": SURUGAYA},
