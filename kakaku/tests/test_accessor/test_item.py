@@ -837,66 +837,6 @@ def test_get_url_and_item_comb_list_no_data_filter_usort_itemid_desc(test_db):
     delete_item_model(test_db)
 
 
-def test_get_url_and_item_comb_list_get_one_from_multiple_uniqname(test_db):
-    add_data_set_2(test_db)
-    filter_dict = {}
-    results = UrlQuery.get_url_and_item_comb_list_in_local_time(
-        test_db, filter=filter_dict
-    )
-    assert len(results) == 1
-    res_dic: dict[int, int] = {}
-    for res in results:
-        dic = {k: y for k, y in res._mapping.items()}
-        url_id = int(dic["url_id"])
-        if url_id in res_dic:
-            assert url_id not in res_dic
-        else:
-            res_dic[url_id] = 1
-            assert dic["uniqname"] == "one_item"
-        continue
-    delete_item_model(test_db)
-
-
-def test_get_url_and_item_comb_list_get_a_non_blank_from_multiple_uniqname(test_db):
-    add_data_set_3(test_db)
-    filter_dict = {}
-    results = UrlQuery.get_url_and_item_comb_list_in_local_time(
-        test_db, filter=filter_dict
-    )
-    assert len(results) == 1
-    res_dic: dict[int, int] = {}
-    for res in results:
-        dic = {k: y for k, y in res._mapping.items()}
-        url_id = int(dic["url_id"])
-        if url_id in res_dic:
-            assert url_id not in res_dic
-        else:
-            res_dic[url_id] = 1
-            assert dic["uniqname"] == "one_other_item_name"
-        continue
-    delete_item_model(test_db)
-
-
-def test_get_url_and_item_comb_list_get_a_blank_from_one_uniqname(test_db):
-    add_data_set_4(test_db)
-    filter_dict = {}
-    results = UrlQuery.get_url_and_item_comb_list_in_local_time(
-        test_db, filter=filter_dict
-    )
-    assert len(results) == 1
-    res_dic: dict[int, int] = {}
-    for res in results:
-        dic = {k: y for k, y in res._mapping.items()}
-        url_id = int(dic["url_id"])
-        if url_id in res_dic:
-            assert url_id not in res_dic
-        else:
-            res_dic[url_id] = 1
-            assert str(dic["uniqname"]).strip() == ""
-        continue
-    delete_item_model(test_db)
-
-
 def test_get_storename_newest_data_no_data(test_db):
     store_id = 0
     filter_dict = {filter_name.FilterQueryName.EX_STORE.value: store_id}

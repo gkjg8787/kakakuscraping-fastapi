@@ -1429,20 +1429,9 @@ class UrlQuery:
     @classmethod
     def get_url_and_item_comb_list_in_local_time(cls, db: Session, filter: dict):
         url_uniq = select(
-            PriceLog.url_id,
-            case(
-                (
-                    func.length(func.trim(PriceLog.uniqname)) == 0,
-                    (
-                        select(PriceLog.uniqname)
-                        .where(PriceLog.url_id == PriceLog.url_id)
-                        .order_by(func.length(func.trim(PriceLog.uniqname)).desc())
-                        .limit(1)
-                    ),
-                ),
-                else_=PriceLog.uniqname,
-            ).label("uniqname"),
-        ).group_by(PriceLog.url_id)
+            PriceLog.url_id.distinct().label("url_id"),
+            PriceLog.uniqname.label("uniqname"),
+        )
         url_uniq = url_uniq.cte("url_uniq")
 
         stmt = (

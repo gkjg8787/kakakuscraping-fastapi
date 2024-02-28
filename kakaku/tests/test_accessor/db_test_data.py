@@ -314,7 +314,7 @@ def add_data_set_2(db):
         {
             "url_id": 1,
             "created_at": dbtimeTodatetime("2023-08-21 10:01:00"),
-            "uniqname": "one_other_item_name",
+            "uniqname": "other",
             "usedprice": 1200,
             "newprice": -1,
             "taxin": True,

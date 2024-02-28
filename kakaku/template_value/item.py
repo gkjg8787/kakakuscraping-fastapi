@@ -1041,13 +1041,36 @@ class UrlListContext(BaseTemplateValue):
     def __init__(self, db: Session, ufq: ppi.UrlListFilterQuery):
         fd = ufq.get_filter_dict()
         super().__init__(
-            res=UrlQuery.get_url_and_item_comb_list_in_local_time(db, filter=fd),
+            res=[],
             actstslist=ppi.get_actstslist(fd),
             fquery=fd,
             urlSortList=ppi.get_url_sort_list(fd),
         )
+        self.res = self.create_url_list(res=UrlQuery.get_url_and_item_comb_list_in_local_time(db, filter=fd))
         self.res_length = len(self.res)
 
+    def create_url_list(self, res):
+        results :dict[int, dict] = {}
+        for r in res:
+            d = dict(r._mapping.items())
+            url_id = int(d["url_id"])
+            if url_id in results:
+                results[url_id] = self.get_column_with_valid_uniqname(cur_dict=results[url_id], new_dict=d)
+            else:
+                results[url_id] = d
+        return [v for v in results.values()]
+    
+    def get_column_with_valid_uniqname(self, cur_dict :dict, new_dict :dict) -> dict:
+        if not cur_dict["uniqname"]:
+            return new_dict
+        if not new_dict["uniqname"]:
+            return cur_dict
+        cur_u = str(cur_dict["uniqname"]).strip()
+        new_u = str(new_dict["uniqname"]).strip()
+        if len(cur_u) >= len(new_u):
+            return cur_dict
+        else:
+            return new_dict
 
 class ExtractStoreItemListContext(BaseTemplateValue):
     res: List
