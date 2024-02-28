@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, status, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
@@ -13,7 +15,17 @@ from template_value.admin import BackServerCtrl
 from common.filter_name import SystemCtrlBtnName
 from common.read_config import get_auto_startup_backserver
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    if is_auto_start_backserver():
+        ctrlbackserver(cmd=SystemCtrlBtnName.STARTUP)
+    yield
+    if is_auto_start_backserver():
+        ctrlbackserver(cmd=SystemCtrlBtnName.STOP)
+
+
+app = FastAPI(lifespan=lifespan)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -35,20 +47,6 @@ def is_auto_start_backserver():
         if k.lower() == "auto" and conf[k]:
             return True
     return False
-
-
-@app.on_event("startup")
-async def startup_event():
-    if not is_auto_start_backserver():
-        return
-    ctrlbackserver(cmd=SystemCtrlBtnName.STARTUP)
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    if not is_auto_start_backserver():
-        return
-    ctrlbackserver(cmd=SystemCtrlBtnName.STOP)
 
 
 @app.get("/")
