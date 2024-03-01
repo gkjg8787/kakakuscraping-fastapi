@@ -3,7 +3,20 @@ from downloader import download_html as dl
 from html_parser import (
     bookoff_html_parse,
     surugaya_html_parse,
+    netoff_html_parse,
 )
+
+
+def test_netoff_dl_and_parse():
+    url = "https://www.netoff.co.jp/detail/0013601421"
+    title = "ポケモン　スカーレット"
+    retb, text = dl.getUrlHtml(url=url)
+    assert retb == True
+    assert len(text) > 0
+    bk = netoff_html_parse.NetoffParse(text, id=1, date="2023-01-01 00:00:00", url=url)
+    ret = bk.getItems()
+    for r in ret:
+        print(r.getOrderedDict())
 
 
 def test_bookoff_dl_and_parse():

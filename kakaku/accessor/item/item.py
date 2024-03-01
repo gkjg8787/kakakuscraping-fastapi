@@ -1354,6 +1354,16 @@ class UrlQuery:
         db.commit()
 
     @classmethod
+    def update_url_active_by_url_id(cls, db: Session, url_id: int, isactive: UrlActive):
+        stmt = (
+            update(UrlInItem)
+            .where(UrlInItem.url_id == url_id)
+            .values(active=isactive.value)
+        )
+        db.execute(stmt)
+        db.commit()
+
+    @classmethod
     def update_url_active_all_by_item_id(
         cls, db: Session, item_id: int, isactive: UrlActive
     ) -> None:

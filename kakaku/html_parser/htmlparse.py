@@ -203,8 +203,8 @@ class ParseItems(metaclass=ABCMeta):
     def getItems(self):
         return ()
 
-    def trimStr(self, text):
-        table = str.maketrans({"\u3000": "", "\n": ""})
+    def trimStr(self, text: str):
+        table = str.maketrans({"\u3000": "", "\r": "", "\n": "", "\t": " "})
         return text.translate(table).strip()
 
     def hasPostage(self) -> bool:
@@ -218,3 +218,6 @@ class ParseItems(metaclass=ABCMeta):
 
     def getShopIDInfo(self) -> dict[str, ParseShopIDInfo] | None:
         return None
+
+    def isDeleted(self) -> bool:
+        return False

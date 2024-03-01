@@ -12,15 +12,28 @@ DEFAULT_STORENAME = "ネットオフ"
 
 class NetoffParse(htmlparse.ParseItems):
     def __init__(self, fp, id, date, url):
-        self.soup = BeautifulSoup(fp, "html.parser", from_encoding="utf-8")
+        soup = BeautifulSoup(fp, "html.parser", from_encoding="utf-8")
         self.iteminfo = htmlparse.ParseItemInfo()
         self.iteminfo.id = id
         self.iteminfo.timeStamp = date
         self.iteminfo.url = url
         self.iteminfo.storename = DEFAULT_STORENAME
-        self.parseItem(self.soup, self.iteminfo)
+        self.isdeleted = self.confirm_item_deletion(soup)
+        if self.isdeleted:
+            return
+        self.parseItem(soup, self.iteminfo)
 
-    def parseItem(self, soup, iteminfo):
+    def confirm_item_deletion(self, soup: BeautifulSoup):
+        ret = soup.select(r"div.fs16")
+        if not ret:
+            return False
+        for div in ret:
+            m = re.search(r"対象商品の情報は削除しました", div.text)
+            if m:
+                return True
+        return False
+
+    def parseItem(self, soup: BeautifulSoup, iteminfo: htmlparse.ParseItemInfo):
         iteminfo.isSuccess = self.parseSuccess(soup)
         if not iteminfo.isSuccess:
             return
@@ -31,7 +44,7 @@ class NetoffParse(htmlparse.ParseItems):
         self.parsePrice(soup, iteminfo)
         self.parseOnSale(soup, iteminfo)
 
-    def parseSuccess(self, soup):
+    def parseSuccess(self, soup: BeautifulSoup):
         q = r".titleArea"
         elem = soup.select(q)
         if len(elem) == 0:
@@ -41,21 +54,21 @@ class NetoffParse(htmlparse.ParseItems):
             return False
         return True
 
-    def existZaiko(self, soup):
+    def existZaiko(self, soup: BeautifulSoup):
         q = r".iStock"
         elem = soup.select(q)
         if len(elem) == 0:
             return False
         return True
 
-    def parseTitle(self, soup):
+    def parseTitle(self, soup: BeautifulSoup):
         q = r".descriptionIn h2"
         elem = soup.select(q)
-        ptn = r'<h2>(<span class="free_shipping_red">送料無料</span>)?\t\t([\s\S]+)(<span)'
+        ptn = r'<h2>(<span class="free_shipping_red">送料無料</span>)?([\s\S]+)(<span)'
         m = re.findall(ptn, self.trimStr(str(elem[0])))
         return m[0][1]
 
-    def parsePrice(self, soup, iteminfo):
+    def parsePrice(self, soup: BeautifulSoup, iteminfo: htmlparse.ParseItemInfo):
         q = r".descriptionIn"
         elem = soup.select(q)
         # if not self.isUsed(elem): return
@@ -83,7 +96,7 @@ class NetoffParse(htmlparse.ParseItems):
 
         return False
 
-    def parseOnSale(self, soup, iteminfo):
+    def parseOnSale(self, soup: BeautifulSoup, iteminfo: htmlparse.ParseItemInfo):
         q = r".itemInfo .sale_balloon"
         elem = soup.select(q)
         if len(elem) == 0:
@@ -94,6 +107,9 @@ class NetoffParse(htmlparse.ParseItems):
 
     def getItems(self):
         return (self.iteminfo,)
+
+    def isDeleted(self) -> bool:
+        return self.isdeleted
 
 
 class NetoffDeliveryParse:

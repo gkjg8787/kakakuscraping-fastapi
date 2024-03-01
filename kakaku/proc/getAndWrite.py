@@ -10,6 +10,7 @@ from accessor.item import (
     NewestQuery,
     ItemQuery,
     UrlQuery,
+    UrlActive,
 )
 from accessor import store
 from html_parser import (
@@ -31,7 +32,7 @@ def deleteTempFile(fname):
         os.remove(fname)
 
 
-def logprint(text, isError, logger=None):
+def logprint(text: str, isError: bool, logger=None):
     if logger is None:
         print(text)
         return
@@ -271,17 +272,6 @@ def update_itemsprice(db: Session, pricedatadict: Dict, pricelog_list: List):
     upsert_pricelog(db, pldict=pldict, newest_pricelog=newest_pricelog)
 
 
-def get_now_db_datetime():
-    dt_now = datetime.datetime.utcnow()
-    date = dt_now.replace(microsecond=0)
-    return date
-
-
-def get_parse_data(fname, url_id, url):
-    date = get_now_db_datetime()
-    return gethtmlparse.getParser(fname, url_id, date, url)
-
-
 def create_online_postage_dict_list(
     db: Session, pstorepos: htmlparse.ParseStorePostage
 ):
@@ -504,23 +494,52 @@ def update_makepure_postage_shop_list(db: Session, parseitems: htmlparse.ParseIt
         store.DailyOnlineShopInfoQuery.add_all(db=db, add_list=add_list)
 
 
+def inactive_url(db: Session, url_id: int):
+    UrlQuery.update_url_active_by_url_id(
+        db=db, url_id=url_id, isactive=UrlActive.INACTIVE
+    )
+
+
+def get_now_db_datetime():
+    dt_now = datetime.datetime.utcnow()
+    date = dt_now.replace(microsecond=0)
+    return date
+
+
+def get_parse_data(fname, url_id, url):
+    date = get_now_db_datetime()
+    return gethtmlparse.getParser(fname, url_id, date, url)
+
+
 def startParse(db: Session, url: str, item_id, fname: str, logger=None) -> None:
     url_id = UrlQuery.add_url(db, urlpath=url)
     try:
         gp = get_parse_data(fname, url_id, url)
     except FileNotFoundError as e:
-        logprint(f"{type(e)} fname={fname}, url_id={url_id}, url={url}", True, logger)
+        logprint(
+            text=f"{type(e)} fname={fname}, url_id={url_id}, url={url}",
+            isError=True,
+            logger=logger,
+        )
         return
     except AttributeError as e:
-        logprint(f"{type(e)} url={url}, {e}", True, logger)
+        logprint(text=f"{type(e)} url={url}, {e}", isError=True, logger=logger)
         return
     except Exception as e:
-        logprint(f"{e}", True, logger)
+        logprint(text=f"{e}", isError=True, logger=logger)
         return
     if gp is None:
-        logprint("ERROR UNSUPPORTED URL", True, logger)
+        logprint(text="ERROR UNSUPPORTED URL", isError=True, logger=logger)
         return
-    update_itemsprices(db=db, parseitems=gp, item_id=item_id, url_id=url_id)
-    update_online_storepostage(db=db, parseitems=gp)
-    update_makepure_postage_shop_list(db=db, parseitems=gp)
+    if gp.isDeleted():
+        logprint(
+            text=f"Item has been removed. inactive the url. url_id={url_id}, url={url}",
+            isError=False,
+            logger=logger,
+        )
+        inactive_url(db=db, url_id=url_id)
+    else:
+        update_itemsprices(db=db, parseitems=gp, item_id=item_id, url_id=url_id)
+        update_online_storepostage(db=db, parseitems=gp)
+        update_makepure_postage_shop_list(db=db, parseitems=gp)
     deleteTempFile(fname)

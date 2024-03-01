@@ -5,11 +5,12 @@ from html_parser import (
     netoff_html_parse,
     bookoff_html_parse,
     geo_html_parse,
+    htmlparse,
 )
 from common.read_config import get_support_url
 
 
-def getParser(filepath, url_id, date, url):
+def getParser(filepath, url_id, date, url) -> htmlparse.ParseItems | None:
     fp = open(filepath, encoding="utf-8")
     parsed_url = urlparse(url)
     supdict = get_support_url()
