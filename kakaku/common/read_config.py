@@ -107,3 +107,7 @@ def get_default_shipping_prefecture_name():
 
 def get_auto_startup_backserver():
     return settings.AUTO_STARTUP_BACKSERVER
+
+
+def get_itemcomb_price_margin():
+    return settings.ITEMCOMB_PRICE_MARGIN

@@ -2,7 +2,7 @@ import os
 import requests
 
 url = (
-    "https://github.com/gkjg8787/Go-ItemCombSum/releases/download/v0.1.0/Go-ItemCombSum"
+    "https://github.com/gkjg8787/Go-ItemCombSum/releases/download/v0.2.0/Go-ItemCombSum"
 )
 
 

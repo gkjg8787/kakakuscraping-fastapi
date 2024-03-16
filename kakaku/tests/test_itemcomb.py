@@ -74,8 +74,16 @@ def assert_searchcomb_result(a: dict, r: dict):
             raise ValueError(f"v is tupple k={k}, v={v}")
 
 
-def test_searchcomb_1(loginit):
+def test_searchcomb_1(loginit, mocker):
     testcase = itemcomb_test_data.item_list_case_1
+    return_dict = {
+        "type": "fix",
+        "value": "250",
+        "min-value": "250",
+    }
+    m = mocker.patch(
+        "itemcomb.sumitemcomb_adapt.get_itemcomb_price_margin", return_value=return_dict
+    )
     ret = sic_ada.start_searchcomb(
         storeconf=testcase[STORECONF],
         itemlist=testcase[ITEMLIST],
@@ -84,8 +92,16 @@ def test_searchcomb_1(loginit):
     assert_searchcomb_result(testcase[RESULT], ret)
 
 
-def test_searchcomb_2(loginit):
+def test_searchcomb_2(loginit, mocker):
     testcase = itemcomb_test_data.item_list_case_2
+    return_dict = {
+        "type": "fix",
+        "value": "250",
+        "min-value": "250",
+    }
+    m = mocker.patch(
+        "itemcomb.sumitemcomb_adapt.get_itemcomb_price_margin", return_value=return_dict
+    )
     ret = sic_ada.start_searchcomb(
         storeconf=testcase[STORECONF],
         itemlist=testcase[ITEMLIST],
@@ -94,8 +110,16 @@ def test_searchcomb_2(loginit):
     assert_searchcomb_result(testcase[RESULT], ret)
 
 
-def test_searchcomb_3(loginit):
+def test_searchcomb_3(loginit, mocker):
     testcase = itemcomb_test_data.item_list_case_3
+    return_dict = {
+        "type": "fix",
+        "value": "250",
+        "min-value": "250",
+    }
+    m = mocker.patch(
+        "itemcomb.sumitemcomb_adapt.get_itemcomb_price_margin", return_value=return_dict
+    )
     ret = sic_ada.start_searchcomb(
         storeconf=testcase[STORECONF],
         itemlist=testcase[ITEMLIST],
@@ -104,8 +128,16 @@ def test_searchcomb_3(loginit):
     assert_searchcomb_result(testcase[RESULT], ret)
 
 
-def test_searchcomb_4(loginit):
+def test_searchcomb_4(loginit, mocker):
     testcase = itemcomb_test_data.item_list_case_4
+    return_dict = {
+        "type": "fix",
+        "value": "250",
+        "min-value": "250",
+    }
+    m = mocker.patch(
+        "itemcomb.sumitemcomb_adapt.get_itemcomb_price_margin", return_value=return_dict
+    )
     ret = sic_ada.start_searchcomb(
         storeconf=testcase[STORECONF],
         itemlist=testcase[ITEMLIST],
@@ -114,8 +146,16 @@ def test_searchcomb_4(loginit):
     assert_searchcomb_result(testcase[RESULT], ret)
 
 
-def test_searchcomb_5(loginit):
+def test_searchcomb_5(loginit, mocker):
     testcase = itemcomb_test_data.item_list_case_5
+    return_dict = {
+        "type": "fix",
+        "value": "250",
+        "min-value": "250",
+    }
+    m = mocker.patch(
+        "itemcomb.sumitemcomb_adapt.get_itemcomb_price_margin", return_value=return_dict
+    )
     ret = sic_ada.start_searchcomb(
         storeconf=testcase[STORECONF],
         itemlist=testcase[ITEMLIST],
@@ -124,8 +164,160 @@ def test_searchcomb_5(loginit):
     assert_searchcomb_result(testcase[RESULT], ret)
 
 
-def test_searchcomb_6_heavy(loginit):
+def test_searchcomb_6_heavy(loginit, mocker):
     testcase = itemcomb_test_data.item_list_case_6
+    return_dict = {
+        "type": "fix",
+        "value": "250",
+        "min-value": "250",
+    }
+    m = mocker.patch(
+        "itemcomb.sumitemcomb_adapt.get_itemcomb_price_margin", return_value=return_dict
+    )
+    ret = sic_ada.start_searchcomb(
+        storeconf=testcase[STORECONF],
+        itemlist=testcase[ITEMLIST],
+        exec_type=sic_ada.get_exec_itemcomb(),
+    )
+    assert_searchcomb_result(testcase[RESULT], ret)
+
+
+def test_searchcomb_7_fix_margin_0(loginit, mocker):
+    testcase = itemcomb_test_data.item_list_case_7
+    return_dict = {
+        "type": "fix",
+        "value": "0",
+        "min-value": "250",
+    }
+    m = mocker.patch(
+        "itemcomb.sumitemcomb_adapt.get_itemcomb_price_margin", return_value=return_dict
+    )
+    ret = sic_ada.start_searchcomb(
+        storeconf=testcase[STORECONF],
+        itemlist=testcase[ITEMLIST],
+        exec_type=sic_ada.get_exec_itemcomb(),
+    )
+    assert_searchcomb_result(testcase[RESULT], ret)
+
+
+def test_searchcomb_8_fix_margin_1(loginit, mocker):
+    testcase = itemcomb_test_data.item_list_case_8
+    return_dict = {
+        "type": "fix",
+        "value": "1",
+        "min-value": "250",
+    }
+    m = mocker.patch(
+        "itemcomb.sumitemcomb_adapt.get_itemcomb_price_margin", return_value=return_dict
+    )
+    ret = sic_ada.start_searchcomb(
+        storeconf=testcase[STORECONF],
+        itemlist=testcase[ITEMLIST],
+        exec_type=sic_ada.get_exec_itemcomb(),
+    )
+    assert_searchcomb_result(testcase[RESULT], ret)
+
+
+def test_searchcomb_9_rate_margin_0_min_0(loginit, mocker):
+    testcase = itemcomb_test_data.item_list_case_7
+    return_dict = {
+        "type": "rate",
+        "value": "0",
+        "min-value": "0",
+    }
+    m = mocker.patch(
+        "itemcomb.sumitemcomb_adapt.get_itemcomb_price_margin", return_value=return_dict
+    )
+    ret = sic_ada.start_searchcomb(
+        storeconf=testcase[STORECONF],
+        itemlist=testcase[ITEMLIST],
+        exec_type=sic_ada.get_exec_itemcomb(),
+    )
+    assert_searchcomb_result(testcase[RESULT], ret)
+
+
+def test_searchcomb_9_rate_margin_0_min_1(loginit, mocker):
+    testcase = itemcomb_test_data.item_list_case_8
+    return_dict = {
+        "type": "rate",
+        "value": "0",
+        "min-value": "1",
+    }
+    m = mocker.patch(
+        "itemcomb.sumitemcomb_adapt.get_itemcomb_price_margin", return_value=return_dict
+    )
+    ret = sic_ada.start_searchcomb(
+        storeconf=testcase[STORECONF],
+        itemlist=testcase[ITEMLIST],
+        exec_type=sic_ada.get_exec_itemcomb(),
+    )
+    assert_searchcomb_result(testcase[RESULT], ret)
+
+
+def test_searchcomb_10_rate_margin_0_01_min_0(loginit, mocker):
+    testcase = itemcomb_test_data.item_list_case_10
+    return_dict = {
+        "type": "rate",
+        "value": "0.01",
+        "min-value": "0",
+    }
+    m = mocker.patch(
+        "itemcomb.sumitemcomb_adapt.get_itemcomb_price_margin", return_value=return_dict
+    )
+    ret = sic_ada.start_searchcomb(
+        storeconf=testcase[STORECONF],
+        itemlist=testcase[ITEMLIST],
+        exec_type=sic_ada.get_exec_itemcomb(),
+    )
+    assert_searchcomb_result(testcase[RESULT], ret)
+
+
+def test_searchcomb_11_rate_margin_0_1_min_0(loginit, mocker):
+    testcase = itemcomb_test_data.item_list_case_11
+    return_dict = {
+        "type": "rate",
+        "value": "0.1",
+        "min-value": "0",
+    }
+    m = mocker.patch(
+        "itemcomb.sumitemcomb_adapt.get_itemcomb_price_margin", return_value=return_dict
+    )
+    ret = sic_ada.start_searchcomb(
+        storeconf=testcase[STORECONF],
+        itemlist=testcase[ITEMLIST],
+        exec_type=sic_ada.get_exec_itemcomb(),
+    )
+    assert_searchcomb_result(testcase[RESULT], ret)
+
+
+def test_searchcomb_12_rate_margin_0_09_min_500(loginit, mocker):
+    testcase = itemcomb_test_data.item_list_case_11
+    return_dict = {
+        "type": "rate",
+        "value": "0.09",
+        "min-value": "500",
+    }
+    m = mocker.patch(
+        "itemcomb.sumitemcomb_adapt.get_itemcomb_price_margin", return_value=return_dict
+    )
+    ret = sic_ada.start_searchcomb(
+        storeconf=testcase[STORECONF],
+        itemlist=testcase[ITEMLIST],
+        exec_type=sic_ada.get_exec_itemcomb(),
+    )
+    assert_searchcomb_result(testcase[RESULT], ret)
+
+
+def test_searchcomb_13_rate_margin_0_09_min_499(loginit, mocker):
+    testcase = itemcomb_test_data.item_list_case_10
+    return_dict = {
+        "type": "rate",
+        "value": "0.09",
+        "min-value": "499",
+    }
+    m = mocker.patch(
+        "itemcomb.sumitemcomb_adapt.get_itemcomb_price_margin", return_value=return_dict
+    )
     ret = sic_ada.start_searchcomb(
         storeconf=testcase[STORECONF],
         itemlist=testcase[ITEMLIST],

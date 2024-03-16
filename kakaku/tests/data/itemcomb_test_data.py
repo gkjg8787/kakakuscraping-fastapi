@@ -90,7 +90,11 @@ item_list_case_3 = {
         {"itemname": "耳をすませば", "storename": "函館美原", "price": "2850"},
         {"itemname": "耳をすませば", "storename": "いわき平", "price": "2880"},
         {"itemname": "耳をすませば", "storename": "うねめ通り", "price": "3011"},
-        {"itemname": "帰ってきたドラえもん", "storename": "うねめ通り", "price": "2211"},
+        {
+            "itemname": "帰ってきたドラえもん",
+            "storename": "うねめ通り",
+            "price": "2211",
+        },
     ],
     "storeconf": storeconf,
     "result": {
@@ -248,6 +252,108 @@ item_list_case_6 = {
             "items": [{"itemname": "B", "price": 2480}],
             "postage": 350,
             "sum_pos_out": 2480,
+        },
+    },
+}
+item_list_case_7 = {
+    "itemlist": [
+        {"itemname": "item01", "storename": "storeA", "price": 500},
+        {"itemname": "item01", "storename": "storeB", "price": 1001},
+        {"itemname": "item02", "storename": "storeA", "price": 1200},
+        {"itemname": "item02", "storename": "storeB", "price": 1000},
+    ],
+    "storeconf": {
+        "storeA": [{"boundary": "0<=", "postage": "500"}],
+        "storeB": [{"boundary": "2000>", "postage": "500"}],
+    },
+    "result": {
+        "sum_pos_in": 2200,
+        "sum_postage": 500,
+        "storeA": {
+            "items": [
+                {"itemname": "item01", "price": 500},
+                {"itemname": "item02", "price": 1200},
+            ],
+            "postage": 500,
+            "sum_pos_out": 1700,
+        },
+    },
+}
+item_list_case_8 = {
+    "itemlist": [
+        {"itemname": "item01", "storename": "storeA", "price": 500},
+        {"itemname": "item01", "storename": "storeB", "price": 1001},
+        {"itemname": "item02", "storename": "storeA", "price": 1200},
+        {"itemname": "item02", "storename": "storeB", "price": 1000},
+    ],
+    "storeconf": {
+        "storeA": [{"boundary": "0<=", "postage": "500"}],
+        "storeB": [{"boundary": "2000>", "postage": "500"}],
+    },
+    "result": {
+        "sum_pos_in": 2001,
+        "sum_postage": 0,
+        "storeB": {
+            "items": [
+                {"itemname": "item01", "price": 1001},
+                {"itemname": "item02", "price": 1000},
+            ],
+            "postage": 0,
+            "sum_pos_out": 2001,
+        },
+    },
+}
+item_list_case_10 = {
+    "itemlist": [
+        {"itemname": "item01", "storename": "storeA", "price": 5000},
+        {"itemname": "item01", "storename": "storeB", "price": 6000},
+        {"itemname": "item02", "storename": "storeA", "price": 12000},
+        {"itemname": "item02", "storename": "storeB", "price": 10000},
+    ],
+    "storeconf": {
+        "storeA": [{"boundary": "0<=", "postage": "500"}],
+        "storeB": [{"boundary": "16000>", "postage": "700"}],
+    },
+    "result": {
+        "sum_pos_in": 16200,
+        "sum_postage": 1200,
+        "storeA": {
+            "items": [
+                {"itemname": "item01", "price": 5000},
+            ],
+            "postage": 500,
+            "sum_pos_out": 5000,
+        },
+        "storeB": {
+            "items": [
+                {"itemname": "item02", "price": 10000},
+            ],
+            "postage": 700,
+            "sum_pos_out": 10000,
+        },
+    },
+}
+item_list_case_11 = {
+    "itemlist": [
+        {"itemname": "item01", "storename": "storeA", "price": 5000},
+        {"itemname": "item01", "storename": "storeB", "price": 6000},
+        {"itemname": "item02", "storename": "storeA", "price": 12000},
+        {"itemname": "item02", "storename": "storeB", "price": 10000},
+    ],
+    "storeconf": {
+        "storeA": [{"boundary": "0<=", "postage": "500"}],
+        "storeB": [{"boundary": "16000>", "postage": "700"}],
+    },
+    "result": {
+        "sum_pos_in": 16000,
+        "sum_postage": 0,
+        "storeB": {
+            "items": [
+                {"itemname": "item01", "price": 6000},
+                {"itemname": "item02", "price": 10000},
+            ],
+            "postage": 0,
+            "sum_pos_out": 16000,
         },
     },
 }

@@ -1,8 +1,45 @@
 import re
+from dataclasses import dataclass
 from .sumitem import SumItem, Store, SelectItem, StoreOperator
 
 
-def createStoreCatalog(storeconf):
+class PriceComparitionMargin:
+    margintype: str
+    marginvalue: str
+    minmargin: str
+
+    def __init__(self, options_dict: dict):
+        if "type" not in options_dict:
+            self.margintype = "fix"
+        if "fix" == options_dict["type"] or "rate" == options_dict["type"]:
+            self.margintype = options_dict["type"]
+        if "value" in options_dict:
+            if self.margintype == "fix" and int(options_dict["value"]) >= 0:
+                self.marginvalue = options_dict["value"]
+            elif self.margintype == "rate" and float(options_dict["value"]) >= 0:
+                self.marginvalue = options_dict["value"]
+        if "min-value" in options_dict and int(options_dict["min-value"]) >= 0:
+            self.minmargin = options_dict["min-value"]
+
+    def get_margin(self, price: int) -> int:
+        if self.margintype == "fix":
+            return int(self.marginvalue)
+        if self.margintype == "rate":
+            margin = float(price) * float(self.marginvalue)
+            if int(margin) > int(self.minmargin):
+                return int(margin)
+            return int(self.minmargin)
+        return 0
+
+
+@dataclass
+class SearchcombCommand:
+    storeconf: dict
+    itemlist: list[dict]
+    options: PriceComparitionMargin
+
+
+def createStoreCatalog(storeconf: dict):
     storecatalog: list[Store] = []
     pattern = r"([0-9]*)([<|>]=?)"
     comp = re.compile(pattern)
@@ -25,7 +62,7 @@ def createStoreCatalog(storeconf):
     return storecatalog
 
 
-def printStoreCatalog(storeconf):
+def printStoreCatalog(storeconf: dict):
     stca = createStoreCatalog(storeconf)
     for st in stca:
         print("---{}---".format(st.getName()))
@@ -35,7 +72,7 @@ def printStoreCatalog(storeconf):
         print("set price={} => postage={}".format(8100, st.getPostage(8100)))
 
 
-def createSelectItem(item):
+def createSelectItem(item: dict):
     return SelectItem(item["itemname"], item["storename"], item["price"])
 
 
@@ -61,7 +98,7 @@ def makeComb(ary1, *args):
     return retary
 
 
-def getStore(stca, name):
+def getStore(stca: list[Store], name: str):
     for s in stca:
         if name == s.getName():
             return s
@@ -69,7 +106,9 @@ def getStore(stca, name):
 
 
 # 送料込みで高いものを排除
-def removeHighPriceItem(stca, ngrp, itemlist):
+def removeHighPriceItem(
+    stca: list[Store], ngrp: list, itemlist: list[dict], pcm: PriceComparitionMargin
+):
     posin_mingrp = []
     MARGIN_PRICE = 250
     for ptn in ngrp:
@@ -93,14 +132,16 @@ def removeHighPriceItem(stca, ngrp, itemlist):
                 continue
             # 送料込みの最安値よりも基本価格が高いものは追加しない
             # 閾値の近くだと複数のアイテム選択時に送料込みで逆転する場合があるため余裕を持たせる
-            if int(mindict["mval"]) + MARGIN_PRICE >= int(itemlist[i]["price"]):
+            if int(mindict["mval"]) + pcm.get_margin(int(mindict["mval"])) >= int(
+                itemlist[i]["price"]
+            ):
                 ary.append(i)
         newngrp.append(ary)
     return newngrp
 
 
 # アイテム名でグループ分けしてインデックス配列を作成
-def createItemPtn(itemlist):
+def createItemPtn(itemlist: list[dict]):
     ngrp = {}
     for i, item in enumerate(itemlist):
         if item["itemname"] in ngrp.keys():
@@ -111,12 +152,12 @@ def createItemPtn(itemlist):
 
 
 # @stop_watch
-def createBulkBuy(itemlist, storeconf):
+def createBulkBuy(cmd: SearchcombCommand):
     bulk: list[SumItem] = []
     # ws = wantItemSet(itemlist)
-    stca = createStoreCatalog(storeconf)
-    itemptn = createItemPtn(itemlist)
-    argary = removeHighPriceItem(stca, itemptn, itemlist)
+    stca = createStoreCatalog(cmd.storeconf)
+    itemptn = createItemPtn(cmd.itemlist)
+    argary = removeHighPriceItem(stca, itemptn, cmd.itemlist, cmd.options)
     # ary1 = [i for i in range(len(itemlist))]
     # argary = [ary1 for i in range(len(ws))]
     # mc = makeComb(ary1, *argary)
@@ -126,7 +167,7 @@ def createBulkBuy(itemlist, storeconf):
         for ind in comb:
             # if ptn.existItemName(itemlist[ind]['itemname']):
             #    break
-            item = createSelectItem(itemlist[ind])
+            item = createSelectItem(cmd.itemlist[ind])
             ptn.addItem(item)
         # if ptn.getItemlen() == len(ws):
         bulk.append(ptn)
@@ -138,12 +179,12 @@ def wantItemSet(itemlist):
     return set(lret)
 
 
-def saitekiPrice(itemlist, storeconf):
+def saitekiPrice(cmd: SearchcombCommand):
     retdict = {}
-    ws = wantItemSet(itemlist)
+    ws = wantItemSet(cmd.itemlist)
     retdict["ws_len"] = len(ws)
     # for i in ws: print(i)
-    bulk = createBulkBuy(itemlist, storeconf)
+    bulk = createBulkBuy(cmd)
     retdict["bulk_len"] = len(bulk)
     cheapest = None
     bestprice = -1
@@ -162,12 +203,12 @@ def saitekiPrice(itemlist, storeconf):
     return retdict
 
 
-def searchcomb(storeconf, itemlist):
-    if len(storeconf) == 0:
+def searchcomb(cmd: SearchcombCommand):
+    if len(cmd.storeconf) == 0:
         return {"errmsg": "no storeconf"}
-    if len(itemlist) == 0:
+    if len(cmd.itemlist) == 0:
         return {"errmsg": "no itemlist"}
-    res = saitekiPrice(itemlist, storeconf)
+    res = saitekiPrice(cmd)
     if res["lowest_sum"] is None:
         return {}
     return res["lowest_sum"].getdict()

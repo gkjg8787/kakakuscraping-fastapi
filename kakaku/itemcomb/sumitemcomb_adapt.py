@@ -17,6 +17,7 @@ from accessor.store import StoreQuery
 from common.read_config import (
     get_exec_itemcomb,
     get_srcdir,
+    get_itemcomb_price_margin,
 )
 from common import cmnlog
 
@@ -102,17 +103,48 @@ def storeconfToStrStoreConf(storeconf: dict):
     return storeconf
 
 
+def get_command_options() -> list[str]:
+    conf = get_itemcomb_price_margin()
+    result: list[str] = []
+    if "type" not in conf:
+        return []
+    if "fix" == conf["type"]:
+        result.extend(["--margin-type", "fix"])
+        if "value" in conf and int(conf["value"]) >= 0:
+            result.extend(["--margin-value", f'{conf["value"]}'])
+    elif "rate" == conf["type"]:
+        result.extend(["--margin-type", "rate"])
+        if "value" in conf and float(conf["value"]) >= 0:
+            result.extend(["--margin-value", f'{conf["value"]}'])
+        if "min-value" in conf and int(conf["min-value"]) >= 0:
+            result.extend(["--min-margin", f'{conf["min-value"]}'])
+    return result
+
+
+def call_searchcomb(storeconf: dict, itemlist: list[dict]):
+    return sumitemcomb.searchcomb(
+        sumitemcomb.SearchcombCommand(
+            storeconf=storeconf,
+            itemlist=itemlist,
+            options=sumitemcomb.PriceComparitionMargin(get_itemcomb_price_margin()),
+        )
+    )
+
+
 def start_searchcomb_subprocess(storeconf: dict, itemlist: list[dict]):
     base_path = str(get_srcdir())
     logger = getLogger()
     cmd = str(Path(base_path, SUMITEMCOMB_BINARY))
     if not os.path.isfile(cmd):
         logger.warning(f"not exist cmd={cmd}")
-        return sumitemcomb.searchcomb(storeconf, itemlist)
+        return call_searchcomb(storeconf=storeconf, itemlist=itemlist)
 
     strstconf = storeconfToStrStoreConf(storeconf)
+    cmdline = [cmd, json.dumps(strstconf), json.dumps(itemlist)]
+    cmdopts = get_command_options()
+    cmdline.extend(cmdopts)
     p = subprocess.run(
-        [cmd, json.dumps(strstconf), json.dumps(itemlist)],
+        cmdline,
         encoding="utf-8",
         capture_output=True,
     )
@@ -125,7 +157,7 @@ def start_searchcomb_subprocess(storeconf: dict, itemlist: list[dict]):
 
 def start_searchcomb(storeconf: dict, itemlist: list[dict], exec_type: str):
     if str(exec_type).lower() != EXEC_BIN_TYPE.lower():
-        return sumitemcomb.searchcomb(storeconf, itemlist)
+        return call_searchcomb(storeconf=storeconf, itemlist=itemlist)
     else:
         return start_searchcomb_subprocess(storeconf, itemlist)
 
