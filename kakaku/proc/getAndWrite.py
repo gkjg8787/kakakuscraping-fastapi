@@ -364,6 +364,7 @@ def equal_dbdata_and_online_terms(dbdata: dict, parsedata: htmlparse.ParseStoreP
             and terms.postage == int(dbdata["postage"])
             and parsedata.campaign_msg == dbdata["campaign_msg"]
             and posd.InsertProcType.ITEM_UPDATE.value == int(dbdata["insert_proc_type"])
+            and isLocalToday(utcTolocaltime(dbdata["created_at"]))
         ):
             return True
     return False

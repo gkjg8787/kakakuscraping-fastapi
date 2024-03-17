@@ -475,6 +475,7 @@ class OnlineStoreQuery:
                 OnlineStorePostage.postage,
                 OnlineStorePostage.campaign_msg,
                 OnlineStorePostage.insert_proc_type,
+                OnlineStorePostage.created_at.label("created_at"),
             )
             .select_from(OnlineStore)
             .join(
