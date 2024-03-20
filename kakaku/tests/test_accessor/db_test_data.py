@@ -1,6 +1,4 @@
-from datetime import datetime, timedelta
-
-from dateutil.relativedelta import relativedelta
+from datetime import datetime, timedelta, timezone
 
 from common.util import dbtimeTodatetime
 from tests.test_sqlalchemy import (
@@ -419,8 +417,8 @@ def add_analysis_data_set_1(db):
         {"item_id": 3, "url_id": 3, "active": "True"},
         {"item_id": 3, "url_id": 4, "active": "True"},
     ]
-    one_week_ago = datetime.utcnow() + timedelta(days=-7)
-    three_days_ago = datetime.utcnow() + timedelta(days=-3)
+    one_week_ago = datetime.now(timezone.utc) + timedelta(days=-7)
+    three_days_ago = datetime.now(timezone.utc) + timedelta(days=-3)
 
     pricelog_list = [
         {
@@ -555,7 +553,7 @@ def add_analysis_data_set_1(db):
         },
         {
             "url_id": 1,
-            "created_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
             "uniqname": "one_item",
             "usedprice": 1400,
             "newprice": -1,
@@ -568,7 +566,7 @@ def add_analysis_data_set_1(db):
         },
         {
             "url_id": 2,
-            "created_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
             "uniqname": "two_item",
             "usedprice": 1000,
             "newprice": -1,
@@ -581,7 +579,7 @@ def add_analysis_data_set_1(db):
         },
         {
             "url_id": 2,
-            "created_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
             "uniqname": "two_item2",
             "usedprice": 1600,
             "newprice": -1,
@@ -594,7 +592,7 @@ def add_analysis_data_set_1(db):
         },
         {
             "url_id": 3,
-            "created_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
             "uniqname": "three_item",
             "usedprice": 3300,
             "newprice": -1,
@@ -607,7 +605,7 @@ def add_analysis_data_set_1(db):
         },
         {
             "url_id": 4,
-            "created_at": datetime.utcnow(),
+            "created_at": datetime.now(timezone.utc),
             "uniqname": "four_item",
             "usedprice": 3600,
             "newprice": -1,
@@ -822,7 +820,7 @@ def add_data_online_store_postage(db):
 
 
 def add_online_store_data_set_of_pricelog(db):
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     pricelog_list = [
         {
             "url_id": 1,

@@ -1,6 +1,6 @@
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 import difflib
 
 from accessor.read_sqlalchemy import Session
@@ -202,7 +202,7 @@ def update_after_confirming(
     add_db_data_list: list[dict] = []
     update_db_data_list: list[dict] = []
     delete_db_data_set: set[int] = []
-    nowdate = datetime.utcnow()
+    nowdate = datetime.now(timezone.utc)
     for prefpos in update_data.prefectures_postage:
         pref_id = prefinfo.get_id(prefpos.name)
         if prefpos.get_postage() is None:
@@ -296,7 +296,9 @@ def update_after_confirming(
 
 def needs_update_by_campaign_msg(db_list: list[dict], prefinfo: PrefInfo):
     fix_ptn = re.compile(r"([1-9][0-9]+)円?(未満)\s+?([1-9][0-9]+)円?[^～]")
-    range_ptn = re.compile(r"([1-9][0-9]+)円?(未満)\s+?([1-9][0-9]+)円?～([1-9][0-9]+)円?")
+    range_ptn = re.compile(
+        r"([1-9][0-9]+)円?(未満)\s+?([1-9][0-9]+)円?～([1-9][0-9]+)円?"
+    )
     for db_data in db_list:
         if not db_data["campaign_msg"]:
             continue

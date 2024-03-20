@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from accessor.item.item import AnalysisQuery
 from common.util import utcTolocaltime
@@ -35,9 +35,9 @@ def test_get_itemlog_start_and_end_from_day(test_db):
     db_test_data.add_analysis_data_set_1(test_db)
     result = AnalysisQuery.get_itemlog_period_datetime_from_day(test_db, days=days)
     print(result)
-    one_week_ago = datetime.utcnow() + timedelta(days=days)
+    one_week_ago = datetime.now(timezone.utc) + timedelta(days=days)
     assert result[0][0].date() == one_week_ago.date()
-    assert result[0][1].date() == datetime.utcnow().date()
+    assert result[0][1].date() == datetime.now(timezone.utc).date()
 
     delete_item_model(test_db)
 
@@ -45,8 +45,8 @@ def test_get_itemlog_start_and_end_from_day(test_db):
 def test_get_itemlog_by_period_date(test_db):
     days = -7
     db_test_data.add_analysis_data_set_1(test_db)
-    one_week_ago_jst = utcTolocaltime(datetime.utcnow() + timedelta(days=days))
-    now_jst = utcTolocaltime(datetime.utcnow())
+    one_week_ago_jst = utcTolocaltime(datetime.now(timezone.utc) + timedelta(days=days))
+    now_jst = utcTolocaltime(datetime.now(timezone.utc))
     result = AnalysisQuery.get_itemlog_by_period_date(
         test_db, start_jst=one_week_ago_jst.date(), end_jst=now_jst.date()
     )

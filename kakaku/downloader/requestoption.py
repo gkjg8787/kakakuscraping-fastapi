@@ -62,7 +62,7 @@ class RequestOpt:
         return RequestOpt.__header
 
     def updateCookieJar(self, cookiejar):
-        nd = datetime.datetime.utcnow()
+        nd = datetime.datetime.now(datetime.timezone.utc)
         oyl = nd + datetime.timedelta(days=365)
         isUpdate = False
         for c in cookiejar:

@@ -502,7 +502,7 @@ def inactive_url(db: Session, url_id: int):
 
 
 def get_now_db_datetime():
-    dt_now = datetime.datetime.utcnow()
+    dt_now = datetime.datetime.now(datetime.timezone.utc)
     date = dt_now.replace(microsecond=0)
     return date
 

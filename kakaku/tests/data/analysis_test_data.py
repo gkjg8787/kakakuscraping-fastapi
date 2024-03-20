@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 SURUGAYA = "駿河屋"
 SURUGAYA_CHIBA = "駿河屋千葉中央店"
@@ -14,10 +14,10 @@ class ResultItem:
         self._mapping = result
 
 
-one_week_ago = datetime.utcnow() + timedelta(days=-7)
-three_days_ago = datetime.utcnow() + timedelta(days=-3)
-one_days_ago = datetime.utcnow() + timedelta(days=-1)
-now = datetime.utcnow()
+one_week_ago = datetime.now(timezone.utc) + timedelta(days=-7)
+three_days_ago = datetime.now(timezone.utc) + timedelta(days=-3)
+one_days_ago = datetime.now(timezone.utc) + timedelta(days=-1)
+now = datetime.now(timezone.utc)
 
 
 def id4_2days_set(date1: datetime, date2: datetime):

@@ -1,5 +1,5 @@
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 from model.server import (
     DBVersion,
@@ -69,7 +69,7 @@ class OrganizeLogQuery:
         log = db.scalar(is_log)
         if log:
             log.status = status
-            log.created_at = datetime.utcnow()
+            log.created_at = datetime.now(timezone.utc)
         else:
             db.add(OrganizeLog(name=name, status=status))
             db.commit()

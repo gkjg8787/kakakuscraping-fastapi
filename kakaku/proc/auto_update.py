@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import re
 from typing import Optional
 from enum import Enum, unique
@@ -66,7 +66,7 @@ class DailyLogOrganizer:
             self.setDatetime()
 
     def setDatetime(self):
-        self.starttime = datetime.utcnow()
+        self.starttime = datetime.now(timezone.utc)
 
 
 class TwoDigitHourFormat:
@@ -120,7 +120,7 @@ class TwoDigitHourFormat:
         convert_tomorrow: bool = False,
     ):
         results: list[datetime] = []
-        n = cmn_util.utcTolocaltime(datetime.utcnow())
+        n = cmn_util.utcTolocaltime(datetime.now(timezone.utc))
         if convert_tomorrow:
             n = n + timedelta(days=1)
         ns = n.strftime("%Y%m%d ")
@@ -145,7 +145,7 @@ class TwoDigitHourFormat:
             ]
         reqs: list[AutoUpdateSchedule] = []
         near = None
-        ln = cmn_util.utcTolocaltime(datetime.utcnow())
+        ln = cmn_util.utcTolocaltime(datetime.now(timezone.utc))
         for ult in timer_list:
             if ln < ult:
                 if not near or near > ult:
@@ -255,7 +255,7 @@ class ItemAutoUpdateTimer:
         return
 
     def check_update_time(self, db: Session):
-        lt = cmn_util.utcTolocaltime(datetime.utcnow())
+        lt = cmn_util.utcTolocaltime(datetime.now(timezone.utc))
         updated_time = None
         next_time = lt
         for uplt in sorted(self.updatelocaltime, reverse=True):
@@ -370,7 +370,7 @@ class DailyOnlineStoreUpdate:
         return
 
     def check_update_time(self, db: Session):
-        lt = cmn_util.utcTolocaltime(datetime.utcnow())
+        lt = cmn_util.utcTolocaltime(datetime.now(timezone.utc))
         updated_time = None
         next_time = lt
         for uplt in sorted(self.updatelocaltime, reverse=True):

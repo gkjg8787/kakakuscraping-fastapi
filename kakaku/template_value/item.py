@@ -1,5 +1,5 @@
 from typing import List, Dict, Optional, Type
-from datetime import datetime
+from datetime import datetime, timezone
 import copy
 
 
@@ -248,7 +248,7 @@ class ItemDetailContext(BaseTemplateValue):
         if tpid == filter_name.ItemDetailTimePeriodName.TWO_WEEK.id:
             return 14
 
-        now = cm_util.utcTolocaltime(datetime.utcnow())
+        now = cm_util.utcTolocaltime(datetime.now(timezone.utc))
         if tpid == filter_name.ItemDetailTimePeriodName.ONE_MONTH.id:
             date = now + relativedelta(months=-1)
             delta = now - date
@@ -1046,21 +1046,25 @@ class UrlListContext(BaseTemplateValue):
             fquery=fd,
             urlSortList=ppi.get_url_sort_list(fd),
         )
-        self.res = self.create_url_list(res=UrlQuery.get_url_and_item_comb_list_in_local_time(db, filter=fd))
+        self.res = self.create_url_list(
+            res=UrlQuery.get_url_and_item_comb_list_in_local_time(db, filter=fd)
+        )
         self.res_length = len(self.res)
 
     def create_url_list(self, res):
-        results :dict[int, dict] = {}
+        results: dict[int, dict] = {}
         for r in res:
             d = dict(r._mapping.items())
             url_id = int(d["url_id"])
             if url_id in results:
-                results[url_id] = self.get_column_with_valid_uniqname(cur_dict=results[url_id], new_dict=d)
+                results[url_id] = self.get_column_with_valid_uniqname(
+                    cur_dict=results[url_id], new_dict=d
+                )
             else:
                 results[url_id] = d
         return [v for v in results.values()]
-    
-    def get_column_with_valid_uniqname(self, cur_dict :dict, new_dict :dict) -> dict:
+
+    def get_column_with_valid_uniqname(self, cur_dict: dict, new_dict: dict) -> dict:
         if not cur_dict["uniqname"]:
             return new_dict
         if not new_dict["uniqname"]:
@@ -1071,6 +1075,7 @@ class UrlListContext(BaseTemplateValue):
             return cur_dict
         else:
             return new_dict
+
 
 class ExtractStoreItemListContext(BaseTemplateValue):
     res: List
@@ -1453,7 +1458,7 @@ class EditShippingConditionResult(BaseTemplateValue):
                 boundary = BoundaryConverter.convert_boundary_to_jtext(sps.boundary)
                 created_at = sps.created_at
                 if not created_at:
-                    created_at = cm_util.utcTolocaltime(datetime.utcnow())
+                    created_at = cm_util.utcTolocaltime(datetime.now(timezone.utc))
                 terms = TermsForListContext(
                     terms_id=sps.terms_id,
                     temrs_text=boundary,
@@ -1786,7 +1791,7 @@ class OnlineStoreCopyContext(BaseTemplateValue):
         res: list[m_store.StorePostage] = []
         store_id_to_name: dict[int, str] = {}
         store_id_to_created_at: dict[int, str] = {}
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         for storename, sp_list in postage_dict.items():
             if not sp_list:
                 continue

@@ -20,14 +20,14 @@ def dbtimeTodatetime(dbtime: Union[str, datetime]) -> datetime:
 
 def isLocalToday(targetlocaltime) -> bool:
     _targettime = dbtimeTodatetime(targetlocaltime)
-    today = utcTolocaltime(datetime.utcnow()).date()
+    today = utcTolocaltime(datetime.now(timezone.utc)).date()
     if _targettime.date() == today:
         return True
     return False
 
 
 def isToday(targettime: datetime) -> bool:
-    today = datetime.utcnow().date()
+    today = datetime.now(timezone.utc).date()
     if targettime.date() == today:
         return True
     return False

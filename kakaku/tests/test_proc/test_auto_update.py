@@ -1,6 +1,6 @@
 import sys
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -37,7 +37,7 @@ def test_dailyLogOriganizer_run_yesterday(mocker):
     m = mocker.patch("proc.auto_update.scm.sendTask", return_value=0)
     logger = cmnlog.getLogger(cmnlog.LogName.MANAGER)
     dlo = auto_update.DailyLogOrganizer(logger=logger)
-    dlo.starttime = datetime.utcnow() - timedelta(days=1)
+    dlo.starttime = datetime.now(timezone.utc) - timedelta(days=1)
     start = dlo.starttime
     assert not cmn_util.isLocalToday(cmn_util.utcTolocaltime(dlo.starttime))
     dlo.run()

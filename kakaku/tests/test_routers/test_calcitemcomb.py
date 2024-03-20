@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi.testclient import TestClient
 
 from main import app
@@ -42,7 +42,7 @@ def add_item_and_store(db):
     urlinitem_dict = {"item_id": 1, "url_id": 1, "active": "True"}
     pldict = {
         "url_id": 1,
-        "created_at": datetime.utcnow(),
+        "created_at": datetime.now(timezone.utc),
         "uniqname": "test_uniq_name",
         "usedprice": 1500,
         "newprice": -1,

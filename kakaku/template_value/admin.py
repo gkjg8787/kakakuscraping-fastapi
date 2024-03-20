@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 import subprocess
 
@@ -88,7 +88,7 @@ class DashBoardTemplate(BaseTemplateValue):
 
     @classmethod
     def is_update_for_today_complete(cls, timer_str_list: list[str]):
-        now = utcTolocaltime(datetime.utcnow()).strftime("%H:%M")
+        now = utcTolocaltime(datetime.now(timezone.utc)).strftime("%H:%M")
         if len(timer_str_list) == 0:
             return False
         if now > sorted(timer_str_list, reverse=True)[0]:

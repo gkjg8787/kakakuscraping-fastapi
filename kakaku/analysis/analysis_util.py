@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from dateutil.relativedelta import relativedelta
 
 from common import (
@@ -13,7 +13,7 @@ def get_days_of_AnalysisTermId(atid: int):
     if atid == filter_name.AnalysisTermName.TWO_WEEK.id:
         return 14
 
-    now = cmn_util.utcTolocaltime(datetime.utcnow())
+    now = cmn_util.utcTolocaltime(datetime.now(timezone.utc))
     if atid == filter_name.AnalysisTermName.ONE_MONTH.id:
         date = now + relativedelta(months=-1)
         delta = now - date

@@ -3,7 +3,7 @@ from enum import Enum, auto
 import argparse
 from typing import List, Dict
 from functools import wraps
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
@@ -218,7 +218,7 @@ def __get_delete_pricelog_2days_list(pricelog_result: List[PriceLog_2days]):
     for k in pricelog_dict.keys():
         if len(pricelog_dict[k]) > MAX_LOG_2DAYS_DATA_CNT:
             delete_target: List[PriceLog_2days] = []
-            yesterday = datetime.utcnow() - timedelta(1)
+            yesterday = datetime.now(timezone.utc) - timedelta(1)
             for pricelog in pricelog_dict[k]:
                 if pricelog.created_at.date() >= yesterday.date():
                     continue

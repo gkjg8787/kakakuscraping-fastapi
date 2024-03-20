@@ -23,43 +23,43 @@ def test_isLocalToday_alchemy_tolocal(test_db):
 
 
 def test_is_today_true():
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     print(f"now={now}")
     assert util.isToday(now)
 
 
 def test_is_today_false_yesterday():
-    yesterday = datetime.utcnow() - timedelta(1)
+    yesterday = datetime.now(timezone.utc) - timedelta(1)
     print(f"yesterday={yesterday}")
     assert not util.isToday(yesterday)
 
 
 def test_is_today_false_2days_ago():
-    two_ago = datetime.utcnow() - timedelta(2)
+    two_ago = datetime.now(timezone.utc) - timedelta(2)
     print(f"2days_ago={two_ago}")
     assert not util.isToday(two_ago)
 
 
 def test_is_local_today_true():
-    now = util.utcTolocaltime(datetime.utcnow())
+    now = util.utcTolocaltime(datetime.now(timezone.utc))
     print(f"now={now}")
     assert util.isLocalToday(now)
 
 
 def test_is_local_today_false_yesterday():
-    yesterday = util.utcTolocaltime(datetime.utcnow() - timedelta(1))
+    yesterday = util.utcTolocaltime(datetime.now(timezone.utc) - timedelta(1))
     print(f"yesterday={yesterday}")
     assert not util.isLocalToday(yesterday)
 
 
 def test_is_local_today_false_2days_ago():
-    two_ago = util.utcTolocaltime(datetime.utcnow() - timedelta(2))
+    two_ago = util.utcTolocaltime(datetime.now(timezone.utc) - timedelta(2))
     print(f"2days_ago={two_ago}")
     assert not util.isLocalToday(two_ago)
 
 
 def test_is_local_today_datetime():
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     utcd = datetime(
         now.year,
         now.month,
