@@ -440,14 +440,14 @@ class NewestQuery:
         storename = cls.get_extract_storename_in_filter(filter)
 
         newest = (
-            select(func.max(utc_to_jst_date_for_query(PriceLog.created_at)))
-            .where(PriceLog.storename == storename)
+            select(func.max(utc_to_jst_date_for_query(PriceLog_2days.created_at)))
+            .where(PriceLog_2days.storename == storename)
             .scalar_subquery()
         )
         newest_data = (
-            select(PriceLog)
-            .where(utc_to_jst_date_for_query(PriceLog.created_at) == newest)
-            .where(PriceLog.storename == storename)
+            select(PriceLog_2days)
+            .where(utc_to_jst_date_for_query(PriceLog_2days.created_at) == newest)
+            .where(PriceLog_2days.storename == storename)
             .cte("newest_data")
         )
         used = (
@@ -1106,12 +1106,12 @@ class ItemQuery:
     @classmethod
     def get_newest_storenames(cls, db: Session):
         max_date = select(
-            func.max(utc_to_jst_date_for_query(PriceLog.created_at))
+            func.max(utc_to_jst_date_for_query(PriceLog_2days.created_at))
         ).scalar_subquery()
         stmt = (
-            select(PriceLog.storename)
-            .where(utc_to_jst_date_for_query(PriceLog.created_at) == max_date)
-            .group_by(PriceLog.storename)
+            select(PriceLog_2days.storename)
+            .where(utc_to_jst_date_for_query(PriceLog_2days.created_at) == max_date)
+            .group_by(PriceLog_2days.storename)
         )
         return db.execute(stmt).all()
 
