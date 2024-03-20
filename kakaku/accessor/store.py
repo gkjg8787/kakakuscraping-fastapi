@@ -701,11 +701,10 @@ class OnlineStoreQuery:
 
 class PrefectureQuery:
     @classmethod
-    def add_all(cls, db: Session, prefname_list: list[str]):
-        for prefname in prefname_list:
-            p = Prefecture(name=prefname)
-            db.add(p)
-        if not prefname_list:
+    def add_all(cls, db: Session, pref_list: list[Prefecture]):
+        for pref in pref_list:
+            db.add(pref)
+        if not pref_list:
             return
         db.commit()
 

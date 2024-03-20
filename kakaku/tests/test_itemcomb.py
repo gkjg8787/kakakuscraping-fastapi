@@ -342,18 +342,20 @@ def test_convert_storename_to_search_storename():
 
 
 def test_prefecture_PrefectureDBSetting_init_setting(test_db):
-    ic_pref.PrefectureDBSetting.init_setting(test_db)
-    ret = ac_store.PrefectureQuery.get_all(test_db)
-    assert len(ret) == len(ic_pref.PrefectureName.get_all_prefecturename()) + 1
-    pref_name_dic: dict[str, int] = {}
-    for pref in ret:
-        pref_name_dic[pref.name] = 1
-        if pref.pref_id == cmn_const_value.NONE_PREF_ID:
-            assert pref.name == ic_pref.PrefectureName.get_country_wide_name()
-            continue
-        assert pref.name in ic_pref.PrefectureName.get_all_prefecturename()
-    assert len(pref_name_dic) == len(ret)
-    delete_online_store_model(test_db)
+    try:
+        ic_pref.PrefectureDBSetting.init_setting(test_db)
+        ret = ac_store.PrefectureQuery.get_all(test_db)
+        assert len(ret) == len(ic_pref.PrefectureName.get_all_prefecturename()) + 1
+        pref_name_dic: dict[str, int] = {}
+        for pref in ret:
+            pref_name_dic[pref.name] = 1
+            if pref.pref_id == cmn_const_value.NONE_PREF_ID:
+                assert pref.name == ic_pref.PrefectureName.get_country_wide_name()
+                continue
+            assert pref.name in ic_pref.PrefectureName.get_all_prefecturename()
+        assert len(pref_name_dic) == len(ret)
+    finally:
+        delete_online_store_model(test_db)
 
 
 def test_surugaya_postage_util_get_shippingResult_success(test_db):
