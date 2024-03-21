@@ -194,7 +194,9 @@ def update_after_confirming(
         update_data = update_data_list[0]
 
     if not update_data.prefectures_postage:
-        logger.debug(f"{get_filename()} no prefectures postage")
+        logger.warning(
+            f"{get_filename()} no prefectures postage, shop_id={update_data.shop_id}, shop_name={update_data.shop_name}"
+        )
         return
     common_fixed_boundary = create_common_fixed_boundary(
         storename_db_dict=db_dict[storename]

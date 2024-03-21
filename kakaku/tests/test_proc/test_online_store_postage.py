@@ -1,23 +1,10 @@
-import sys
 import logging
-
-import pytest
+import io
 
 from common import cmnlog
 from proc import online_store_postage as osp
 from itemcomb import prefecture
 from tests.test_db import test_db
-
-
-@pytest.fixture
-def loginit():
-    logger = logging.getLogger(cmnlog.LogName.MANAGER)
-    h = logging.StreamHandler(stream=sys.stdout)
-    h.setFormatter(logging.Formatter(fmt="%(levelname)s - %(message)s"))
-    logger.setLevel(logging.DEBUG)
-    logger.addHandler(h)
-    yield
-    del logging.Logger.manager.loggerDict[logger.name]
 
 
 def test_get_db_data_by_pref_id_one_list(test_db):
@@ -151,3 +138,32 @@ def test_needs_update_by_campaign_msg_no_list(mocker, test_db):
         db_list=db_dict_list, prefinfo=PrefInfoMock()
     )
     assert ret == True
+
+
+def test_update_after_confirming_no_postage_of_update_data(mocker, test_db):
+    ssi = osp.spu.StoreShippingInfo(
+        res={
+            "shop_name": "test",
+            "url": "test_url",
+            "shop_id": "1",
+            "postage": None,
+        }
+    )
+    logger = cmnlog.getLogger(cmnlog.LogName.MANAGER)
+    logstr = io.StringIO()
+    h = logging.StreamHandler(stream=logstr)
+    h.setFormatter(logging.Formatter(fmt="%(message)s"))
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(h)
+
+    osp.update_after_confirming(
+        db=test_db,
+        storename="test",
+        db_dict={},
+        prefinfo=None,
+        update_data_list=[ssi],
+        logger=logger,
+    )
+    assert "no prefectures postage" in logstr.getvalue()
+    del logging.Logger.manager.loggerDict[logger.name]
+    logstr.close()

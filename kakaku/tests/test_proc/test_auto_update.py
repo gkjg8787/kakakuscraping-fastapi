@@ -22,7 +22,7 @@ def loginit():
     del logging.Logger.manager.loggerDict[logger.name]
 
 
-def test_DailyLogOrganizer_run_today(mocker):
+def test_DailyLogOrganizer_run_today(mocker, loginit):
     m = mocker.patch("proc.auto_update.scm.sendTask", return_value=0)
     logger = cmnlog.getLogger(cmnlog.LogName.MANAGER)
     dlo = auto_update.DailyLogOrganizer(logger=logger)
@@ -33,7 +33,7 @@ def test_DailyLogOrganizer_run_today(mocker):
     assert start == end
 
 
-def test_dailyLogOriganizer_run_yesterday(mocker):
+def test_dailyLogOriganizer_run_yesterday(mocker, loginit):
     m = mocker.patch("proc.auto_update.scm.sendTask", return_value=0)
     logger = cmnlog.getLogger(cmnlog.LogName.MANAGER)
     dlo = auto_update.DailyLogOrganizer(logger=logger)

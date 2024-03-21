@@ -78,7 +78,10 @@ def getPrefecturePostage(tenpo_cd, prefs):
     jsontext = getRawShippingFee(tenpo_cd)
     if not jsontext:
         return None
-    jdict = json.loads(jsontext)
+    try:
+        jdict = json.loads(jsontext)
+    except json.decoder.JSONDecodeError:
+        return None
     if has_list_pref_fee(jdict):
         rets = [searchPrefecturePostage(jdict, pref) for pref in prefs]
     else:

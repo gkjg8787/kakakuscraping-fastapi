@@ -3,8 +3,6 @@ import json
 import time
 import re
 
-from typing import List, Dict
-
 from common import const_value
 from itemcomb.surugaya_postage import create_posdb
 from itemcomb.surugaya_postage import post_surugaya_postage
@@ -36,7 +34,7 @@ class StoreShippingInfo:
     shop_id: int
     prefectures_postage: list[PrefecturePostage]
 
-    def __init__(self, res: Dict):
+    def __init__(self, res: dict):
         self.prefectures_postage = []
         if "shop_name" in res:
             self.shop_name = res["shop_name"]
@@ -48,6 +46,8 @@ class StoreShippingInfo:
             self.set_postages(res["postage"])
 
     def set_postages(self, postages):
+        if not postages:
+            return
         for p in postages:
             prefpos = PrefecturePostage()
             if "national_fee" in p and p["national_fee"]:
@@ -64,6 +64,8 @@ class StoreShippingInfo:
             self.prefectures_postage.append(prefpos)
 
     def get_prefecture_postage(self, prefecture: str):
+        if not self.prefectures_postage:
+            return None
         if (
             len(self.prefectures_postage) == 1
             and self.prefectures_postage[0].name
@@ -78,9 +80,9 @@ class StoreShippingInfo:
 
 
 class ShippingResult:
-    shipping_list: List[StoreShippingInfo] = []
+    shipping_list: list[StoreShippingInfo] = []
 
-    def __init__(self, result: Dict):
+    def __init__(self, result: dict):
         self.shipping_list = list()
         if "result" in result:
             for r in result["result"]:
@@ -253,7 +255,7 @@ def funcstart(
     forced_shop_update: bool = False,
     without_shop_update: bool = False,
     outtype: str = "dict",
-    prefectures: List[str] = ["東京都"],
+    prefectures: list[str] = ["東京都"],
 ):
     checkUpdateShopList(db, forced_shop_update, without_shop_update)
     rdict = getPostage(

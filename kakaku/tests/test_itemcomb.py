@@ -1,5 +1,4 @@
 import sys
-import json
 import logging
 
 import pytest
@@ -365,6 +364,22 @@ def test_surugaya_postage_util_get_shippingResult_success(test_db):
     assert len(sres.get_list()) != 0
     for si in sres.get_list():
         assert 0 != si.get_prefecture_postage(prefectures[0])
+        assert "千葉中央" in si.shop_name
+        break
+    delete_online_store_model(test_db)
+
+
+def test_surugaya_postage_util_get_shippingResult_requests_ng(test_db, mocker):
+    storename = "千葉中央"
+    prefectures = ["東京都"]
+    m = mocker.patch(
+        "itemcomb.surugaya_postage_util.post_surugaya_postage.requests.post",
+        side_effect=spu.post_surugaya_postage.Timeout,
+    )
+    sres = spu.get_shippingResult(test_db, storename=storename, prefectures=prefectures)
+    assert len(sres.get_list()) != 0
+    for si in sres.get_list():
+        assert si.get_prefecture_postage(prefectures[0]) is None
         assert "千葉中央" in si.shop_name
         break
     delete_online_store_model(test_db)
