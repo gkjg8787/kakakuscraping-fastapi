@@ -48,7 +48,6 @@ def createStoreCatalog(storeconf: dict):
         for boundary in storeconf[store]:
             bv = comp.findall(boundary["boundary"])
             if len(bv) == 1:
-                # print('bv=({}, {})'.format(bv[0], bv[1]))
                 ope = StoreOperator.create(bv[0][0], bv[0][1], boundary["postage"])
             elif len(bv) == 2:
                 ope = StoreOperator.createRange(
@@ -105,12 +104,10 @@ def getStore(stca: list[Store], name: str):
     return None
 
 
-# 送料込みで高いものを排除
 def removeHighPriceItem(
     stca: list[Store], ngrp: list, itemlist: list[dict], pcm: PriceComparitionMargin
 ):
     posin_mingrp = []
-    MARGIN_PRICE = 250
     for ptn in ngrp:
         minv = -1
         min_idx = -1
@@ -122,7 +119,6 @@ def removeHighPriceItem(
                 minv = sump
                 min_idx = i
         posin_mingrp.append({"midx": min_idx, "mval": minv})
-    # print('postage include mingrp = {}'.format(posin_mingrp))
     newngrp = []
     for ptn, mindict in zip(ngrp, posin_mingrp):
         ary = []
@@ -130,8 +126,6 @@ def removeHighPriceItem(
             if int(mindict["midx"]) == int(i):
                 ary.append(i)
                 continue
-            # 送料込みの最安値よりも基本価格が高いものは追加しない
-            # 閾値の近くだと複数のアイテム選択時に送料込みで逆転する場合があるため余裕を持たせる
             if int(mindict["mval"]) + pcm.get_margin(int(mindict["mval"])) >= int(
                 itemlist[i]["price"]
             ):
@@ -140,7 +134,6 @@ def removeHighPriceItem(
     return newngrp
 
 
-# アイテム名でグループ分けしてインデックス配列を作成
 def createItemPtn(itemlist: list[dict]):
     ngrp = {}
     for i, item in enumerate(itemlist):
@@ -151,25 +144,17 @@ def createItemPtn(itemlist: list[dict]):
     return list(ngrp.values())
 
 
-# @stop_watch
 def createBulkBuy(cmd: SearchcombCommand):
     bulk: list[SumItem] = []
-    # ws = wantItemSet(itemlist)
     stca = createStoreCatalog(cmd.storeconf)
     itemptn = createItemPtn(cmd.itemlist)
     argary = removeHighPriceItem(stca, itemptn, cmd.itemlist, cmd.options)
-    # ary1 = [i for i in range(len(itemlist))]
-    # argary = [ary1 for i in range(len(ws))]
-    # mc = makeComb(ary1, *argary)
     mc = makeComb(*argary)
     for comb in mc:
         ptn = SumItem(stca)
         for ind in comb:
-            # if ptn.existItemName(itemlist[ind]['itemname']):
-            #    break
             item = createSelectItem(cmd.itemlist[ind])
             ptn.addItem(item)
-        # if ptn.getItemlen() == len(ws):
         bulk.append(ptn)
     return bulk
 
@@ -183,7 +168,6 @@ def saitekiPrice(cmd: SearchcombCommand):
     retdict = {}
     ws = wantItemSet(cmd.itemlist)
     retdict["ws_len"] = len(ws)
-    # for i in ws: print(i)
     bulk = createBulkBuy(cmd)
     retdict["bulk_len"] = len(bulk)
     cheapest = None
@@ -193,13 +177,7 @@ def saitekiPrice(cmd: SearchcombCommand):
         if bestprice == -1 or bestprice > sumprice:
             cheapest = b
             bestprice = sumprice
-        # print('----[{}]----start---'.format(i))
-        # b.printSum()
-        # print('----[{}]-----end----'.format(i))
     retdict["lowest_sum"] = cheapest
-    # print('---best price---')
-    # print('price={}'.format(bestprice))
-    # cheapest.printSum()
     return retdict
 
 

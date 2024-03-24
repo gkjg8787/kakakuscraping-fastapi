@@ -11,7 +11,6 @@ from sqlalchemy import (
     func,
     between,
     and_,
-    case,
 )
 
 from sqlalchemy.sql import expression as exp
