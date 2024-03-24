@@ -5,24 +5,39 @@ from fastapi.testclient import TestClient
 from main import app
 from proc import system_status as syssts
 from proc import get_sys_status
-from accessor.read_sqlalchemy import get_session
+from accessor.read_sqlalchemy import Session, get_session, is_postgre
+from accessor.item.item import NewestQuery
 from common import filter_name
-from tests.test_db import test_db, drop_test_db
 from tests.test_routers.test_common import (
-    RedirectCheckValue,
-    check_redirect,
     is_html,
 )
+
 
 client = TestClient(app)
 prefix = "/admin"
 
 
-def check_status_waittime(jstsname: str, waittime: int = 0):
-    # db = next(get_session())
-    # sysstr = get_sys_status.getSystemStatus(db)
-    # if syssts.SystemStatusToJName.get_jname(sysstr) != jstsname:
-    time.sleep(waittime)
+def is_testable_db(db: Session | None = None):
+    if is_postgre():
+        return False
+    if not db:
+        return False
+    results = NewestQuery.get_raw_newest_data_all(db)
+    if results:
+        return False
+    return True
+
+
+def check_status_waittime(db: Session, jstsname: str, waittime: int = 0):
+    sumtime = 0
+    while True:
+        sysstr = get_sys_status.getSystemStatus(db)
+        if syssts.SystemStatusToJName.get_jname(sysstr) == jstsname:
+            break
+        assert sumtime < waittime
+        sumtime += 1
+        time.sleep(1)
+    time.sleep(1)
     response = client.get(
         f"{prefix}/dashboard/",
     )
@@ -33,8 +48,10 @@ def check_status_waittime(jstsname: str, waittime: int = 0):
 
 
 def test_read_admin_dashboard_stop():
+    test_db = next(get_session())
     check_status_waittime(
-        syssts.SystemStatusToJName.get_jname(syssts.SystemStatus.STOP.name)
+        db=test_db,
+        jstsname=syssts.SystemStatusToJName.get_jname(syssts.SystemStatus.STOP.name),
     )
 
 
@@ -45,7 +62,7 @@ def test_read_admin_dashboard_svchg_no_data():
     assert response.status_code == 422
 
 
-def post_startup_check():
+def post_startup_check(db: Session):
     response = client.post(
         f"{prefix}/dashboard/svchg/",
         data={
@@ -56,13 +73,17 @@ def post_startup_check():
     assert response.status_code == 200
     assert "サーバ状態の更新" in response.text
     check_status_waittime(
-        syssts.SystemStatusToJName.get_jname(syssts.SystemStatus.ACTIVE.name),
+        db=db,
+        jstsname=syssts.SystemStatusToJName.get_jname(syssts.SystemStatus.ACTIVE.name),
         waittime=9,
     )
 
 
 def test_read_admin_dashboard_svchg_startup_and_stop():
-    post_startup_check()
+    test_db = next(get_session())
+    if not is_testable_db(test_db):
+        return
+    post_startup_check(test_db)
 
     response = client.post(
         f"{prefix}/dashboard/svchg/",
@@ -74,12 +95,17 @@ def test_read_admin_dashboard_svchg_startup_and_stop():
     assert response.status_code == 200
     assert "サーバ状態の更新" in response.text
     check_status_waittime(
-        syssts.SystemStatusToJName.get_jname(syssts.SystemStatus.STOP.name), waittime=10
+        db=test_db,
+        jstsname=syssts.SystemStatusToJName.get_jname(syssts.SystemStatus.STOP.name),
+        waittime=5,
     )
 
 
 def test_read_admin_dashboard_svchg_startup_and_restart():
-    post_startup_check()
+    test_db = next(get_session())
+    if not is_testable_db(test_db):
+        return
+    post_startup_check(test_db)
 
     response = client.post(
         f"{prefix}/dashboard/svchg/",
@@ -91,8 +117,9 @@ def test_read_admin_dashboard_svchg_startup_and_restart():
     assert response.status_code == 200
     assert "サーバ状態の更新" in response.text
     check_status_waittime(
-        syssts.SystemStatusToJName.get_jname(syssts.SystemStatus.ACTIVE.name),
-        waittime=15,
+        db=test_db,
+        jstsname=syssts.SystemStatusToJName.get_jname(syssts.SystemStatus.ACTIVE.name),
+        waittime=10,
     )
 
     response = client.post(
