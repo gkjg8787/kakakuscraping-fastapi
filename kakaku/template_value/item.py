@@ -675,11 +675,14 @@ class AddGroupPostContext(BaseTemplateValue):
 
 class EditGroupContext(BaseTemplateValue):
     gfid: int = filter_name.FilterDefault.GID
-    res: List = []
-    groups: List
-    actstslist: List
-    itemSortList: List
-    fquery: Dict
+    other_items: list = []
+    other_items_length :int = 0
+    group_items: list = []
+    group_items_length :int = 0
+    groups: list
+    actstslist: list
+    itemSortList: list
+    fquery: dict
     ZAIKO_CHECKED: str = ""
     GROUPID_NAME: str = filter_name.FilterQueryName.GID.value
     ITEMACT_NAME: str = filter_name.FilterQueryName.ACT.value
@@ -690,8 +693,8 @@ class EditGroupContext(BaseTemplateValue):
     STOCK_VALUE: int = filter_name.FilterOnOff.ON
     MIN_PRICE_RANGE_NAME: str = filter_name.FilterQueryName.PRMIN.value
     MAX_PRICE_RANGE_NAME: str = filter_name.FilterQueryName.PRMAX.value
-    MIN_PRICE_RANGE: Optional[int] = None
-    MAX_PRICE_RANGE: Optional[int] = None
+    MIN_PRICE_RANGE: int | None = None
+    MAX_PRICE_RANGE: int | None = None
 
     def __init__(self, nfqg: ppi.NewestFilterQueryForGroup, db: Session):
         fd = nfqg.get_filter_dict()
@@ -709,10 +712,12 @@ class EditGroupContext(BaseTemplateValue):
                 gid=gid, groups=self.groups
             )
             self.gfid = self.fquery[filter_name.FilterQueryName.GID.value]
-            newest_list = NewestQuery.get_newest_data_for_edit_group(db, filter=fd)
-            self.res = self.get_newest_list_add_seleted(
-                db, newest_list=newest_list, group_id=self.gfid
+            self.other_items = NewestQuery.get_newest_data_for_edit_group(
+                db, filter=fd, group_id=gid
             )
+            self.other_items_length = len(self.other_items)
+            self.group_items = NewestQuery.get_newest_data_of_group(db, group_id=gid)
+            self.group_items_length = len(self.group_items)
 
         if filter_name.FilterQueryName.PRMIN.value in self.fquery:
             self.MIN_PRICE_RANGE = int(
@@ -722,21 +727,6 @@ class EditGroupContext(BaseTemplateValue):
             self.MAX_PRICE_RANGE = int(
                 self.fquery[filter_name.FilterQueryName.PRMAX.value]
             )
-
-    def get_newest_list_add_seleted(self, db: Session, newest_list, group_id: int):
-        gi_list = GroupQuery.get_group_item_by_group_id(db, group_id=group_id)
-        group_item_id_list = [gi.item_id for gi in gi_list]
-        results = []
-        for row in newest_list:
-            dic = {}
-            for k, v in row._mapping.items():
-                dic[k] = v
-                if "item_id" == k and v in group_item_id_list:
-                    dic[templates_string.HTMLOption.CHECKED.value] = (
-                        templates_string.HTMLOption.CHECKED.value
-                    )
-            results.append(dic)
-        return results
 
 
 class UpdateGroupItem:
