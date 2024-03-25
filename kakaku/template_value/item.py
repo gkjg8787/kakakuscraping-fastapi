@@ -676,9 +676,9 @@ class AddGroupPostContext(BaseTemplateValue):
 class EditGroupContext(BaseTemplateValue):
     gfid: int = filter_name.FilterDefault.GID
     other_items: list = []
-    other_items_length :int = 0
+    other_items_length: int = 0
     group_items: list = []
-    group_items_length :int = 0
+    group_items_length: int = 0
     groups: list
     actstslist: list
     itemSortList: list
