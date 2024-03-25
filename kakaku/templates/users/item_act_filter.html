@@ -1,4 +1,4 @@
-<form method="get" action="">
+<form method="get" action="{{ form_action }}">
     状態 : <select name="{{ ITEMACT_NAME }}" onchange="submit(this.form)">
         {% for actsts in actstslist %}
         <option value="{{ actsts.id }}" {{ actsts.selected }}>{{ actsts.text }}</option>

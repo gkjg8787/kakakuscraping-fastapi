@@ -1,4 +1,4 @@
-<form method="get" action="">
+<form method="get" action="{{ form_action }}">
     並び替え : <select name="{{ ITEMSORT_NAME }}" onchange="submit(this.form)">
         {% for isn in itemSortList %}
         <option value="{{ isn.id }}" {{ isn.selected }}>

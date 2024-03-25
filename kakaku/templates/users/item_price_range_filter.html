@@ -1,4 +1,4 @@
-<form method="get" action="">
+<form method="get" action="{{ form_action }}">
     <div class="item_price_range_filter_box">
     価格の範囲 : <input type="number" name="{{ MIN_PRICE_RANGE_NAME }}" value="{{ MIN_PRICE_RANGE }}"> ～ <input type="number" name="{{ MAX_PRICE_RANGE_NAME }}" value="{{ MAX_PRICE_RANGE }}">
     <button type="submit">価格範囲で抽出</button>
