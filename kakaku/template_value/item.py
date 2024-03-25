@@ -713,7 +713,7 @@ class EditGroupContext(BaseTemplateValue):
             )
             self.gfid = self.fquery[filter_name.FilterQueryName.GID.value]
             self.other_items = NewestQuery.get_newest_data_for_edit_group(
-                db, filter=fd, group_id=gid
+                db, filter=fd, ignore_group_id=gid
             )
             self.other_items_length = len(self.other_items)
             self.group_items = NewestQuery.get_newest_data_of_group(db, group_id=gid)

@@ -117,10 +117,12 @@ class NewestQuery:
         return db.execute(stmt).all()
 
     @classmethod
-    def get_newest_data_for_edit_group(cls, db: Session, filter: Dict, group_id: int):
+    def get_newest_data_for_edit_group(
+        cls, db: Session, filter: Dict, ignore_group_id: int
+    ):
         stmt = cls.get_base_select()
         stmt = cls.__set_not_include_group_filter(
-            filter={fqn.GID.value: group_id}, stmt=stmt
+            filter={fqn.GID.value: ignore_group_id}, stmt=stmt
         )
         stmt = cls.__set_act_filter(filter, stmt)
         stmt = cls.__set_in_stock_filter(filter, stmt)
@@ -187,9 +189,7 @@ class NewestQuery:
     def __set_not_include_group_filter(cls, filter: Dict, stmt):
         if fqn.GID.value not in filter.keys() or int(filter[fqn.GID.value]) < 0:
             return stmt
-        stmt = stmt.join(
-            GroupItem, GroupItem.item_id == Item.item_id, isouter=True
-        ).where(
+        stmt = stmt.where(
             Item.item_id.not_in(
                 select(GroupItem.item_id).where(
                     GroupItem.group_id == int(filter[fqn.GID.value])
