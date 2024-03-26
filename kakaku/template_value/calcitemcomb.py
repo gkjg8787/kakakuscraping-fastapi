@@ -93,8 +93,8 @@ class ItemSelectionContext(BaseTemplateValue):
 
 
 class ShippingConditionContext(BaseTemplateValue):
-    item_id_list: List[int] = []
-    store_list: List = []
+    item_id_list: list[int] = []
+    store_list: list = []
     errmsg: str = ""
     POST_ITEM_ID: str = filter_name.TemplatePostName.ITEM_ID.value
     POST_STORENAME: str = filter_name.TemplatePostName.STORE_NAME.value

@@ -91,9 +91,18 @@ def getAndRegistShippingTerms(db: Session, storenames):
 def getAndRegistShippingTermsByItemId(db: Session, itemids: List[int]):
     res = ItemQuery.get_current_storename_list_by_item_id(db, item_id_list=itemids)
     if res is None or len(res) == 0:
-        return {
-            StorePostageResultName.ERROR: itemcomb_error.ItemCombError.NO_STORE_DATA
-        }
+        count = ItemQuery.get_count_of_pricelog_2days_for_today_by_item_id(
+            db, item_id_list=itemids
+        )
+        if not count:
+            return {
+                StorePostageResultName.ERROR: itemcomb_error.ItemCombError.NO_TODAY_LOG
+            }
+        else:
+            return {
+                StorePostageResultName.ERROR: itemcomb_error.ItemCombError.NO_STORE_DATA
+            }
+
     storenames = [t for r in res for t in r]
     return getAndRegistShippingTerms(db, storenames=storenames)
 

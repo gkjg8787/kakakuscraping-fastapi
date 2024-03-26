@@ -20,6 +20,7 @@ from tests.test_sqlalchemy import (
     insert_stores,
     delete_item_and_store_model,
 )
+from itemcomb.itemcomb_error import ItemCombError
 
 client = TestClient(app)
 prefix = "/calcitemcomb"
@@ -33,6 +34,46 @@ def test_read_select_item_price_combination_no_item(test_db):
     assert response.status_code == 200
     is_html(response.text)
     assert "価格計算の対象アイテムの選択" in response.text
+
+
+def add_item_no_log(db):
+    item_dict = {"item_id": 1, "name": "test_item"}
+    insert_item_dict(db, item_dict)
+
+
+def add_item_no_store(db):
+    item_dict = {"item_id": 1, "name": "test_item"}
+    url_dict = {"url_id": 1, "urlpath": SURUGAYA_OTHER_NAUSHIKA}
+    urlinitem_dict = {"item_id": 1, "url_id": 1, "active": "True"}
+    pldict = {
+        "url_id": 1,
+        "created_at": datetime.now(timezone.utc),
+        "uniqname": "test_uniq_name",
+        "usedprice": 1500,
+        "newprice": -1,
+        "taxin": True,
+        "onsale": False,
+        "salename": "",
+        "issuccess": True,
+        "storename": "",
+        "trendrate": 0.0,
+    }
+    nidict = {
+        "item_id": 1,
+        "url_id": 1,
+        "newestprice": 1500,
+        "taxin": True,
+        "onsale": False,
+        "salename": "",
+        "trendrate": 0.0,
+        "storename": "",
+        "lowestprice": 1500,
+    }
+    insert_item_dict(db, item_dict)
+    insert_url(db, url_id=url_dict["url_id"], urlpath=url_dict["urlpath"])
+    insert_urlinitem_dict(db, urlinitem_dict=urlinitem_dict)
+    insert_pricelog_sync(db, pldict=pldict)
+    insert_newestitem_dict(db, nidict=nidict)
 
 
 def add_item_and_store(db):
@@ -91,6 +132,32 @@ def test_read_input_shop_shipping_condition_no_query(test_db):
     is_html(response.text)
     assert "送料条件の入力" in response.text
     assert "アイテムが指定されていません" in response.text
+
+
+def test_read_input_shop_shipping_condition_no_today_log(test_db):
+    add_item_no_log(test_db)
+
+    params = {filter_name.ItemDetailQueryName.ITEMID.value: 1}
+    response = client.get(f"{prefix}/shipping/", params=params)
+    assert response.status_code == 200
+    is_html(response.text)
+    assert "送料条件の入力" in response.text
+    assert ItemCombError.NO_TODAY_LOG.value in response.text
+
+    delete_item_and_store_model(test_db)
+
+
+def test_read_input_shop_shipping_condition_no_store(test_db):
+    add_item_no_store(test_db)
+
+    params = {filter_name.ItemDetailQueryName.ITEMID.value: 1}
+    response = client.get(f"{prefix}/shipping/", params=params)
+    assert response.status_code == 200
+    is_html(response.text)
+    assert "送料条件の入力" in response.text
+    assert ItemCombError.NO_STORE_DATA.value in response.text
+
+    delete_item_and_store_model(test_db)
 
 
 def test_read_input_shop_shipping_condition_exist_store(test_db):

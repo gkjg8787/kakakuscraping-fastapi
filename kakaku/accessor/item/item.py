@@ -1096,8 +1096,23 @@ class ItemQuery:
         return db.execute(stmt).all()
 
     @classmethod
+    def get_count_of_pricelog_2days_for_today_by_item_id(
+        cls, db: Session, item_id_list: list[int]
+    ) -> int:
+        stmt = (
+            select(func.count(PriceLog_2days.log_id))
+            .join(UrlInItem, UrlInItem.url_id == PriceLog_2days.url_id)
+            .where(UrlInItem.item_id.in_(item_id_list))
+            .where(
+                utc_to_jst_date_for_query(PriceLog_2days.created_at)
+                >= get_jst_date_for_query()
+            )
+        )
+        return db.scalar(stmt)
+
+    @classmethod
     def get_current_storename_list_by_item_id(
-        cls, db: Session, item_id_list: List[int]
+        cls, db: Session, item_id_list: list[int]
     ):
         stmt = (
             select(PriceLog_2days.storename)
@@ -1112,7 +1127,6 @@ class ItemQuery:
             .where(PriceLog_2days.storename != "")
             .group_by(PriceLog_2days.storename)
         )
-        # print(stmt)
         return db.execute(stmt).all()
 
     @classmethod

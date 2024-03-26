@@ -318,7 +318,7 @@ class ItemAutoUpdateTimer:
             db,
             syssts_name_list=[
                 SystemStatusLogName.ALL_DATA_UPDATE,
-                SystemStatusLogName.ALL_DATA_UPDATE,
+                SystemStatusLogName.AUTO_ALL_DATA_UPDATE,
             ],
             start_time=start,
             end_time=end,
