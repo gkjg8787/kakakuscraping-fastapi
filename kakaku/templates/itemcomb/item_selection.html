@@ -107,7 +107,13 @@
             <td><input type="checkbox" name="{{ ITEMID_Q_NAME }}" value="{{ row['item_id'] }}"></td>
             <td>{{ row['item_id'] }}</td>
             <td>{{ row['name'] }}</td>
-            <td>{{ row['urlpath'] }}</td>
+            <td>
+                {%if row['urlpath'] | isSupportDomain %}
+                    <a href="{{ row['urlpath']}}" target="_blank" rel="noopener noreferrer">{{ row['urlpath']}}</a>
+                {% else %}    
+                    {{ row['urlpath'] }}
+                {% endif %}
+            </td>
             <td>{{ row['price'] }}円</td>
             <td>{{ row['storename'] }}</td>
             <td>{{ row['created_at'] }}</td>

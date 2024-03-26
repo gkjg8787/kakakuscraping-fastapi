@@ -54,7 +54,13 @@
                 <td><input type="checkbox" name="{{ POST_GROUP_ITEM_LIST }}" value="{{ row['item_id'] }}"  form="group_item_post_form" checked></td>
                 <td>{{ row['item_id'] }}</td>
                 <td>{{ row['name'] }}</td>
-                <td>{{ row['urlpath'] }}</td>
+                <td>
+                {%if row['urlpath'] | isSupportDomain %}
+                    <a href="{{ row['urlpath']}}" target="_blank" rel="noopener noreferrer">{{ row['urlpath']}}</a>
+                {% else %}    
+                    {{ row['urlpath'] }}
+                {% endif %}
+                </td>
                 <td>{{ row['price'] }}円</td>
                 <td>{{ row['storename'] }}</td>
                 <td>{{ row['created_at'] }}</td>
@@ -117,7 +123,13 @@
         <td><input type="checkbox" name="{{ POST_GROUP_ITEM_LIST }}" value="{{ row['item_id'] }}" form="group_item_post_form"></td>
         <td>{{ row['item_id'] }}</td>
         <td>{{ row['name'] }}</td>
-        <td>{{ row['urlpath'] }}</td>
+        <td>
+        {%if row['urlpath'] | isSupportDomain %}
+            <a href="{{ row['urlpath']}}" target="_blank" rel="noopener noreferrer">{{ row['urlpath']}}</a>
+        {% else %}    
+            {{ row['urlpath'] }}
+        {% endif %}
+        </td>
         <td>{{ row['price'] }}円</td>
         <td>{{ row['storename'] }}</td>
         <td>{{ row['created_at'] }}</td>
