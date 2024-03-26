@@ -10,7 +10,11 @@
         </div>
     </div>
     <div class="item_detail">
+        {%- if item.item_url | isSupportDomain %}
+        <a href="{{ item.item_url }}" class="item_url" target="_blank" rel="noopener noreferrer"><div class="item_title">{{ item.title }}</div></a>
+        {%- else %}
         <a href="{{ item.item_url }}" class="item_url"><div class="item_title">{{ item.title }}</div></a>
+        {%- endif %}
         <div class="item_subinfo">    
             <div class="item_lbox">
                 <div class="item_category">{{ item.category }}</div>
@@ -27,10 +31,17 @@
                 <div class="new_price">{{ item.main.new.price_pre_text }}<strong>{{ item.main.new.price }}</strong>{{ item.main.new.price_tail_text }}</div>
                 {%- endif %}
                 {%- if item.makepure %}
-                <a href="{{ item.makepure.url }}" class="makepure_url">
-                    <div class="makepure">マケプレ<strong>{{ item.makepure.price }}</strong></div>
-                    <div class="makepurebiko">{{ item.makepure.biko }}</div>
-                </a>
+                    {%- if item.makepure.url | isSupportDomain %}
+                    <a href="{{ item.makepure.url }}" class="makepure_url" target="_blank" rel="noopener noreferrer">
+                        <div class="makepure">マケプレ<strong>{{ item.makepure.price }}</strong></div>
+                        <div class="makepurebiko">{{ item.makepure.biko }}</div>
+                    </a>
+                    {%- else %}
+                    <a href="{{ item.makepure.url }}" class="makepure_url">
+                        <div class="makepure">マケプレ<strong>{{ item.makepure.price }}</strong></div>
+                        <div class="makepurebiko">{{ item.makepure.biko }}</div>
+                    </a>
+                    {%- endif %}
                 {%- endif %}
             </div>
             <div class="item_btnbox">
