@@ -1018,8 +1018,33 @@ class ItemPurchaseContext(BaseTemplateValue):
         return results_dict.values()
 
 
+class ItemForUrlList(BaseModel):
+    item_id: int
+    name: str
+    act_status: str
+
+
+class UrlInfoForUrlList(BaseModel):
+    url_id: int
+    url: str
+    name: str | None
+    registration_date: datetime
+    created_at: datetime | None
+    itemlist: list[ItemForUrlList] = []
+    item_num: int = 0
+
+    def add_item(self, item: ItemForUrlList):
+        if self.itemlist:
+            if item.item_id in [i.item_id for i in self.itemlist]:
+                return
+            self.itemlist.append(item)
+        else:
+            self.itemlist = [item]
+        self.item_num = len(self.itemlist)
+
+
 class UrlListContext(BaseTemplateValue):
-    res: list
+    res: list[UrlInfoForUrlList]
     res_length: int = 0
     ITEMACT_NAME: str = filter_name.FilterQueryName.ACT.value
     actstslist: list
@@ -1042,29 +1067,60 @@ class UrlListContext(BaseTemplateValue):
         self.res_length = len(self.res)
 
     def create_url_list(self, res):
-        results: dict[int, dict] = {}
+        results: dict[int, UrlInfoForUrlList] = {}
         for r in res:
             d = dict(r._mapping.items())
             url_id = int(d["url_id"])
             if url_id in results:
-                results[url_id] = self.get_column_with_valid_uniqname(
-                    cur_dict=results[url_id], new_dict=d
+                newest = self.get_newest_urlinfo(
+                    cur=results[url_id], new=self.create_urlinfoforurllist(d)
                 )
+                if results[url_id] != newest:
+                    # reinsert to maintain order
+                    results.pop(url_id)
+                    results[url_id] = newest
             else:
-                results[url_id] = d
+                results[url_id] = self.create_urlinfoforurllist(d)
+            if not d["item_id"]:
+                continue
+            results[url_id].add_item(self.create_itemforurllist(d))
         return [v for v in results.values()]
 
-    def get_column_with_valid_uniqname(self, cur_dict: dict, new_dict: dict) -> dict:
-        if not cur_dict["uniqname"]:
-            return new_dict
-        if not new_dict["uniqname"]:
-            return cur_dict
-        cur_u = str(cur_dict["uniqname"]).strip()
-        new_u = str(new_dict["uniqname"]).strip()
-        if len(cur_u) >= len(new_u):
-            return cur_dict
+    def create_urlinfoforurllist(self, d: dict) -> UrlInfoForUrlList:
+        return UrlInfoForUrlList(
+            url_id=int(d["url_id"]),
+            url=d["urlpath"],
+            name=d["uniqname"],
+            registration_date=d["registration_date"],
+            created_at=d["created_at"],
+        )
+
+    def create_itemforurllist(self, d: dict) -> ItemForUrlList | None:
+        if not d["item_id"]:
+            return None
+        return ItemForUrlList(
+            item_id=int(d["item_id"]), name=d["itemname"], act_status=d["active"]
+        )
+
+    def get_newest_urlinfo(
+        self, cur: UrlInfoForUrlList, new: UrlInfoForUrlList
+    ) -> dict:
+        if not cur.created_at:
+            self.move_items(src=cur, dest=new)
+            return new
+        if not new.created_at:
+            return cur
+        if cur.created_at >= new.created_at:
+            return cur
         else:
-            return new_dict
+            self.move_items(src=cur, dest=new)
+            return new
+
+    def move_items(self, src: UrlInfoForUrlList, dest: UrlInfoForUrlList):
+        if not src.item_num:
+            return
+        for i in src.itemlist:
+            dest.add_item(i)
 
 
 class ExtractStoreItemListContext(BaseTemplateValue):

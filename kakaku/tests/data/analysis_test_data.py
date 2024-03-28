@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from .stab_class import DBResult
 
 SURUGAYA = "駿河屋"
 SURUGAYA_CHIBA = "駿河屋千葉中央店"
@@ -7,11 +8,8 @@ BOOKOFF = "ブックオフ"
 GEO = "ゲオ"
 
 
-class ResultItem:
-    _mapping: dict
-
-    def __init__(self, result: dict = {}):
-        self._mapping = result
+class ResultItem(DBResult):
+    pass
 
 
 one_week_ago = datetime.now(timezone.utc) + timedelta(days=-7)

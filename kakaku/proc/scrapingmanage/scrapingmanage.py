@@ -10,7 +10,6 @@ from common.read_config import (
 )
 from proc import (
     sendcmd,
-    updateAllItems,
     manager_util,
     db_organizer,
 )
@@ -26,6 +25,7 @@ from proc.system_status_log import (
 from proc.proc_task import DirectOrderTask
 from accessor.read_sqlalchemy import get_session, Session
 from accessor.server import OrganizeLogQuery
+from accessor.item import UrlQuery
 from itemcomb.prefecture import PrefectureDBSetting
 from .queuemanager import (
     QueueManager,
@@ -93,11 +93,23 @@ def startQueue():
     logger.info(get_filename() + " manager end")
 
 
+def update_all_items(db: Session, dlproc: DlProc):
+    logheader = get_filename()
+    logger = cmnlog.getLogger(cmnlog.LogName.MANAGER)
+    logger.info(logheader + " get UPDATE_ACT_ALL")
+    ret = UrlQuery.get_act_items_url(db)
+    items = [dict(row._mapping.items()) for row in ret]
+    logger.info("{} ACT ITEMS NUM={}".format(logheader, len(items)))
+    for item in items:
+        dlproc.putDlTask(item["urlpath"], item["item_id"])
+    logger.debug(logheader + " put end UPDATE_ACT_ALL")
+
+
 def scrapingURL(task: sendcmd.SendCmd, db: Session):
     global parseproc, dlproc
-    logger = getLogger(cmnlog.LogName.MANAGER)
     match task.cmdstr:
         case sendcmd.ScrOrder.UPDATE:
+            logger = getLogger(cmnlog.LogName.MANAGER)
             logger.info(get_filename() + " get UPDATE")
             SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.DATA_UPDATE)
             dlproc.putDlTask(task.url, task.id)
@@ -106,13 +118,13 @@ def scrapingURL(task: sendcmd.SendCmd, db: Session):
             SystemStatusLogAccess.add(
                 db=db, sysstslog=SystemStatusLogName.AUTO_ALL_DATA_UPDATE
             )
-            updateAllItems.updateAllitems(db, dlproc)
+            update_all_items(db, dlproc)
             return
         case sendcmd.ScrOrder.UPDATE_ACT_ALL:
             SystemStatusLogAccess.add(
                 db=db, sysstslog=SystemStatusLogName.ALL_DATA_UPDATE
             )
-            updateAllItems.updateAllitems(db, dlproc)
+            update_all_items(db, dlproc)
             return
         case sendcmd.ScrOrder.DB_ORGANIZE_SYNC | sendcmd.ScrOrder.DB_ORGANIZE_DAYS:
             SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.DB_ORGANIZE)

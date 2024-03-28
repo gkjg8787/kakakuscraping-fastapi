@@ -19,6 +19,8 @@ def dbtimeTodatetime(dbtime: Union[str, datetime]) -> datetime:
 
 
 def isLocalToday(targetlocaltime) -> bool:
+    if not targetlocaltime:
+        return False
     _targettime = dbtimeTodatetime(targetlocaltime)
     today = utcTolocaltime(datetime.now(timezone.utc)).date()
     if _targettime.date() == today:

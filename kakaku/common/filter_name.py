@@ -236,6 +236,14 @@ class UrlSortName(Enum):
         4,
         "アイテムID降",
     )
+    UPDATE_TIME_ASC = (
+        5,
+        "更新時間が古い",
+    )
+    UPDATE_TIME_DESC = (
+        6,
+        "更新時間が新しい",
+    )
 
     def __init__(self, id: int, text: str):
         self.id = id

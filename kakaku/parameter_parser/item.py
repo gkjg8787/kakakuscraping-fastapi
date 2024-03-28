@@ -635,7 +635,7 @@ class UrlListFilterQuery:
         return results
 
 
-def get_url_sort_list(f: Dict) -> List:
+def get_url_sort_list(f: dict) -> list:
     results = [
         TemplatesItemSort(name=i.qname, id=i.id, text=i.jname) for i in UrlSortName
     ]
@@ -643,6 +643,18 @@ def get_url_sort_list(f: Dict) -> List:
         return results
     for r in results:
         if int(r.id) == int(f[FilterQueryName.USORT.value]):
+            r.selected = HTMLOption.SELECTED.value
+    return results
+
+
+def get_url_updated_list(f: dict) -> list:
+    results = [
+        TemplatesItemSort(name=i.qname, id=i.id, text=i.jname) for i in UrlUpdatedName
+    ]
+    if FilterQueryName.UPDATED.value not in f:
+        return results
+    for r in results:
+        if int(r.id) == int(f[FilterQueryName.UPDATED.value]):
             r.selected = HTMLOption.SELECTED.value
     return results
 

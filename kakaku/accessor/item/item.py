@@ -1475,26 +1475,33 @@ class UrlQuery:
         db.commit()
 
     @classmethod
-    def get_url_and_item_comb_list_in_local_time(cls, db: Session, filter: dict):
-        url_uniq = select(
-            PriceLog.url_id.distinct().label("url_id"),
-            PriceLog.uniqname.label("uniqname"),
-        )
-        url_uniq = url_uniq.cte("url_uniq")
+    def get_url_and_item_comb_of_not_updated_today_in_localtime(cls, db: Session):
+        f = {
+            fqn.ACT.value: ActFilterName.ACT.id,
+            fqn.UPDATED.value: UrlUpdatedName.NOT_UPDATED.id,
+        }
+        return cls.get_url_and_item_comb_log_list_in_local_time(db=db, filter=f)
 
+    @classmethod
+    def get_url_and_item_comb_list_in_local_time(cls, db: Session, filter: dict):
         stmt = (
             select(
                 Url.url_id,
                 Url.urlpath,
-                url_uniq.c.uniqname,
-                utc_to_jst_datetime_for_query(Url.created_at).label("created_at"),
+                PriceLog_2days.uniqname,
+                utc_to_jst_datetime_for_query(Url.created_at).label(
+                    "registration_date"
+                ),
+                utc_to_jst_datetime_for_query(PriceLog_2days.created_at).label(
+                    "created_at"
+                ),
                 UrlInItem.item_id,
                 Item.name.label("itemname"),
                 UrlInItem.active,
             )
             .select_from(Url)
             .join(UrlInItem, Url.url_id == UrlInItem.url_id, isouter=True)
-            .join(url_uniq, Url.url_id == url_uniq.c.url_id, isouter=True)
+            .join(PriceLog_2days, Url.url_id == PriceLog_2days.url_id, isouter=True)
             .join(Item, UrlInItem.item_id == Item.item_id, isouter=True)
         )
         isactive = get_act_filter(filter)
@@ -1510,19 +1517,25 @@ class UrlQuery:
             stmt = stmt.order_by(Url.url_id.asc())
             return stmt
         fnum = int(filter[fqn.USORT.value])
-        if fnum == UrlSortName.URLID_ASC.id:
-            stmt = stmt.order_by(Url.url_id.asc())
-            return stmt
-        if fnum == UrlSortName.URLID_DESC.id:
-            stmt = stmt.order_by(Url.url_id.desc())
-            return stmt
-        if fnum == UrlSortName.ITEMID_ASC.id:
-            stmt = stmt.order_by(UrlInItem.item_id.asc())
-            return stmt
-        if fnum == UrlSortName.ITEMID_DESC.id:
-            stmt = stmt.order_by(UrlInItem.item_id.desc())
-            return stmt
-
+        match fnum:
+            case UrlSortName.URLID_ASC.id:
+                stmt = stmt.order_by(Url.url_id.asc())
+                return stmt
+            case UrlSortName.URLID_DESC.id:
+                stmt = stmt.order_by(Url.url_id.desc())
+                return stmt
+            case UrlSortName.ITEMID_ASC.id:
+                stmt = stmt.order_by(UrlInItem.item_id.asc())
+                return stmt
+            case UrlSortName.ITEMID_DESC.id:
+                stmt = stmt.order_by(UrlInItem.item_id.desc())
+                return stmt
+            case UrlSortName.UPDATE_TIME_ASC.id:
+                stmt = stmt.order_by(PriceLog_2days.created_at.asc())
+                return stmt
+            case UrlSortName.UPDATE_TIME_DESC.id:
+                stmt = stmt.order_by(PriceLog_2days.created_at.desc())
+                return stmt
         return stmt
 
     @classmethod
