@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+{% extends "shared/layout.html" %}
 
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
@@ -137,38 +137,27 @@
             <td>{{ row['name'] }}</td>
             <td>{{ row['url_id'] }}</td>
             <td>
-                {%if row['urlpath'] | isSupportDomain %}
-                    <a href="{{ row['urlpath']}}" target="_blank" rel="noopener noreferrer">{{ row['urlpath']}}</a>
-                {% else %}    
-                    {{ row['urlpath'] }}
-                {% endif %}
+                {%- with url = row['urlpath'] %}
+                {%- include "shared/url_link.html" %}
+                {%- endwith %}
             </td>
             <td>
-                {% if row['price'] | int <= 0 %}
-                    <span class="gray_background">{{ row['price'] }}円</span>
-                {% elif row['price'] | isLowestPrice(row['lowestprice']) %}
-                    <span class="red_price">{{ row['price'] }}円</span>
-                {% else %}
-                    <span >{{ row['price'] }}円</span>
-                {% endif %}
+                {%- with price = row['price'], lowestprice = row['lowestprice'] %}
+                {%- include "shared/price_span.html" %}
+                {%- endwith %}
             </td>
             <td>
-            {% if row['trendrate'] | float > 0 %}
-                <span class="uprate">{{ "{:.2%}".format(row['trendrate'] | float) }}</span>
-            {% elif row['trendrate'] | float < 0 %}
-                <span class="downrate">{{ "{:.2%}".format(row['trendrate'] | float) }}</span>
-            {% else %}
-                <span >{{ "{:.2%}".format(row['trendrate'] | float) }}</span>
-            {% endif %}
+                {%- with trendrate = row['trendrate'] %}
+                {%- include "shared/trendrate_span.html" %}
+                {%- endwith %}
             </td>
             <td>{{ row['salename'] }}</td>
             <td>{{ row['storename'] }}</td>
-            {% if not row['created_at'] | isLocalToday %}
-                <td class="gray_background">
-            {% else %}
-                <td>
-            {% endif %}
-            {{ row['created_at'] }}</td>
+            <td>
+                {%- with updatetime = row['created_at'] %}
+                {%- include "shared/updatetime.html" %}
+                {%- endwith %}
+            </td>
             <td>{{ row['lowestprice'] }}円</td>
             <td>{{ row['act'] }}</td>
             <td class="noborder nobreak">

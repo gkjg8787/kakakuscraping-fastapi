@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+{% extends "shared/layout.html" %}
 
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
@@ -81,7 +81,11 @@
             <td>{{ row.terms_list[0].pref }}</td>
             <td>{{ row.terms_list[0].temrs_text }}</td>
             <td>{{ row.terms_list[0].postage }}</td>
-            <td>{{ row.terms_list[0].created_at }}</td>
+            <td>
+                {%- with updatetime = row.terms_list[0].created_at %}
+                {%- include "shared/updatetime.html" %}
+                {%- endwith %}
+            </td>
             <td>{{ row.terms_list[0].campaign_msg }}</td>
             {%- else %}
             <td>{{ row.shop_id }}</td>
@@ -100,7 +104,11 @@
             <td>{{ terms.pref }}</td>
             <td>{{ terms.temrs_text }}</td>
             <td>{{ terms.postage }}</td>
-            <td>{{ terms.created_at }}</td>
+            <td>
+                {%- with updatetime = terms.created_at %}
+                {%- include "shared/updatetime.html" %}
+                {%- endwith %}
+            </td>
             <td>{{ terms.campaign_msg }}</td>
         </tr>
         {%- endfor %}

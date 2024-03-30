@@ -1,0 +1,7 @@
+{%- if price | int <= 0 %}
+    <span class="gray_background">{{ price }}円</span>
+{%- elif price | isLowestPrice(lowestprice) %}
+    <span class="red_price">{{ price }}円</span>
+{%- else %}
+    <span >{{ price }}円</span>
+{%- endif %}

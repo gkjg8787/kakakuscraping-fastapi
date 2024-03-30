@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+{% extends "shared/layout.html" %}
 
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
@@ -53,13 +53,13 @@
             {% set itempurl = row.get_url_list()[0] %}
             <td rowspan="{{ itempurl.itemurls_num}}">
                 {%- with url = itempurl.purchase_url %}
-                {%- include "url_link.html" %}
+                {%- include "shared/url_link.html" %}
                 {%- endwith %}
             </td>
             <td>{{ itempurl.itemurls[0].url_id }}</td>
             <td> 
                 {%- with url = itempurl.itemurls[0].item_url %}
-                {%- include "url_link.html" %}
+                {%- include "shared/url_link.html" %}
                 {%- endwith %}
             </td>
             <td>{{ itempurl.itemurls[0].act_status }}</td>
@@ -74,7 +74,7 @@
                     <td>{{ itemurl.url_id }}</td>
                     <td> 
                         {%- with url = itemurl.item_url %}
-                        {%- include "url_link.html" %}
+                        {%- include "shared/url_link.html" %}
                         {%- endwith %}
                     </td>
                     <td>{{ itemurl.act_status }}</td>
@@ -84,14 +84,14 @@
             <tr>
                 <td rowspan="{{ itempurl.itemurls_num}}">
                     {%- with url = itempurl.purchase_url %}
-                    {%- include "url_link.html" %}
+                    {%- include "shared/url_link.html" %}
                     {%- endwith %}
                 </td>
                 {% set itemurl = itempurl.itemurls[0] %}
                 <td>{{ itemurl.url_id }}</td>
                 <td> 
                     {%- with url = itemurl.item_url %}
-                    {%- include "url_link.html" %}
+                    {%- include "shared/url_link.html" %}
                     {%- endwith %}
                 </td>
                 <td>{{ itemurl.act_status }}</td>
@@ -101,7 +101,7 @@
                     <td>{{ itemurl.url_id }}</td>
                     <td> 
                         {%- with url = itemurl.item_url %}
-                        {%- include "url_link.html" %}
+                        {%- include "shared/url_link.html" %}
                         {%- endwith %}
                     </td>
                     <td>{{ itemurl.act_status }}</td>

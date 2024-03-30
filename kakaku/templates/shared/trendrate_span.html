@@ -1,0 +1,7 @@
+{%- if trendrate | float > 0 %}
+    <span class="uprate">{{ "{:.2%}".format(trendrate | float) }}</span>
+{%- elif trendrate | float < 0 %}
+    <span class="downrate">{{ "{:.2%}".format(trendrate | float) }}</span>
+{%- else %}
+    <span >{{ "{:.2%}".format(trendrate | float) }}</span>
+{%- endif %}

@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+{% extends "shared/layout.html" %}
 
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
@@ -108,15 +108,21 @@
             <td>{{ row['item_id'] }}</td>
             <td>{{ row['name'] }}</td>
             <td>
-                {%if row['urlpath'] | isSupportDomain %}
-                    <a href="{{ row['urlpath']}}" target="_blank" rel="noopener noreferrer">{{ row['urlpath']}}</a>
-                {% else %}    
-                    {{ row['urlpath'] }}
-                {% endif %}
+                {%- with url = row['urlpath'] %}
+                {%- include "shared/url_link.html" %}
+                {%- endwith %}
             </td>
-            <td>{{ row['price'] }}円</td>
+            <td>
+                {%- with price = row['price'], lowestprice = row['lowestprice'] %}
+                {%- include "shared/price_span.html" %}
+                {%- endwith %}
+            </td>
             <td>{{ row['storename'] }}</td>
-            <td>{{ row['created_at'] }}</td>
+            <td>
+                {%- with updatetime = row['created_at'] %}
+                {%- include "shared/updatetime.html" %}
+                {%- endwith %}
+            </td>
             <td>{{ row['lowestprice'] }}円</td>
             <td>{{ row['act'] }}</td>
         {%- endfor %}

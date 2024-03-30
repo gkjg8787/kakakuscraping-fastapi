@@ -25,6 +25,11 @@ a {
 .item_img {
     text-align:center;
 }
+.item_img_img {
+    border :0;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
 .add_item, .add_make, .add_both {
     margin: 3px 0;
 }

@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+{% extends "shared/layout.html" %}
 
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
@@ -42,17 +42,16 @@
                 <td rowspan="{{ row.item_num }}">{{ row.url_id }}</td>
                 <td rowspan="{{ row.item_num }}"> 
                     {%- with url = row.url %}
-                    {%- include "url_link.html" %}
+                    {%- include "shared/url_link.html" %}
                     {%- endwith %}
                 </td>
                 <td rowspan="{{ row.item_num }}">{{ row.name }}</td>
                 <td rowspan="{{ row.item_num }}">{{ row.registration_date }}</td>
-                {% if not row.created_at | isLocalToday %}
-                    <td rowspan="{{ row.item_num }}" class="gray_background">
-                {% else %}
-                    <td rowspan="{{ row.item_num }}">
-                {% endif %}
-                {{ row.created_at }}</td>
+                <td rowspan="{{ row.item_num }}">
+                    {%- with updatetime = row.created_at %}
+                    {%- include "shared/updatetime.html" %}
+                    {%- endwith %}
+                </td>
                 <td>{{ row.itemlist[0].item_id }}</td>
                 <td>{{ row.itemlist[0].name }}</td>
                 <td>{{ row.itemlist[0].act_status }}</td>
@@ -64,17 +63,16 @@
                 <td>{{ row.url_id }}</td>
                 <td> 
                     {%- with url = row.url %}
-                    {%- include "url_link.html" %}
+                    {%- include "shared/url_link.html" %}
                     {%- endwith %}
                 </td>
                 <td>{{ row.name }}</td>
                 <td>{{ row.registration_date }}</td>
-                {% if not row.created_at | isLocalToday %}
-                    <td class="gray_background">
-                {% else %}
-                    <td>
-                {% endif %}
-                {{ row.created_at }}</td>
+                <td>
+                    {%- with updatetime = row.created_at %}
+                    {%- include "shared/updatetime.html" %}
+                    {%- endwith %}
+                </td>
                 <td>None</td>
                 <td>None</td>
                 <td>None</td>
