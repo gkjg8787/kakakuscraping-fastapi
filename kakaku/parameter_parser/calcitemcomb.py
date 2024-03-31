@@ -5,18 +5,23 @@ from pydantic import BaseModel
 
 from parameter_parser.util import is_valid_id
 from parameter_parser.storepostage import ItemCombStore, FormDataConvert
+from common import filter_name
 
 
 class ShippingConditionQuery:
-    item_id_list: List[int] = []
+    item_id_list: list[int] = []
+    sort: str = str(filter_name.StoreListSortName.OLD_STORE.id)
     errmsg: str = ""
 
     def __init__(
         self,
-        itemid: List[str] = Query(None),
+        itemid: list[str] = Query(None),
+        sort: str = "",
     ):
+        if sort and sort.isdigit() and filter_name.StoreListSortName.hasId(int(sort)):
+            self.sort = sort
         if itemid:
-            results: List[int] = []
+            results: list[int] = []
             for id in itemid:
                 if is_valid_id(id):
                     results.append(int(id))
@@ -27,6 +32,12 @@ class ShippingConditionQuery:
             self.errmsg = "アイテムが指定されていません"
             return False
         return True
+
+    def get_filter_dict(self) -> dict:
+        results = {}
+        if self.sort:
+            results[filter_name.FilterQueryName.SORT.value] = self.sort
+        return results
 
 
 class ItemCombinationResultForm(BaseModel):

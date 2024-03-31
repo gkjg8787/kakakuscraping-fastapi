@@ -44,11 +44,9 @@
     </td>
     <td>{{ items['salename'] }}</td>
     <td>{{ items['storename'] }}</td>
-    <td>
-        {%- with updatetime = items['created_at'] %}
-        {%- include "shared/updatetime.html" %}
-        {%- endwith %}
-    </td>
+    {%- with updatetime = items['created_at'] %}
+    {%- include "shared/updatetime_td.html" %}
+    {%- endwith %}
     <td>{{ items['lowestprice'] }}円</td>
     <td>{{ items['act'] }}</td>
     </tr>

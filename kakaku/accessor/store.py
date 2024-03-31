@@ -163,8 +163,10 @@ class StoreQuery:
             db.refresh(store)
 
     @classmethod
-    def get_storepostage_by_storename(cls, db: Session, storenames: List[str]):
-        j = (
+    def get_storepostage_by_storename(
+        cls, db: Session, storenames: list[str], fq: dict = {}
+    ):
+        stmt = (
             select(
                 Store.store_id,
                 Store.storename,
@@ -176,9 +178,9 @@ class StoreQuery:
                 ),
             )
             .join(StorePostage, Store.store_id == StorePostage.store_id, isouter=True)
-            .subquery()
+            .where(Store.storename.in_(storenames))
         )
-        stmt = select(j).where(j.c.storename.in_(storenames))
+        stmt = cls._set_store_list_filter(stmt=stmt, fq=fq)
         return db.execute(stmt).all()
 
     @classmethod
@@ -228,6 +230,10 @@ class StoreQuery:
                 return stmt.order_by(Store.store_id.asc())
             case filter_name.StoreListSortName.NEW_STORE.id:
                 return stmt.order_by(Store.store_id.desc())
+            case filter_name.StoreListSortName.SHIPPING_ASC.id:
+                return stmt.order_by(StorePostage.postage.asc(), Store.store_id.asc())
+            case filter_name.StoreListSortName.SHIPPING_DESC.id:
+                return stmt.order_by(StorePostage.postage.desc(), Store.store_id.asc())
             case _:
                 return stmt
 
@@ -357,11 +363,17 @@ class OnlineStoreQuery:
                 utc_to_jst_datetime_for_query(OnlineStorePostage.created_at).label(
                     "terms_created_at"
                 ),
+                DailyOnlineShopInfo.shop_id.label("tenpo_code"),
             )
             .select_from(OnlineStore)
             .join(
                 OnlineStorePostage,
                 OnlineStore.shop_id == OnlineStorePostage.shop_id,
+                isouter=True,
+            )
+            .join(
+                DailyOnlineShopInfo,
+                OnlineStore.storename == DailyOnlineShopInfo.shop_name,
                 isouter=True,
             )
         )

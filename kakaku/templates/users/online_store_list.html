@@ -76,20 +76,26 @@
         <tr>
             {%- if row.terms_num > 0 %}
             <td rowspan="{{ row.terms_num }}">{{ row.shop_id }}</td>
-            <td rowspan="{{ row.terms_num }}">{{ row.storename }}</td>
+            <td rowspan="{{ row.terms_num }}">
+                {%- with name = row.storename, url = row.shipping_url %}
+                {%- include "shared/name_and_url.html" %}
+                {%- endwith %}
+            </td>
             <td rowspan="{{ row.terms_num }}">{{ row.created_at }}</td>
             <td>{{ row.terms_list[0].pref }}</td>
             <td>{{ row.terms_list[0].temrs_text }}</td>
             <td>{{ row.terms_list[0].postage }}</td>
-            <td>
-                {%- with updatetime = row.terms_list[0].created_at %}
-                {%- include "shared/updatetime.html" %}
-                {%- endwith %}
-            </td>
+            {%- with updatetime = row.terms_list[0].created_at %}
+            {%- include "shared/updatetime_td.html" %}
+            {%- endwith %}
             <td>{{ row.terms_list[0].campaign_msg }}</td>
             {%- else %}
             <td>{{ row.shop_id }}</td>
-            <td>{{ row.storename }}</td>
+            <td>
+                {%- with name = row.storename, url = row.shipping_url %}
+                {%- include "shared/name_and_url.html" %}
+                {%- endwith %}
+            </td>
             <td>{{ row.created_at }}</td>
             <td>None</td>
             <td>None</td>
@@ -104,11 +110,9 @@
             <td>{{ terms.pref }}</td>
             <td>{{ terms.temrs_text }}</td>
             <td>{{ terms.postage }}</td>
-            <td>
-                {%- with updatetime = terms.created_at %}
-                {%- include "shared/updatetime.html" %}
-                {%- endwith %}
-            </td>
+            {%- with updatetime = terms.created_at %}
+            {%- include "shared/updatetime_td.html" %}
+            {%- endwith %}
             <td>{{ terms.campaign_msg }}</td>
         </tr>
         {%- endfor %}

@@ -93,14 +93,24 @@ class ItemSelectionContext(BaseTemplateValue):
 
 
 class ShippingConditionContext(BaseTemplateValue):
-    item_id_list: list[int] = []
-    store_list: list = []
+    item_id_list: list[int]
+    store_list: list
     errmsg: str = ""
     POST_ITEM_ID: str = filter_name.TemplatePostName.ITEM_ID.value
     POST_STORENAME: str = filter_name.TemplatePostName.STORE_NAME.value
+    ITEMID_Q_NAME: str = filter_name.ItemDetailQueryName.ITEMID.value
+    STORESORT_NAME: str = filter_name.FilterQueryName.SORT.value
+    storeSortList: list
+    fquery: dict
 
-    def __init__(self, scq: ppc.ShippingConditionQuery, db: Session):
-        super().__init__()
+    def __init__(self, db: Session, scq: ppc.ShippingConditionQuery):
+        fq = scq.get_filter_dict()
+        super().__init__(
+            item_id_list=[],
+            store_list=[],
+            storeSortList=ppi.get_store_sort_list(fq),
+            fquery=fq,
+        )
         if not scq.is_valid():
             self.errmsg = scq.errmsg
             return
@@ -117,7 +127,9 @@ class ShippingConditionContext(BaseTemplateValue):
                 )
                 return
         self.item_id_list = scq.item_id_list
-        results = getAndRegistShippingTermsByItemId(db, itemids=self.item_id_list)
+        results = getAndRegistShippingTermsByItemId(
+            db=db, itemids=self.item_id_list, fq=fq
+        )
         if StorePostageResultName.ERROR in results:
             self.errmsg = results[StorePostageResultName.ERROR].value
             return

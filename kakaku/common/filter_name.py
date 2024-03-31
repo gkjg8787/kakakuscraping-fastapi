@@ -176,6 +176,8 @@ class StoreListSortName(Enum):
     NEW_STORE = (2, "登録が新しい")
     NAME_ASC = (3, "店名昇")
     NAME_DESC = (4, "店名降")
+    SHIPPING_ASC = (7, "送料が安い")
+    SHIPPING_DESC = (8, "送料が高い")
 
     def __init__(self, id: int, text: str):
         self.id = id

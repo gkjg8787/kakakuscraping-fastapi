@@ -74,21 +74,16 @@ def update_shippingterms(
     StoreQuery.insert_storepostage_list(db, storepostage_list=storepostage_list)
 
 
-def getAndRegistShippingTerms(db: Session, storenames):
+def getAndRegistShippingTerms(db: Session, storenames: list[str], fq: dict = {}):
     StoreQuery.regist_stores(db, storename_list=storenames)
-    res = StoreQuery.get_storepostage_by_storename(db, storenames=storenames)
-    dicl: List[Dict] = []
-    for row in res:
-        dic = {}
-        for k, v in row._mapping.items():
-            dic[k] = v
-        dicl.append(dic)
-    resdic: Dict[List[Dict]] = {}
+    res = StoreQuery.get_storepostage_by_storename(db=db, storenames=storenames, fq=fq)
+    dicl = [dict(row._mapping.items()) for row in res]
+    resdic: dict[list[dict]] = {}
     resdic[StorePostageResultName.RESULT] = dicl
     return resdic
 
 
-def getAndRegistShippingTermsByItemId(db: Session, itemids: List[int]):
+def getAndRegistShippingTermsByItemId(db: Session, itemids: list[int], fq: dict = {}):
     res = ItemQuery.get_current_storename_list_by_item_id(db, item_id_list=itemids)
     if res is None or len(res) == 0:
         count = ItemQuery.get_count_of_pricelog_2days_for_today_by_item_id(
@@ -103,8 +98,8 @@ def getAndRegistShippingTermsByItemId(db: Session, itemids: List[int]):
                 StorePostageResultName.ERROR: itemcomb_error.ItemCombError.NO_STORE_DATA
             }
 
-    storenames = [t for r in res for t in r]
-    return getAndRegistShippingTerms(db, storenames=storenames)
+    storenames: list[str] = [t for r in res for t in r]
+    return getAndRegistShippingTerms(db=db, storenames=storenames, fq=fq)
 
 
 def parseParamOpt():

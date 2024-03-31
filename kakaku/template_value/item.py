@@ -1283,23 +1283,32 @@ class StoreListContext(BaseTemplateValue):
 
 
 class EditShippingConditionContext(BaseTemplateValue):
-    item_id_list: List[int] = []
-    store_list: List = []
+    item_id_list: list[int]
+    store_list: list[SP_StoreShippingTerms]
     errmsg: str = ""
     POST_ITEM_ID: str = filter_name.TemplatePostName.ITEM_ID.value
     POST_STORENAME: str = filter_name.TemplatePostName.STORE_NAME.value
+    STORESORT_NAME: str = filter_name.FilterQueryName.SORT.value
+    storeSortList: list
+    fquery: dict
 
-    def __init__(self, db: Session):
-        super().__init__()
-        results = ac_store.StoreQuery.get_store_and_postage_all(db)
+    def __init__(self, db: Session, slfq: ppi.StoreListFilterQuery):
+        fq = slfq.get_filter_dict()
+        super().__init__(
+            item_id_list=[],
+            store_list=[],
+            storeSortList=ppi.get_store_sort_list(fq),
+            fquery=fq,
+        )
+        results = ac_store.StoreQuery.get_store_and_postage_all(db, fq=fq)
         if not results or len(results) == 0:
             self.errmsg = "店舗がありません"
             return
         self.store_list = self.convert_to_store_list(results)
 
     @staticmethod
-    def convert_to_store_list(res_list: List[Dict]) -> List[SP_StoreShippingTerms]:
-        results: Dict[str, SP_StoreShippingTerms] = {}
+    def convert_to_store_list(res_list: list[dict]) -> list[SP_StoreShippingTerms]:
+        results: dict[str, SP_StoreShippingTerms] = {}
         for row in res_list:
             res = dict(row._mapping.items())
             t = SP_Terms(
@@ -1587,14 +1596,18 @@ class OnlineStoreForListContext(BaseModel):
     created_at: datetime
     terms_list: list[OnlineTermsForListContext]
     terms_num: int
+    shipping_url: str
 
-    def __init__(self, shop_id: int, storename: str, created_at: datetime):
+    def __init__(
+        self, shop_id: int, storename: str, created_at: datetime, shipping_url: str
+    ):
         super().__init__(
             shop_id=shop_id,
             storename=storename,
             created_at=created_at,
             terms_list=[],
             terms_num=0,
+            shipping_url=shipping_url,
         )
 
     def add_terms(self, terms: OnlineTermsForListContext):
@@ -1603,7 +1616,7 @@ class OnlineStoreForListContext(BaseModel):
 
 
 class OnlineStoreListContext(BaseTemplateValue):
-    res: list[StoreForListContext] = []
+    res: list[OnlineStoreForListContext]
     res_length: int = 0
     STORESORT_NAME: str = filter_name.FilterQueryName.SORT.value
     storeSortList: list
@@ -1611,27 +1624,30 @@ class OnlineStoreListContext(BaseTemplateValue):
     CONFIGUREDTERMS_NAME: str = filter_name.FilterQueryName.CONFED.value
     confstslist: list
     PREF_NAME: str = filter_name.FilterQueryName.PREF.value
-    pref_list: list[IdTextSelected] = []
+    pref_list: list[IdTextSelected]
     EQST_NAME: str = filter_name.FilterQueryName.STORE.value
     storelist: list[pps.TemplatesStore]
     ONLINE_STORE_COPY_NAME: str = filter_name.FilterQueryName.OSCTYPE.value
     online_store_copy_type_list: list[IdTextSelected]
-    pref_list_for_copy: list[IdTextSelected] = []
+    pref_list_for_copy: list[IdTextSelected]
 
     def __init__(self, db: Session, slfp: ppi.OnlineStoreListFilterQuery):
         fq = slfp.get_filter_dict()
         super().__init__(
+            res=[],
             fquery=fq,
             storeSortList=ppi.get_store_sort_list(fq),
             confstslist=ppi.get_store_terms_configured_list(fq),
+            pref_list=[],
             storelist=self.create_storelist(db, fq=fq),
             online_store_copy_type_list=self.create_osctypelist(),
+            pref_list_for_copy=[],
         )
-        results = ac_store.OnlineStoreQuery.get_all_local_time_by_query(db=db, fq=fq)
         pref_dict = self.create_pref_id_to_prefname(db)
         self.pref_list = self.create_selected_pref_list(pref_dict, fq=fq)
         self.pref_list_for_copy = self.convert_to_pref_list_for_copy(pref_dict)
-        self.res = self.convert_to_StoreForListContext(
+        results = ac_store.OnlineStoreQuery.get_all_local_time_by_query(db=db, fq=fq)
+        self.res = self.convert_to_OnlineStoreForListContext(
             pref_id_to_prefname=pref_dict, res=results
         )
         if not self.res:
@@ -1639,7 +1655,7 @@ class OnlineStoreListContext(BaseTemplateValue):
         self.res_length = len(self.res)
 
     @classmethod
-    def convert_to_StoreForListContext(cls, pref_id_to_prefname: dict, res: list):
+    def convert_to_OnlineStoreForListContext(cls, pref_id_to_prefname: dict, res: list):
         results: dict[int, OnlineStoreForListContext] = {}
         for r in res:
             dic = dict(r._mapping.items())
@@ -1648,6 +1664,9 @@ class OnlineStoreListContext(BaseTemplateValue):
                     shop_id=dic["shop_id"],
                     storename=dic["storename"],
                     created_at=dic["created_at"],
+                    shipping_url=surugayaURL.SurugayaShippingURL(
+                        tenpo_code=dic["tenpo_code"]
+                    ).get_url(),
                 )
             if "terms_id" in dic and str(dic["terms_id"]).isdigit():
                 pref = pref_id_to_prefname[int(dic["pref_id"])]

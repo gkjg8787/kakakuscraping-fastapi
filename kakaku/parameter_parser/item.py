@@ -647,18 +647,6 @@ def get_url_sort_list(f: dict) -> list:
     return results
 
 
-def get_url_updated_list(f: dict) -> list:
-    results = [
-        TemplatesItemSort(name=i.qname, id=i.id, text=i.jname) for i in UrlUpdatedName
-    ]
-    if FilterQueryName.UPDATED.value not in f:
-        return results
-    for r in results:
-        if int(r.id) == int(f[FilterQueryName.UPDATED.value]):
-            r.selected = HTMLOption.SELECTED.value
-    return results
-
-
 class ExtractStoreFilterQuery:
     gid: str = ""
     act: str = ""

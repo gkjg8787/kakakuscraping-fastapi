@@ -1,0 +1,5 @@
+{%- if not updatetime | isLocalToday %}
+    <td class="gray_background">{{ updatetime }}</td>
+{%- else %}
+    <td>{{ updatetime }}</td>
+{%- endif %}

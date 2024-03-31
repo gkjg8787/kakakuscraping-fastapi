@@ -13,7 +13,28 @@
     {%- if errmsg %}
     <p style="color:red;">{{ errmsg }}</p>
     {%- endif %}
+    <h2>操作メニュー</h2>
     <p><a href="{{ url_for('read_select_item_price_combination') }}" class="plain-link">アイテム選択へ戻る</a></p>
+    <h3>フィルタ</h3>
+    <p>
+        <form method="get" action="">
+            並び替え : <select name="{{ STORESORT_NAME }}" onchange="submit(this.form)">
+                {% for st in storeSortList %}
+                <option value="{{ st.id }}" {{ st.selected }}>
+                    {{ st.text }}順
+                </option>
+                {% endfor %}
+            </select>
+            {% for k, v in fquery.items() %}
+                {% if k != STORESORT_NAME and v != "" %}
+                <input type="hidden" name="{{ k }}" value="{{ v }}">
+                {% endif %}
+            {% endfor %}
+            {%- for id in item_id_list %}
+                <input type="hidden" name="{{ ITEMID_Q_NAME }}" value="{{ id }}">
+            {%- endfor %}
+        </form>
+    </p>
     {%- with 
         item_id_list = item_id_list,
         store_list = store_list,

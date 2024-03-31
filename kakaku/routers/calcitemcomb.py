@@ -39,7 +39,7 @@ def read_input_shop_shipping_condition(
     scq: ShippingConditionQuery = Depends(),
     db: Session = Depends(get_session),
 ):
-    scc = ShippingConditionContext(scq=scq, db=db)
+    scc = ShippingConditionContext(db=db, scq=scq)
     return templates.TemplateResponse(
         request=request,
         name="itemcomb/shipping_condition.html",

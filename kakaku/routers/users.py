@@ -497,9 +497,11 @@ def read_users_stores(
 
 @router.get("/stores/postage/edit/", response_class=HTMLResponse)
 def read_users_stores_postage_edit(
-    request: Request, db: Session = Depends(get_session)
+    request: Request,
+    slfq: ppi.StoreListFilterQuery = Depends(),
+    db: Session = Depends(get_session),
 ):
-    escc = template_value.item.EditShippingConditionContext(db=db)
+    escc = template_value.item.EditShippingConditionContext(db=db, slfq=slfq)
     return templates.TemplateResponse(
         request=request,
         name="users/edit_shipping_condition.html",

@@ -118,11 +118,9 @@
                 {%- endwith %}
             </td>
             <td>{{ row['storename'] }}</td>
-            <td>
-                {%- with updatetime = row['created_at'] %}
-                {%- include "shared/updatetime.html" %}
-                {%- endwith %}
-            </td>
+            {%- with updatetime = row['created_at'] %}
+            {%- include "shared/updatetime_td.html" %}
+            {%- endwith %}
             <td>{{ row['lowestprice'] }}円</td>
             <td>{{ row['act'] }}</td>
         {%- endfor %}

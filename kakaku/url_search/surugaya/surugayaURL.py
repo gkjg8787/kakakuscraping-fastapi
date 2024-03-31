@@ -3,10 +3,12 @@ from urllib.parse import urlencode
 
 from url_search import readoption
 
+DOMAIN = "https://www.suruga-ya.jp"
+
 
 class SurugayaURL:
     def __init__(self, rsopts: readoption.ReadSearchOpt):
-        self.base = "https://www.suruga-ya.jp/search"
+        self.base = f"{DOMAIN}/search"
         self.query = {
             "category": "",
             "search_word": "",
@@ -72,7 +74,7 @@ class SurugayaURL:
 
 
 class SurugayaPurchaseURL:
-    domain = "https://www.suruga-ya.jp"
+    domain = DOMAIN
     individual_url = f"{domain}/kaitori/kaitori_detail/"
     search_url = f"{domain}/kaitori/search_buy"
     word: str = ""
@@ -103,3 +105,15 @@ class SurugayaPurchaseURL:
         if m:
             return m[2]
         return ""
+
+
+class SurugayaShippingURL:
+    shippingurl = ""
+
+    def __init__(self, tenpo_code: str):
+        if not tenpo_code:
+            return
+        self.shippingurl = f"{DOMAIN}/shop/delivery/{tenpo_code}"
+
+    def get_url(self) -> str:
+        return self.shippingurl

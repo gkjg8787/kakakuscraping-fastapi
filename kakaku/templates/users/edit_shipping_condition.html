@@ -13,8 +13,15 @@
     {%- if errmsg %}
     <p style="color:red;">{{ errmsg }}</p>
     {%- endif %}
+    <h2>操作メニュー</h2>
     <p><a href="{{ url_for('read_users_stores') }}" class="plain-link">店舗一覧へ戻る</a></p>
     <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
+    <h3>フィルタ</h3>
+    <p>
+    {%- with ITEMSORT_NAME = STORESORT_NAME, itemSortList = storeSortList, fquery = fquery %}
+    {%- include "users/item_sort_filter.html" %}
+    {%- endwith %}
+    </p>
     {%- with 
         item_id_list = item_id_list,
         store_list = store_list,
