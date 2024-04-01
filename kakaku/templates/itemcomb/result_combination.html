@@ -47,6 +47,6 @@
         </li>
         {%- endfor %}
     </ul>
-    <div><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></div>
-    <div><a href="{{ url_for('read_select_item_price_combination') }}" class="plain-link">アイテム選択へ戻る</a></div>
+    <div class="link_text_line"><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></div>
+    <div class="link_text_line"><a href="{{ url_for('read_select_item_price_combination') }}" class="plain-link">アイテム選択へ戻る</a></div>
 {% endblock %}
