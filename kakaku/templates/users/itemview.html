@@ -2,6 +2,7 @@
 
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/itemdetails.css') }}" type="text/css">
     <title>アイテム詳細</title>
  {% endblock %}
 
@@ -173,9 +174,11 @@
             {%- endfor %}
         </table>
     {%- endif %}
-    <h2>取得データ一覧</h2>
-    <p>
-        <form method="get" action="">
+    <h2 id="log_list">取得データ一覧</h2>
+    <h3>フィルタ</h3>
+    <div class="flex_box">
+        <div class="detail_log_filter">
+        <form method="get" action="#log_list">
             対象期間 : <select name="{{ TIME_PERIOD_Q_NAME }}" onchange="submit(this.form)">
                 {%- for tp in timePeriodList %}
                 <option value="{{ tp.id }}" {{ tp.selected }}>
@@ -183,7 +186,37 @@
                 </option>
                 {%- endfor %}
             </select>
+            {% for k, v in fquery.items() %}
+                {% if k != TIME_PERIOD_Q_NAME and v != "" %}
+                <input type="hidden" name="{{ k }}" value="{{ v }}">
+                {% endif %}
+            {% endfor %}
+        </form>
+        </div>
+        <div class="detail_log_filter">
+        {%- with EQST_NAME = EQST_NAME, storelist = storelist, fquery = fquery, form_action = "#log_list" %}
+        {%- include "users/item_store_filter.html" %}
+        {%- endwith %}
+        </div>
+        <div class="detail_log_filter">
+            <form method="get" action="#log_list">
+                表示を圧縮<input type="checkbox"
+                                onchange="submit(this.form)"
+                                name="{{ COMPRESS_NAME }}"
+                                value="{{ COMPRESS_VALUE }}"
+                                {{ COMPRESS_CHECKED }} />
+                {% for k, v in fquery.items() %}
+                    {% if k != COMPRESS_NAME and v != "" %}
+                    <input type="hidden" name="{{ k }}" value="{{ v}}">
+                    {% endif %}
+                {% endfor %}
+            </form>
+        </div>
+    </div>
+    <p>
+        <form action="#log_list" method="get">
             <input type="hidden" name="{{ ITEMID_Q_NAME }}" value="{{ items['item_id'] }}">
+            <button type="submit">検索条件クリア</button>
         </form>
     </p>
     <p>
@@ -223,4 +256,5 @@
             {% endfor %}
         {% endif %}
     </table>
+    <p><a href="#" class="plain-link">TOPへ</a></p>
 {% endblock %}

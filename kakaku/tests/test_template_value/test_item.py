@@ -224,3 +224,171 @@ def test_UrlListContext_sort_update_time_desc_no_database_access_02(test_db, moc
         assert_func=assert_created_at_desc,
         result_length=3,
     )
+
+
+def test_CompressLogByStorename_no_list():
+    loglist = []
+    plog = item.CompressLogByStorename(loglist=loglist)
+    assert len(plog.get_log_list()) == 0
+
+
+def test_CompressLogByStorename_one_data():
+    loglist = [
+        {
+            "url_id": 1,
+            "storename": "A",
+            "created_at": datetime(2024, 4, 3, hour=6, minute=0, second=0),
+            "newprice": -1,
+            "usedprice": 500,
+        }
+    ]
+    plog = item.CompressLogByStorename(loglist=loglist)
+    results = plog.get_log_list()
+    assert len(results) == 1
+    assert loglist == results
+
+
+def test_CompressLogByStorename_three_data_sorted():
+    loglist = [
+        {
+            "url_id": 1,
+            "storename": "A",
+            "created_at": datetime(2024, 4, 3, hour=6, minute=0, second=0),
+            "newprice": -1,
+            "usedprice": 500,
+        },
+        {
+            "url_id": 2,
+            "storename": "B",
+            "created_at": datetime(2024, 4, 5, hour=6, minute=0, second=0),
+            "newprice": -1,
+            "usedprice": 700,
+        },
+        {
+            "url_id": 3,
+            "storename": "C",
+            "created_at": datetime(2024, 4, 3, hour=10, minute=0, second=0),
+            "newprice": -1,
+            "usedprice": 400,
+        },
+    ]
+    plog = item.CompressLogByStorename(loglist=loglist)
+    results = plog.get_log_list()
+    assert len(results) == 3
+    assert sorted(loglist, key=lambda l: l["created_at"], reverse=True) == results
+
+
+def test_CompressLogByStorename_five_data_compress_two():
+    loglist = [
+        {
+            "url_id": 1,
+            "storename": "A",
+            "created_at": datetime(2024, 4, 3, hour=6, minute=0, second=0),
+            "newprice": -1,
+            "usedprice": 500,
+        },
+        {
+            "url_id": 1,
+            "storename": "A",
+            "created_at": datetime(2024, 4, 4, hour=6, minute=0, second=0),
+            "newprice": -1,
+            "usedprice": 500,
+        },
+        {
+            "url_id": 2,
+            "storename": "B",
+            "created_at": datetime(2024, 4, 5, hour=6, minute=0, second=0),
+            "newprice": -1,
+            "usedprice": 700,
+        },
+        {
+            "url_id": 3,
+            "storename": "C",
+            "created_at": datetime(2024, 4, 3, hour=10, minute=0, second=0),
+            "newprice": -1,
+            "usedprice": 400,
+        },
+        {
+            "url_id": 3,
+            "storename": "C",
+            "created_at": datetime(2024, 4, 6, hour=10, minute=0, second=0),
+            "newprice": -1,
+            "usedprice": 400,
+        },
+    ]
+    plog = item.CompressLogByStorename(loglist=loglist)
+    results = plog.get_log_list()
+    assert len(results) == 3
+    pre_data = None
+    for r in results:
+        if not pre_data:
+            pre_data = r
+            continue
+        assert pre_data["created_at"] >= r["created_at"]
+
+
+def test_CompressLogByStorename_four_data_comporess_four():
+    loglist = [
+        {
+            "url_id": 1,
+            "storename": "A",
+            "created_at": datetime(2024, 4, 3, hour=6, minute=0, second=0),
+            "newprice": -1,
+            "usedprice": 500,
+        },
+        {
+            "url_id": 1,
+            "storename": "A",
+            "created_at": datetime(2024, 4, 5, hour=6, minute=0, second=0),
+            "newprice": -1,
+            "usedprice": 500,
+        },
+        {
+            "url_id": 1,
+            "storename": "A",
+            "created_at": datetime(2024, 4, 3, hour=10, minute=0, second=0),
+            "newprice": -1,
+            "usedprice": 500,
+        },
+        {
+            "url_id": 1,
+            "storename": "A",
+            "created_at": datetime(2024, 5, 28, hour=10, minute=0, second=0),
+            "newprice": -1,
+            "usedprice": 500,
+        },
+    ]
+    plog = item.CompressLogByStorename(loglist=loglist)
+    results = plog.get_log_list()
+    assert len(results) == 1
+    assert results[0]["created_at"] == loglist[3]["created_at"]
+
+
+def test_CompressLogByStorename_three_data_no_comporess():
+    loglist = [
+        {
+            "url_id": 1,
+            "storename": "A",
+            "created_at": datetime(2024, 4, 3, hour=6, minute=0, second=0),
+            "newprice": -1,
+            "usedprice": 500,
+        },
+        {
+            "url_id": 1,
+            "storename": "A",
+            "created_at": datetime(2024, 4, 5, hour=6, minute=0, second=0),
+            "newprice": -1,
+            "usedprice": 700,
+        },
+        {
+            "url_id": 1,
+            "storename": "A",
+            "created_at": datetime(2024, 4, 3, hour=10, minute=0, second=0),
+            "newprice": -1,
+            "usedprice": 400,
+        },
+    ]
+    plog = item.CompressLogByStorename(loglist=loglist)
+    results = plog.get_log_list()
+    assert len(results) == 3
+    assert sorted(loglist, key=lambda l: l["created_at"], reverse=True) == results

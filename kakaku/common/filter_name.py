@@ -27,6 +27,7 @@ class FilterQueryName(AutoLowerName):
     CONFED = auto()
     OSCTYPE = auto()
     PSORT = auto()
+    PRESS = auto()
 
 
 @unique

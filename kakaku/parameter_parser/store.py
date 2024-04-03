@@ -17,7 +17,7 @@ class TemplatesStore(BaseModel):
     selected: str = ""
 
 
-def get_stores(db: Session, f: Dict) -> List:
+def get_stores(db: Session, f: dict):
     results = [
         TemplatesStore(id=s.store_id, name=s.storename) for s in StoreQuery.get_all(db)
     ]
@@ -30,7 +30,7 @@ def get_stores(db: Session, f: Dict) -> List:
     return results
 
 
-def get_stores_for_newest(db: Session, filter: Dict) -> List:
+def get_stores_for_newest(db: Session, filter: dict):
     return get_selected_store_list(
         db,
         filter=filter,
@@ -39,7 +39,7 @@ def get_stores_for_newest(db: Session, filter: Dict) -> List:
     )
 
 
-def get_stores_for_extract_store(db: Session, filter: Dict) -> List:
+def get_stores_for_extract_store(db: Session, filter: dict):
     return get_selected_store_list(
         db,
         filter=filter,
@@ -49,15 +49,22 @@ def get_stores_for_extract_store(db: Session, filter: Dict) -> List:
 
 
 def get_selected_store_list(
-    db: Session, filter: Dict, filter_key_name: str, target_store_result: list
-) -> List:
+    db: Session, filter: dict, filter_key_name: str, target_store_result: list
+):
     store_all = [
         TemplatesStore(id=s.store_id, name=s.storename) for s in StoreQuery.get_all(db)
     ]
     newest_store_list = __get_newest_store_list(target_store_result)
     results = [r for r in store_all if r.name in newest_store_list]
+    return get_sorted_selected_store_list(
+        filter=filter, filter_key_name=filter_key_name, store_list=results
+    )
 
-    results = sorted(results, key=lambda r: r.name)
+
+def get_sorted_selected_store_list(
+    filter: dict, filter_key_name: str, store_list: list[TemplatesStore]
+):
+    results = sorted(store_list, key=lambda r: r.name)
 
     if (
         filter_key_name not in filter
@@ -73,10 +80,28 @@ def get_selected_store_list(
     return results
 
 
-def __get_newest_store_list(newest_list: List) -> List:
+def __get_newest_store_list(newest_list: list):
     results = []
     for row in newest_list:
         for k, v in row._mapping.items():
             if "storename" == k and v and len(v) > 0:
                 results.append(v)
     return results
+
+
+def get_stores_for_item_detail(
+    db: Session, filter: dict, storename_list: list[str]
+) -> list[TemplatesStore]:
+    if not storename_list:
+        return []
+    store_list = [
+        TemplatesStore(id=s.store_id, name=s.storename)
+        for s in StoreQuery.get_store_by_storename_list(
+            db=db, storename_list=storename_list
+        )
+    ]
+    return get_sorted_selected_store_list(
+        filter=filter,
+        filter_key_name=FilterQueryName.STORE.value,
+        store_list=store_list,
+    )

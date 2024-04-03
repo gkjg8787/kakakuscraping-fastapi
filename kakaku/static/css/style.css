@@ -36,6 +36,11 @@ td.noborder {
     border: none;
     border-top: solid 1px;
 }
+.flex_box {
+    display:flex;
+    flex-wrap: wrap;
+    justify-content:flex-start;
+}
 .nobreak {
     white-space: nowrap;
 }
@@ -96,6 +101,7 @@ a.like_button_link:hover {
 #itemfilter {
     display: inline;
 }
+
 
 /* Dark mode */
 @media (prefers-color-scheme: dark) {

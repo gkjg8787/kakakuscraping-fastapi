@@ -188,14 +188,24 @@ class ItemDetailContext(BaseTemplateValue):
     POST_URL_PATH: str = filter_name.TemplatePostName.URL_PATH.value
     ACTIVE_VALUE: str = UrlActive.ACTIVE.value
     SEARCH_WORD_NAME: str = filter_name.FilterQueryName.WORD.value
+    fquery: dict
+    storelist: list
+    EQST_NAME: str = filter_name.FilterQueryName.STORE.value
+    COMPRESS_NAME: str = filter_name.FilterQueryName.PRESS.value
+    COMPRESS_VALUE: int = filter_name.FilterOnOff.ON
+    COMPRESS_CHECKED: str = ""
 
-    def __init__(self, idq: ppi.ItemDetailQuery, db: Session):
+    def __init__(self, db: Session, idq: ppi.ItemDetailQuery):
+        fq = idq.get_filter_dict()
         super().__init__(
             loglist=[],
             items={},
             urllist=[],
             purchase_urllist=[],
             timePeriodList=[],
+            fquery=fq,
+            storelist=[],
+            COMPRESS_CHECKED=ppi.get_compress_filter_checked(fq),
         )
         if not idq.itemid:
             return
@@ -212,9 +222,20 @@ class ItemDetailContext(BaseTemplateValue):
             item_id=itemid,
             result_limit=None,
             days=-day,
+            storename=self.get_storename_by_store_id(db=db, store_id=idq.store),
         )
         if self.loglist:
+            self.loglist = self.compress_logs(
+                loglist=self.loglist, checked=self.COMPRESS_CHECKED
+            )
             self.loglist_length = len(self.loglist)
+            self.storelist = pps.get_stores_for_item_detail(
+                db=db,
+                filter=self.fquery,
+                storename_list=ItemQuery.get_storename_by_item_id_1year(
+                    db=db, item_id=itemid, days=-day
+                ),
+            )
         self.urllist = UrlQuery.get_urlinfo_by_item_id(db, item_id=itemid)
         if self.urllist:
             self.purchase_urllist = self.create_purchase_urllist(
@@ -226,6 +247,20 @@ class ItemDetailContext(BaseTemplateValue):
         if not self.items or len(self.items) == 0:
             return False
         return True
+
+    def get_storename_by_store_id(self, db: Session, store_id: any) -> str:
+        if not store_id:
+            return ""
+        if type(store_id) is str:
+            if not str(store_id).isdigit() or int(store_id) <= 0:
+                return ""
+            store_id = int(store_id)
+        storename = ac_store.StoreQuery.get_storename_by_store_id(
+            db=db, store_id=store_id
+        )
+        if not storename:
+            return ""
+        return storename
 
     @staticmethod
     def create_time_period_list(periodid: int):
@@ -288,6 +323,46 @@ class ItemDetailContext(BaseTemplateValue):
             )
             results[purchase_url] = ipu
         return list(results.values())
+
+    def compress_logs(self, loglist: list, checked: str):
+        if not checked:
+            return loglist
+        compresslog = CompressLogByStorename(
+            loglist=[dict(row._mapping.items()) for row in loglist]
+        )
+        return compresslog.get_log_list()
+
+
+class CompressLogByStorename:
+    loglist: list[dict]
+
+    def __init__(self, loglist: list[dict]):
+        storename_to_list: dict[str, list] = {}
+        for log in loglist:
+            if log["storename"] in storename_to_list:
+                storename_to_list[log["storename"]].append(log)
+            else:
+                storename_to_list[log["storename"]] = [log]
+        results: list[dict] = []
+        for dlist in storename_to_list.values():
+            urlid_to_predata: dict[int, dict] = {}
+            for d in sorted(dlist, key=lambda d: d["created_at"], reverse=True):
+                urlid = int(d["url_id"])
+                if urlid not in urlid_to_predata or not urlid_to_predata[urlid]:
+                    urlid_to_predata[urlid] = d
+                elif (
+                    urlid == int(d["url_id"])
+                    and urlid_to_predata[urlid]["usedprice"] == d["usedprice"]
+                    and urlid_to_predata[urlid]["newprice"] == d["newprice"]
+                ):
+                    continue
+                else:
+                    urlid_to_predata[urlid] = d
+                results.append(d)
+        self.loglist = sorted(results, key=lambda r: r["created_at"], reverse=True)
+
+    def get_log_list(self):
+        return self.loglist
 
 
 class ItemDetailChartContext(BaseTemplateValue):

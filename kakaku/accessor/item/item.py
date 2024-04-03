@@ -972,6 +972,7 @@ class ItemQuery:
         item_id: int,
         result_limit: int | None = None,
         days: int | None = None,
+        storename: str = "",
     ):
         stmt = (
             select(
@@ -1000,9 +1001,36 @@ class ItemQuery:
                 utc_to_jst_datetime_for_query(PriceLog.created_at)
                 >= get_jst_datetime_for_query(interval_days=days)
             )
+        if storename:
+            stmt = stmt.where(PriceLog.storename == storename)
         if result_limit and result_limit > 0:
             stmt = stmt.limit(result_limit)
         return db.execute(stmt).all()
+    
+    @classmethod
+    def get_storename_by_item_id_1year(
+        cls,
+        db: Session,
+        item_id: int,
+        days: int | None = None,
+    ):
+        stmt = (
+            select(
+                PriceLog.storename,
+            )
+            .select_from(Item)
+            .join(UrlInItem, UrlInItem.item_id == item_id)
+            .join(Url, UrlInItem.url_id == Url.url_id)
+            .join(PriceLog, PriceLog.url_id == Url.url_id)
+            .where(Item.item_id == item_id)
+            .group_by(PriceLog.storename)
+        )
+        if days and days <= 0:
+            stmt = stmt.where(
+                utc_to_jst_datetime_for_query(PriceLog.created_at)
+                >= get_jst_datetime_for_query(interval_days=days)
+            )
+        return db.scalars(stmt).all()
 
     @classmethod
     def get_daily_min_used_pricelog_by_item_id_and_since_year_ago(

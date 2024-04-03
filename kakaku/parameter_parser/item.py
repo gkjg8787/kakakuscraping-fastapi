@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from common.filter_name import (
     ActFilterName,
     FilterQueryName,
+    ItemDetailQueryName,
     ItemSortName,
     FilterOnOff,
     StoreListSortName,
@@ -164,16 +165,43 @@ class NewestFilterQuery:
 class ItemDetailQuery:
     itemid: str = ""
     periodid: str = ""
+    store: str = ""
+    press: str = ""
 
-    def __init__(self, itemid: str = "", periodid: str = ""):
+    def __init__(
+        self, itemid: str = "", periodid: str = "", store: str = "", press: str = ""
+    ):
         if is_valid_id(itemid):
             self.itemid = itemid
         if is_valid_id(periodid) and self.is_valid_period_id(periodid):
             self.periodid = periodid
+        if store and store.isdigit():
+            self.store = store
+        if press and press.isdigit():
+            self.press = press
 
     def is_valid_period_id(self, pid: str):
         return ItemDetailTimePeriodName.hasId(int(pid))
 
+    def get_filter_dict(self) -> dict:
+        results = {}
+        if self.itemid:
+            results[ItemDetailQueryName.ITEMID.value] = self.itemid
+        if self.periodid:
+            results[ItemDetailQueryName.PERIODID.value] = self.periodid
+        if self.store:
+            results[FilterQueryName.STORE.value] = self.store
+        if self.press:
+            results[FilterQueryName.PRESS.value] = self.press
+        return results
+
+def get_compress_filter_checked(f: dict) -> str:
+    if (
+        FilterQueryName.PRESS.value in f
+        and int(f[FilterQueryName.PRESS.value]) == FilterOnOff.ON
+    ):
+        return HTMLOption.CHECKED.value
+    return ""
 
 class TemplatesItemSort(BaseModel):
     name: str

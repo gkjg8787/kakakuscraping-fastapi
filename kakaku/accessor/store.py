@@ -68,6 +68,11 @@ class StoreQuery:
         return db.scalar(stmt)
 
     @classmethod
+    def get_store_by_storename_list(cls, db: Session, storename_list: list[str]):
+        stmt = select(Store).where(Store.storename.in_(storename_list))
+        return db.scalars(stmt).all()
+
+    @classmethod
     def get_storename_for_calcitemcomb_by_item_id_list(
         cls, db: Session, item_id_list: List[int]
     ):
