@@ -1,5 +1,5 @@
 from datetime import datetime
-from common import read_config
+from common import read_config, filter_name
 from template_value import admin
 from proc.auto_update import AutoUpdateStatus
 
@@ -89,3 +89,102 @@ def test_DashBoardTemplate_create_online_store_autoupdate_schedule_ok_multi(mock
     assert len(ret_list) == 3
     for ret, conf in zip(ret_list, return_list):
         assert ret.requirement == conf
+
+
+def test_DashBoardTemplate_is_auto_copy_online_store_to_local_true(mocker):
+    return_dict: dict = {"auto": True, "type": "overwrite"}
+    m = mocker.patch(
+        "common.read_config.get_auto_copy_of_online_store_info_to_local",
+        return_value=return_dict,
+    )
+    ret = admin.DashBoardTemplate.is_auto_copy_online_store_to_local()
+    assert ret == True
+
+
+def test_DashBoardTemplate_is_auto_copy_online_store_to_local_false_none(mocker):
+    return_dict = None
+    m = mocker.patch(
+        "common.read_config.get_auto_copy_of_online_store_info_to_local",
+        return_value=return_dict,
+    )
+    ret = admin.DashBoardTemplate.is_auto_copy_online_store_to_local()
+    assert ret == False
+
+
+def test_DashBoardTemplate_is_auto_copy_online_store_to_local_false_blank_dict(mocker):
+    return_dict: dict = {}
+    m = mocker.patch(
+        "common.read_config.get_auto_copy_of_online_store_info_to_local",
+        return_value=return_dict,
+    )
+    ret = admin.DashBoardTemplate.is_auto_copy_online_store_to_local()
+    assert ret == False
+
+
+def test_DashBoardTemplate_is_auto_copy_online_store_to_local_false_setting_false(
+    mocker,
+):
+    return_dict: dict = {"auto": False, "type": "overwrite"}
+    m = mocker.patch(
+        "common.read_config.get_auto_copy_of_online_store_info_to_local",
+        return_value=return_dict,
+    )
+    ret = admin.DashBoardTemplate.is_auto_copy_online_store_to_local()
+    assert ret == False
+
+
+def test_DashBoardTemplate_get_auto_copy_online_store_to_local_internal_config_overwrite(
+    mocker,
+):
+    return_dict: dict = {"auto": True, "type": "overwrite"}
+    m = mocker.patch(
+        "common.read_config.get_auto_copy_of_online_store_info_to_local",
+        return_value=return_dict,
+    )
+    ret = admin.DashBoardTemplate.get_auto_copy_online_store_to_local_internal_config()
+    assert ret == {
+        "name": "コピータイプ",
+        "value": filter_name.OnlineStoreCopyTypeName.OVERWRITE.jname,
+    }
+
+
+def test_DashBoardTemplate_get_auto_copy_online_store_to_local_internal_config_fill_blank(
+    mocker,
+):
+    return_dict: dict = {"auto": True, "type": "fill_blank"}
+    m = mocker.patch(
+        "common.read_config.get_auto_copy_of_online_store_info_to_local",
+        return_value=return_dict,
+    )
+    ret = admin.DashBoardTemplate.get_auto_copy_online_store_to_local_internal_config()
+    assert ret == {
+        "name": "コピータイプ",
+        "value": filter_name.OnlineStoreCopyTypeName.FILL_BLANK.jname,
+    }
+
+
+def test_DashBoardTemplate_get_auto_copy_online_store_to_local_internal_config_fill_blank_no_under_bar(
+    mocker,
+):
+    return_dict: dict = {"auto": True, "type": "fillblank"}
+    m = mocker.patch(
+        "common.read_config.get_auto_copy_of_online_store_info_to_local",
+        return_value=return_dict,
+    )
+    ret = admin.DashBoardTemplate.get_auto_copy_online_store_to_local_internal_config()
+    assert ret == {
+        "name": "コピータイプ",
+        "value": filter_name.OnlineStoreCopyTypeName.FILL_BLANK.jname,
+    }
+
+
+def test_DashBoardTemplate_get_auto_copy_online_store_to_local_internal_config_no_type(
+    mocker,
+):
+    return_dict: dict = {"auto": True, "type": ""}
+    m = mocker.patch(
+        "common.read_config.get_auto_copy_of_online_store_info_to_local",
+        return_value=return_dict,
+    )
+    ret = admin.DashBoardTemplate.get_auto_copy_online_store_to_local_internal_config()
+    assert ret == {}

@@ -29,6 +29,12 @@
         </div>
         {% endif %}
     </div>
+    <div class="auto_update_box">
+        <div class="auto_update_status">店舗情報の取得後、My店舗へ自動コピー：{{ auto_copy_online_store_to_local }}</div>
+        {% if not sysstop and auto_copy_online_store_to_local_internal_config %}
+            <div class="internal_config">{{ auto_copy_online_store_to_local_internal_config["name"] }}：{{ auto_copy_online_store_to_local_internal_config["value"] }}</div>
+        {% endif %}
+    </div>
     <div class="system_status_log_box">
         <textarea class="system_status_log" readonly>{{ sysstatuslog }}</textarea>
     </div>

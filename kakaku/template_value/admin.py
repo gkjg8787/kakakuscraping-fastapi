@@ -13,6 +13,7 @@ from common import read_config
 from common.filter_name import (
     SystemCtrlBtnName,
     DashBoardPostName,
+    OnlineStoreCopyTypeName,
 )
 from common.util import utcTolocaltime
 from proc.auto_update import AutoUpdateOnOff, TwoDigitHourFormat
@@ -37,9 +38,11 @@ class DashBoardTemplate(BaseTemplateValue):
     online_store_autoupdate: str = AutoUpdateOnOff.OFF.jname
     online_store_autoupdate_schedule: list[AutoUpdateSchedule] = []
     sysstatuslog: str = SYSTEM_STS_LOG_DEFAULT
+    auto_copy_online_store_to_local: str = AutoUpdateOnOff.OFF.jname
+    auto_copy_online_store_to_local_internal_config: dict
 
     def __init__(self, db: Session):
-        super().__init__()
+        super().__init__(auto_copy_online_store_to_local_internal_config={})
         syssts = get_sys_status.getSystemStatus(db)
         self.syssts = SystemStatusToJName.get_jname(syssts)
         if syssts == SystemStatus.STOP.name:
@@ -55,6 +58,12 @@ class DashBoardTemplate(BaseTemplateValue):
             self.online_store_autoupdate = AutoUpdateOnOff.ON.jname
             self.online_store_autoupdate_schedule = (
                 self.create_online_store_autoupdate_schedule()
+            )
+
+        if self.is_auto_copy_online_store_to_local():
+            self.auto_copy_online_store_to_local = AutoUpdateOnOff.ON.jname
+            self.auto_copy_online_store_to_local_internal_config = (
+                self.get_auto_copy_online_store_to_local_internal_config()
             )
 
         self.sysstatuslog = self.get_system_status_log_text(db)
@@ -94,6 +103,34 @@ class DashBoardTemplate(BaseTemplateValue):
         if now > sorted(timer_str_list, reverse=True)[0]:
             return True
         return False
+
+    @classmethod
+    def is_auto_copy_online_store_to_local(cls):
+        auto_set = read_config.get_auto_copy_of_online_store_info_to_local()
+        if not auto_set:
+            return False
+        if "auto" not in auto_set or auto_set["auto"] is None:
+            return False
+        if type(auto_set["auto"]) is not bool:
+            return False
+        return auto_set["auto"]
+
+    @classmethod
+    def get_auto_copy_online_store_to_local_internal_config(cls):
+        auto_set = read_config.get_auto_copy_of_online_store_info_to_local()
+        results = {}
+        if not auto_set:
+            return results
+        if "type" not in auto_set or auto_set["type"] is None:
+            return results
+        for osctn in OnlineStoreCopyTypeName:
+            if str(auto_set["type"]).lower().replace(
+                "_", ""
+            ) == osctn.qname.lower().replace("_", ""):
+                results["name"] = "コピータイプ"
+                results["value"] = osctn.jname
+                return results
+        return results
 
 
 class BackServerCtrl:
