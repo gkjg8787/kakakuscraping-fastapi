@@ -63,13 +63,13 @@ class AutoCopyOnlineStoreToLocal:
 
     def __init__(self, logger: cmnlog.logging.Logger):
         self.logger = logger
-        logger_header = os.path.basename(__file__)
+        self.logger_header = os.path.basename(__file__)
         try:
             self.coslc = CopyOnlineStoreToLocalConfigFactory.read_config()
         except ValueError as e:
-            logger.warning(f"{logger_header} {str(e)}")
+            logger.warning(f"{self.logger_header} {str(e)}")
         logger.info(
-            f"{logger_header} auto_copy_online_store_to_local={self.coslc.is_auto_copy}"
+            f"{self.logger_header} auto_copy_online_store_to_local={self.coslc.is_auto_copy}"
         )
 
     def start(self, db: Session):
