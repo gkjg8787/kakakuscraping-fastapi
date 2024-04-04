@@ -7,6 +7,7 @@ import time
 from multiprocessing import Process
 from logging import Logger
 
+
 from common import util as cmn_util, read_config, cmnlog
 from model.server import AutoUpdateSchedule
 from proc import scrapingmanage as scm
@@ -361,6 +362,7 @@ class DailyOnlineStoreUpdate:
         )
         self.isAutoUpdate = True
         self.createUpdateLocalTime()
+
         return
 
     def createUpdateLocalTime(self, tomorrow=False):

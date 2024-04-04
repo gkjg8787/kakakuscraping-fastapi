@@ -9,6 +9,7 @@ from proc import (
     manager_util,
     scrapingmanage as scm,
     online_store_postage,
+    online_store_copy,
     db_organizer,
 )
 from proc.proc_status import ProcName
@@ -63,6 +64,8 @@ class ParseProc:
             psa = manager_util.writeProcStart(db, pnum=id, name=ProcName.PARSE)
         is_parse = False
         PARSE_QUEUE_TIMEOUT = 5
+        autocopysttolc = online_store_copy.AutoCopyOnlineStoreToLocal(logger=logger)
+
         while True:
             task = self.get_task(q=self.parse_task_q, timeout=PARSE_QUEUE_TIMEOUT)
             if task is None:
@@ -87,7 +90,9 @@ class ParseProc:
             if type(task) is DirectOrderTask:
                 with next(get_session()) as db:
                     manager_util.writeProcActive(db, psa=psa)
-                    self.instruct_update_data(db=db, logger=logger, task=task)
+                    self.instruct_update_data(
+                        db=db, logger=logger, task=task, autocopysttolc=autocopysttolc
+                    )
                 continue
 
             if type(task) is not DownloadResultTask:
@@ -115,7 +120,11 @@ class ParseProc:
         return p
 
     def instruct_update_data(
-        self, db: Session, logger: cmnlog.logging.Logger, task: DirectOrderTask
+        self,
+        db: Session,
+        logger: cmnlog.logging.Logger,
+        task: DirectOrderTask,
+        autocopysttolc: online_store_copy.AutoCopyOnlineStoreToLocal,
     ):
         match task.cmdstr:
             case ScrOrder.DB_ORGANIZE_SYNC | ScrOrder.DB_ORGANIZE_DAYS:
@@ -127,6 +136,7 @@ class ParseProc:
                 logger.info(f"{get_filename()} update online store postage start")
                 online_store_postage.update_online_store_postage(db=db)
                 logger.info(f"{get_filename()} update online store postage end")
+                autocopysttolc.start(db=db)
                 return
 
     def start_db_organize(self, db: Session, cmdstr: str):
