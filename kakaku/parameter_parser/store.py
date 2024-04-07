@@ -1,4 +1,3 @@
-from typing import Dict, List
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 

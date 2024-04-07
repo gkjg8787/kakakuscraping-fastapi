@@ -195,6 +195,7 @@ class ItemDetailQuery:
             results[FilterQueryName.PRESS.value] = self.press
         return results
 
+
 def get_compress_filter_checked(f: dict) -> str:
     if (
         FilterQueryName.PRESS.value in f
@@ -202,6 +203,7 @@ def get_compress_filter_checked(f: dict) -> str:
     ):
         return HTMLOption.CHECKED.value
     return ""
+
 
 class TemplatesItemSort(BaseModel):
     name: str

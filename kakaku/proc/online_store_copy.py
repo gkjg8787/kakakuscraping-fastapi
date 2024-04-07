@@ -102,8 +102,8 @@ class OnlineStoreCopy:
     def get_online_and_local_store_postage(cls, db: Session, pref_name: str):
         online_dic: dict[str, list] = {}
         pref_name_list = [prefecture.PrefectureName.get_country_wide_name(), pref_name]
-        for os in store.OnlineStoreQuery.get_all_by_prefname(db, pref_name_list):
-            dic = dict(os._mapping.items())
+        for oso in store.OnlineStoreQuery.get_all_by_prefname(db, pref_name_list):
+            dic = dict(oso._mapping.items())
             if dic["storename"] in online_dic:
                 max_terms_id = max(
                     [temp["terms_id"] for temp in online_dic[dic["storename"]]]

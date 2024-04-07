@@ -1006,7 +1006,7 @@ class ItemQuery:
         if result_limit and result_limit > 0:
             stmt = stmt.limit(result_limit)
         return db.execute(stmt).all()
-    
+
     @classmethod
     def get_storename_by_item_id_1year(
         cls,
@@ -1501,14 +1501,6 @@ class UrlQuery:
         )
         db.execute(stmt)
         db.commit()
-
-    @classmethod
-    def get_url_and_item_comb_of_not_updated_today_in_localtime(cls, db: Session):
-        f = {
-            fqn.ACT.value: ActFilterName.ACT.id,
-            fqn.UPDATED.value: UrlUpdatedName.NOT_UPDATED.id,
-        }
-        return cls.get_url_and_item_comb_log_list_in_local_time(db=db, filter=f)
 
     @classmethod
     def get_url_and_item_comb_list_in_local_time(cls, db: Session, filter: dict):
