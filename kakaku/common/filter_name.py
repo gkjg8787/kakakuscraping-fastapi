@@ -28,6 +28,9 @@ class FilterQueryName(AutoLowerName):
     OSCTYPE = auto()
     PSORT = auto()
     PRESS = auto()
+    LEVEL = auto()
+    MIN_DATE = auto()
+    MAX_DATE = auto()
 
 
 @unique
@@ -422,6 +425,42 @@ class OnlineStoreCopyTypeName(Enum):
     FILL_BLANK = (
         2,
         "未登録を埋める",
+    )
+
+    def __init__(self, id: int, text: str):
+        self.id = id
+        self.qname = self.name.lower()
+        self.jname = text
+
+    @classmethod
+    def hasId(cls, id: int) -> bool:
+        for isn in cls:
+            if isn.id == id:
+                return True
+        return False
+
+
+@unique
+class LogLevelFilterName(Enum):
+    ALL = (
+        1,
+        "全て",
+    )
+    DEBUG = (
+        2,
+        "DEBUG",
+    )
+    INFO = (
+        3,
+        "INFO",
+    )
+    WARNING = (
+        4,
+        "WARNING",
+    )
+    ERROR = (
+        5,
+        "ERROR",
     )
 
     def __init__(self, id: int, text: str):

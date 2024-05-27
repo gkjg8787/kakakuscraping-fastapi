@@ -1,0 +1,73 @@
+{% extends "shared/layout.html" %}
+
+{% block head %}
+    <title>サーバログ</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/logtext.css') }}" type="text/css">
+{% endblock %}
+
+{% block body %}
+    <script>
+        window.onload = function () {
+            var elements = document.getElementsByClassName("log_textarea");
+            for (let element of elements ){
+                element.scrollTop = element.scrollHeight;
+            }
+        }
+    </script>
+    <h1>サーバログ</h1>
+    <p><a href="{{ url_for('read_admin_server_log') }}" class="plain-link">画面更新</a></p>
+    <h3>フィルタ</h3>
+    <div class="filter_list">
+        <div class="loglevel_filter_box filter_box">
+        {%- with
+            FORM_METHOD = loglevel_filter.form.method,
+            FORM_ACTION = loglevel_filter.form.action,
+            MENU_TITLE = loglevel_filter.select.title,
+            MENU_NAME = loglevel_filter.select.input_name,
+            menu_list = loglevel_filter.select.menu_list,
+            hidden_input_dict = fquery
+        %}
+        {%- include "shared/select_form.html" %}
+        {%- endwith %}
+        </div>
+        <div class="date_range_filter_box filter_box">
+        {%- with
+            FORM_METHOD = date_range_filter.form.method,
+            FORM_ACTION = date_range_filter.form.action,
+            MENU_TITLE = date_range_filter.range_input.title,
+            MIN_DATE_NAME = date_range_filter.range_input.lower.input_name,
+            MIN_DATE_MIN = date_range_filter.range_input.lower.min_value,
+            MIN_DATE_MAX = date_range_filter.range_input.lower.max_value,
+            MIN_DATE_VALUE = date_range_filter.range_input.lower.value,
+            MAX_DATE_NAME = date_range_filter.range_input.upper.input_name,
+            MAX_DATE_MIN = date_range_filter.range_input.upper.min_value,
+            MAX_DATE_MAX = date_range_filter.range_input.upper.max_value,
+            MAX_DATE_VALUE = date_range_filter.range_input.upper.value,
+            SUBMIT_BUTTON_VALUE = date_range_filter.range_input.submit_value,
+            hidden_input_dict = fquery
+        %}
+        {%- include "shared/date_range_form.html" %}
+        {%- endwith %}
+        </div>
+    </div>
+    <div class="log_list_box flex_box">
+        {%- for logfile in logfilelist %}
+        <div class="log_file_box">
+            <div class="log_file_title">{{ logfile.filename }}</div>
+            {%- if logfile.error_msg %}
+            <div class="log_box short_log">
+                <textarea class="log_textarea" readonly>{{ logfile.text }}</textarea>
+            </div>
+            {%- else %}
+            <div class="log_box long_log">
+                <textarea class="log_textarea" readonly>{{ logfile.text }}</textarea>
+            </div>
+            {%- endif %}
+        </div>
+        {%- endfor %}
+    </div>
+    <p><a href="#" class="plain-link">TOPへ</a></p>
+    <p><a href="{{ url_for('read_admin_dashboard') }}" class="plain-link">管理画面へ戻る</a></p>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
+{% endblock %}

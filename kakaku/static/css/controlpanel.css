@@ -20,6 +20,14 @@ textarea.system_status_log {
 .internal_config {
     margin-left: 12px;
 }
+.goto_serverlog_link {
+    margin-top: 30px;
+    margin-bottom: 15px;
+}
+.goto_tempdir_link {
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
 /* Dark mode */
 @media (prefers-color-scheme: dark) {
     textarea.system_status_log {

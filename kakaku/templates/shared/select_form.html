@@ -1,0 +1,14 @@
+<form method="{{ FORM_METHOD }}" action="{{ FORM_ACTION }}">
+    {{ MENU_TITLE }} : <select name="{{ MENU_NAME }}" onchange="submit(this.form)">
+        {% for m in menu_list %}
+        <option value="{{ m.id }}" {{ m.selected }}>
+            {{ m.text }}{{ OPTION_TEXT_SUFFIX }}
+        </option>
+        {% endfor %}
+    </select>
+    {% for k, v in hidden_input_dict.items() %}
+        {% if k != MENU_NAME and v != "" %}
+        <input type="hidden" name="{{ k }}" value="{{ v }}">
+        {% endif %}
+    {% endfor %}
+</form>

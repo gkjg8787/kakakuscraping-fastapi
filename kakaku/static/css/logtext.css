@@ -1,0 +1,30 @@
+.filter_box {
+    margin-top: 10px;
+    margin-bottom:10px;
+}
+textarea.log_textarea {
+    min-height: 150px;
+    margin-top: 10px;
+    margin-bottom: 8px;
+    width: 100%;
+}
+.flex_box {
+    gap: 14px;
+}
+.short_log {
+    min-width: 150px;
+}
+.long_log {
+    min-width: 810px;
+}
+.filter_list {
+    margin-bottom: 20px;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+    textarea.log_textarea {
+        background-color: black;
+        color: white;
+    }
+}

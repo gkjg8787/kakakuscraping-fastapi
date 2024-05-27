@@ -1,0 +1,10 @@
+<form method="{{ FORM_METHOD }}" action="{{ FORM_ACTION }}">
+    {{ MENU_TITLE }} : <input type="date" name="{{ MIN_DATE_NAME }}" min="{{ MIN_DATE_MIN }}" max="{{ MIN_DATE_MAX }}" value="{{ MIN_DATE_VALUE }}">
+    　～　<input type="date" name="{{ MAX_DATE_NAME }}" min="{{ MAX_DATE_MIN }}" max="{{ MAX_DATE_MAX }}" value="{{ MAX_DATE_VALUE }}">
+    <button type="submit">{{ SUBMIT_BUTTON_VALUE }}</button>
+    {% for k, v in hidden_input_dict.items() %}
+        {% if k != MIN_DATE_NAME and k != MAX_DATE_NAME and v != "" %}
+        <input type="hidden" name="{{ k }}" value="{{ v }}">
+        {% endif %}
+    {% endfor %}
+</form>

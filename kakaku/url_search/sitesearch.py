@@ -107,7 +107,7 @@ def get_search_for_inner(sword: str, optdict=None) -> dict:
     deleteLogger()
     cmnlog.createLogger(cmnlog.LogName.SEARCH)
     logger = getLogger()
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(cmnlog.LOGGING_LEVEL)
     logger.info(__file__ + " start url_search")
 
     logger.info(__file__ + " sword=" + sword)

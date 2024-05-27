@@ -10,16 +10,18 @@ def getLogger(fn):
     return logging.getLogger(fn)
 
 
+def getLogPath(fn):
+    return os.path.join(get_log_dir(), fn + ".log")
+
+
 # initLoggerなしでの呼び出し1回目
 def createLogger(fn):
-    logdir = get_log_dir()
-    return _setLogger(logdir, fn)
+    return _setLogger(fn)
 
 
 def removeLogger(fn):
-    logdir = get_log_dir()
     logger = logging.getLogger(fn)
-    logpath = os.path.join(logdir, fn + ".log")
+    logpath = getLogPath()
     flh = logging.FileHandler(logpath)
     logger.removeHandler(flh)
 
@@ -29,8 +31,8 @@ def deleteLogger(fn):
     del logging.Logger.manager.loggerDict[logger.name]
 
 
-def _setLogger(dir, fn):
-    logpath = os.path.join(dir, fn + ".log")
+def _setLogger(fn):
+    logpath = getLogPath(fn)
     logger = logging.getLogger(fn)
     flh = logging.FileHandler(logpath)
     form = logging.Formatter(

@@ -52,5 +52,8 @@
         <button type="submit" name="{{ system_ctrl_btn_name }}" value="{{ RESTART }}">再起動</button>
         {% endif %}
     </form>
+    
+    <div class="goto_serverlog_link"><a href="{{ url_for('read_admin_server_log') }}" class="like_button_link">サーバログ一覧</a></div>
+    <div class="goto_tempdir_link"><a href="{{ url_for('read_admin_server_temp_file') }}" class="like_button_link">Tempディレクトリファイル</a></div>
     <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
 {% endblock %}
