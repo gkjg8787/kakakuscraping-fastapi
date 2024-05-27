@@ -21,7 +21,7 @@ def createLogger(fn):
 
 def removeLogger(fn):
     logger = logging.getLogger(fn)
-    logpath = getLogPath()
+    logpath = getLogPath(fn)
     flh = logging.FileHandler(logpath)
     logger.removeHandler(flh)
 
