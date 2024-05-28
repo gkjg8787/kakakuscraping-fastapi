@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from common import cmnlog, filter_name
 from .service import ServerLogRawText
-from .model import ServerLogFile, ServerLogLine
+from .model import ServerLogFile
 from .file import ServerLogFileFactory
 
 
@@ -71,6 +71,8 @@ class CreateExtractServerLogCommand:
                     near_end.strftime(datefmt),
                     fpath,
                 )
+            else:
+                return cmd
         if loglevel_name_list and not self.is_all_loglevel(
             loglevel_name_list=loglevel_name_list
         ):

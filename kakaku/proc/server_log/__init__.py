@@ -2,6 +2,7 @@ from .model import ServerLogLine, ServerLogFile
 from .extract_server_log import (
     ExtractServerLogResult,
     ExtractServerLogByCommand,
+    IExtractServerLog,
 )
 
 __all__ = [
@@ -9,4 +10,5 @@ __all__ = [
     "ServerLogFile",
     "ExtractServerLogResult",
     "ExtractServerLogByCommand",
+    "IExtractServerLog",
 ]

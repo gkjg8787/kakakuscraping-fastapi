@@ -1,6 +1,8 @@
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import subprocess
+from multiprocessing import Process, Manager, Queue
+import queue
 
 from sqlalchemy.orm import Session
 
@@ -11,6 +13,7 @@ from proc import get_sys_status
 from proc.auto_update import AutoUpdateOnOff, TwoDigitHourFormat
 from proc.system_status_log import SystemStatusLogAccess
 from proc.server_log import (
+    IExtractServerLog,
     ExtractServerLogResult,
     ExtractServerLogByCommand,
 )
@@ -277,9 +280,6 @@ class ServerLogDisplay(BaseTemplateValue):
     def get_logfilelist(
         self, lfq: LogFilterQuery, datefmt: str, selected_id_list: list[int]
     ) -> list[ExtractServerLogResult]:
-        loglist = self.get_logname_list()
-        esl = ExtractServerLogByCommand()
-        logfilelist: list[ExtractServerLogResult] = []
         start_date: datetime | None = None
         end_date: datetime | None = None
         if lfq.max_date:
@@ -291,17 +291,60 @@ class ServerLogDisplay(BaseTemplateValue):
             for l in LogLevelFilterName:
                 if l.id in selected_id_list:
                     loglevel_name_list.append(l.name)
+
+        loglist = self.get_logname_list()
+        esl = ExtractServerLogByCommand()
+        proclist: list[Process] = []
+        m = Manager()
+        retq: Queue = m.Queue()
+        timeout: float = 10.0
         for logfile in loglist:
-            eslresult = esl.get_list_by_time_period(
-                logname=logfile,
-                loglevel_name_list=loglevel_name_list,
-                start=start_date,
-                end=end_date,
+            p = Process(
+                target=self.start_func_for_process,
+                args=(
+                    logfile,
+                    loglevel_name_list,
+                    start_date,
+                    end_date,
+                    esl,
+                    retq,
+                    timeout,
+                ),
             )
-            if eslresult.error_msg:
-                eslresult.text = eslresult.error_msg
-            logfilelist.append(eslresult)
-        return logfilelist
+            p.start()
+            proclist.append(p)
+
+        for p in proclist:
+            p.join()
+
+        logfilelist: list[ExtractServerLogResult] = []
+        for p in proclist:
+            try:
+                eslresult: ExtractServerLogResult = retq.get(timeout=timeout)
+                logfilelist.append(eslresult)
+            except queue.Empty:
+                pass
+        return sorted(logfilelist, key=lambda l: l.filename)
+
+    @staticmethod
+    def start_func_for_process(
+        logname: str,
+        loglevel_name_list: list[str],
+        start: datetime | None,
+        end: datetime | None,
+        esl: IExtractServerLog,
+        retq: Queue,
+        timeout: float = 10,
+    ):
+        eslresult = esl.get_list_by_time_period(
+            logname=logname,
+            loglevel_name_list=loglevel_name_list,
+            start=start,
+            end=end,
+        )
+        if eslresult.error_msg:
+            eslresult.text = eslresult.error_msg
+        retq.put(eslresult, timeout=timeout)
 
     @staticmethod
     def get_logname_list():
