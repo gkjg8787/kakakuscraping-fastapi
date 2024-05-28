@@ -225,25 +225,18 @@ class LogLevelFilterFactory:
     @classmethod
     def create(
         cls,
-        form_method: str = templates_string.FormMethod.GET.value,
-        form_action: str = "",
-        title: str = "ログレベル",
         input_name: str = FilterQueryName.LEVEL.value,
-        selected_id: int = 0,
-    ) -> shared.SelectForm:
-        menu_list: list[shared.SelectOption] = []
+        selected_id_list: list[int] = [],
+    ) -> shared.CheckBox:
+        checkboxelist: list[shared.CheckBoxElement] = []
         for s in LogLevelFilterName:
-            selectopt = shared.SelectOption(id=s.id, text=s.jname, selected="")
-            if selected_id and selected_id == s.id:
-                selectopt.selected = templates_string.HTMLOption.SELECTED.value
-            menu_list.append(selectopt)
-        return shared.SelectForm(
-            form=shared.Form(action=form_action, method=form_method),
-            select=shared.Select(
-                title=title,
-                input_name=input_name,
-                menu_list=menu_list,
-            ),
+            checkbox = shared.CheckBoxElement(id=s.id, text=s.jname, checked="")
+            if selected_id_list and s.id in selected_id_list:
+                checkbox.checked = templates_string.HTMLOption.CHECKED.value
+            checkboxelist.append(checkbox)
+        return shared.CheckBox(
+            input_name=input_name,
+            checkboxes=checkboxelist,
         )
 
 
@@ -251,20 +244,20 @@ class ServerLogDisplay(BaseTemplateValue):
     logfilelist: list[ExtractServerLogResult]
     fquery: dict
     date_range_filter: shared.RangeInputForm
-    loglevel_filter: shared.SelectForm
+    loglevel_filter: shared.CheckBox
 
     def __init__(self, lfq: LogFilterQuery):
         today = datetime.now(timezone.utc)
         one_year_ago = today - timedelta(days=365)
         datefmt = "%Y-%m-%d"
-        selected_id = 0
-        if lfq.level:
-            selected_id = int(lfq.level)
-        if not lfq.level and not lfq.min_date and not lfq.max_date:
+        selected_id_list: list[int] = []
+        if lfq.level_list:
+            selected_id_list = [int(l) for l in lfq.level_list]
+        if not lfq.level_list and not lfq.min_date and not lfq.max_date:
             lfq.min_date = (today - timedelta(days=3)).astimezone(JST).strftime(datefmt)
         super().__init__(
             logfilelist=[],
-            fquery=lfq.get_filter_dict(),
+            fquery={},  # lfq.get_filter_dict(),
             date_range_filter=DateRangeFilterFactory.create(
                 lower_value=lfq.min_date,
                 upper_value=lfq.max_date,
@@ -273,14 +266,16 @@ class ServerLogDisplay(BaseTemplateValue):
                 lower_min=one_year_ago,
                 upper_min=one_year_ago,
             ),
-            loglevel_filter=LogLevelFilterFactory.create(selected_id=selected_id),
+            loglevel_filter=LogLevelFilterFactory.create(
+                selected_id_list=selected_id_list
+            ),
         )
         self.logfilelist = self.get_logfilelist(
-            lfq=lfq, datefmt=datefmt, selected_id=selected_id
+            lfq=lfq, datefmt=datefmt, selected_id_list=selected_id_list
         )
 
     def get_logfilelist(
-        self, lfq: LogFilterQuery, datefmt: str, selected_id: int
+        self, lfq: LogFilterQuery, datefmt: str, selected_id_list: list[int]
     ) -> list[ExtractServerLogResult]:
         loglist = self.get_logname_list()
         esl = ExtractServerLogByCommand()
@@ -292,11 +287,10 @@ class ServerLogDisplay(BaseTemplateValue):
         if lfq.min_date:
             start_date = datetime.strptime(lfq.min_date, datefmt)
         loglevel_name_list: list[str] = []
-        if lfq.level:
+        if selected_id_list:
             for l in LogLevelFilterName:
-                if selected_id == l.id:
+                if l.id in selected_id_list:
                     loglevel_name_list.append(l.name)
-                    break
         for logfile in loglist:
             eslresult = esl.get_list_by_time_period(
                 logname=logfile,

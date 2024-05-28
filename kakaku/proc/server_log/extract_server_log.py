@@ -71,12 +71,11 @@ class CreateExtractServerLogCommand:
                     near_end.strftime(datefmt),
                     fpath,
                 )
-        if loglevel_name_list:
+        if loglevel_name_list and not self.is_all_loglevel(
+            loglevel_name_list=loglevel_name_list
+        ):
             ret: str = ""
             for l in loglevel_name_list:
-                if l == filter_name.LogLevelFilterName.ALL.name:
-                    ret = ""
-                    break
                 if ret:
                     ret += f"|{l}"
                 else:
@@ -87,6 +86,20 @@ class CreateExtractServerLogCommand:
                 else:
                     cmd = f"grep -E '({ret})' {fpath}"
         return cmd
+
+    @staticmethod
+    def is_all_loglevel(loglevel_name_list: list[str]) -> bool:
+        if not loglevel_name_list:
+            return False
+        ret: set[str] = set()
+        loglevelfilter_len: int = 0
+        for lfq in filter_name.LogLevelFilterName:
+            loglevelfilter_len += 1
+            if lfq.jname in loglevel_name_list:
+                ret.add(lfq.jname)
+        if len(ret) == loglevelfilter_len:
+            return True
+        return False
 
     def get_datelist_of_file(self, fpath: str):
         datelistcmd = (

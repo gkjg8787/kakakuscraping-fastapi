@@ -22,6 +22,17 @@ class Form(BaseModel):
     action: str = ""
 
 
+class CheckBoxElement(BaseModel):
+    id: int
+    text: str = ""
+    checked: str = ""
+
+
+class CheckBox(BaseModel):
+    input_name: str
+    checkboxes: list[CheckBoxElement] = []
+
+
 class SelectForm(BaseModel):
     form: Form
     select: Select

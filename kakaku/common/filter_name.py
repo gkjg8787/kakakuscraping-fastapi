@@ -442,10 +442,6 @@ class OnlineStoreCopyTypeName(Enum):
 
 @unique
 class LogLevelFilterName(Enum):
-    ALL = (
-        1,
-        "全て",
-    )
     DEBUG = (
         2,
         "DEBUG",

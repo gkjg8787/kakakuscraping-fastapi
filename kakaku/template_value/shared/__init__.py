@@ -6,6 +6,8 @@ from .shared import (
     SelectForm,
     Select,
     SelectOption,
+    CheckBox,
+    CheckBoxElement,
 )
 
 __all__ = [
@@ -16,4 +18,6 @@ __all__ = [
     "SelectForm",
     "Select",
     "SelectOption",
+    "CheckBox",
+    "CheckBoxElement",
 ]

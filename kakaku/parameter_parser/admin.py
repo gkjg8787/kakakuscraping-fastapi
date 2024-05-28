@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from fastapi import Form
+from fastapi import Form, Query
 
 from common.filter_name import (
     FilterQueryName,
@@ -18,13 +18,17 @@ class ProcCtrlForm:
 
 
 class LogFilterQuery:
-    level: str = ""
+    level_list: list[str]
     min_date: str = ""
     max_date: str = ""
 
-    def __init__(self, level: str = "", min_date: str = "", max_date: str = ""):
-        if self.is_valid_log_level(level):
-            self.level = level
+    def __init__(
+        self, level: list[str] = Query([]), min_date: str = "", max_date: str = ""
+    ):
+        self.level_list = []
+        for l in level:
+            if self.is_valid_log_level(l):
+                self.level_list.append(l)
         if min_date and self.is_valid_date(min_date):
             self.min_date = min_date
         if max_date and self.is_valid_date(max_date):
@@ -48,8 +52,8 @@ class LogFilterQuery:
 
     def get_filter_dict(self) -> dict:
         results = {}
-        if self.level:
-            results[FilterQueryName.LEVEL.value] = self.level
+        if self.level_list:
+            results[FilterQueryName.LEVEL.value] = self.level_list
         if self.min_date:
             results[FilterQueryName.MIN_DATE.value] = self.min_date
         if self.max_date:

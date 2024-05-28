@@ -20,21 +20,20 @@
     <h3>フィルタ</h3>
     <div class="filter_list">
         <div class="loglevel_filter_box filter_box">
-        {%- with
-            FORM_METHOD = loglevel_filter.form.method,
-            FORM_ACTION = loglevel_filter.form.action,
-            MENU_TITLE = loglevel_filter.select.title,
-            MENU_NAME = loglevel_filter.select.input_name,
-            menu_list = loglevel_filter.select.menu_list,
-            hidden_input_dict = fquery
-        %}
-        {%- include "shared/select_form.html" %}
-        {%- endwith %}
+            {%- for box in loglevel_filter.checkboxes %}
+            <input type="checkbox"
+            name="{{ loglevel_filter.input_name }}"
+            value="{{ box.id }}"
+            form="date_range_form"
+            {{ box.checked }}
+            >{{ box.text }}
+            {%- endfor %}
         </div>
         <div class="date_range_filter_box filter_box">
         {%- with
             FORM_METHOD = date_range_filter.form.method,
             FORM_ACTION = date_range_filter.form.action,
+            FORM_ID = "date_range_form",
             MENU_TITLE = date_range_filter.range_input.title,
             MIN_DATE_NAME = date_range_filter.range_input.lower.input_name,
             MIN_DATE_MIN = date_range_filter.range_input.lower.min_value,
