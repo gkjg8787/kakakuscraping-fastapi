@@ -60,6 +60,8 @@ class CountTempFile:
         count_by_file_ext_list = list(results.values())
         if no_extension.count > 0:
             count_by_file_ext_list.append(no_extension)
+        for el in count_by_file_ext_list:
+            el.files.sort(key=lambda fileinfo: fileinfo.updatetime)
         return CountTempFileResult(
             total_count=total_count,
             count_by_file_ext_list=count_by_file_ext_list,
