@@ -355,6 +355,7 @@ class ServerLogDisplay(BaseTemplateValue):
             LogName.DOWNLOAD + "{:0=2}".format(0),
             LogName.DOWNLOAD + "{:0=2}".format(1),
             LogName.DOWNLOAD + "{:0=2}".format(2),
+            LogName.DOWNLOAD + "{:0=2}".format(3),
             LogName.PARSE,
             LogName.ITEMCOMB,
             LogName.SEARCH,
