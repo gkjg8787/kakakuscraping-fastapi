@@ -160,7 +160,7 @@ class StoreQuery:
             stores.append(Store(storename=sname))
         not_exist_stores = cls.get_unregistered_stores(db, stores=stores)
         if len(not_exist_stores) == 0:
-            return ()
+            return
 
         db.add_all(not_exist_stores)
         db.commit()

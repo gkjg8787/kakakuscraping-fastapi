@@ -125,7 +125,9 @@ class CreateExtractServerLogCommand:
         self, datelist: list[datetime], end: datetime | None, start: datetime = None
     ):
         def less_than_start(target: datetime, start: datetime | None) -> bool:
-            return start and target.date() < start.date()
+            if start and target.date() < start.date():
+                return True
+            return False
 
         if not end:
             return None
@@ -164,7 +166,9 @@ class CreateExtractServerLogCommand:
         end: datetime | None = None,
     ):
         def greater_than_end(target: datetime, end: datetime | None) -> bool:
-            return end and target.date() > end.date()
+            if end and target.date() > end.date():
+                return True
+            return False
 
         if not start:
             return None
