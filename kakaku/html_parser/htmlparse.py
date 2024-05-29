@@ -203,7 +203,8 @@ class ParseItems(metaclass=ABCMeta):
     def getItems(self):
         return ()
 
-    def trimStr(self, text: str):
+    @classmethod
+    def trimStr(cls, text: str):
         table = str.maketrans({"\u3000": "", "\r": "", "\n": "", "\t": " "})
         return text.translate(table).strip()
 

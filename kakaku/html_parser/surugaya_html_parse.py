@@ -43,11 +43,13 @@ class SurugayaProduct_Other(AB_SurugayaParse):
         item.timeStamp = date
         item.url = url
         return item
-
-    def getTitle(self, soup):
+    @classmethod
+    def getTitle(cls, soup):
         titlebody = "h1.title_product.mgnB15"
         retstr = soup.select_one(titlebody)
-        namestr = self.trimStr(retstr.text).replace("の取り扱い店舗一覧", "")
+        if not retstr:
+            return ""
+        namestr = cls.trimStr(retstr.text).replace("の取り扱い店舗一覧", "")
         return namestr
 
     def createSinagire(self, binfo):
@@ -194,8 +196,11 @@ class SurugayaProduct(AB_SurugayaParse):
         return self.__itemInfo.name
 
 
-def is_makepure(url):
-    return "product-other" in str(url) or "product/other" in str(url)
+def is_makepure(soup :BeautifulSoup):
+    ret = SurugayaProduct_Other.getTitle(soup)
+    if ret:
+        return True
+    return False
 
 
 class SurugayaMakepurePostage:
@@ -203,7 +208,7 @@ class SurugayaMakepurePostage:
     shopid_dict: dict[str, htmlparse.ParseShopIDInfo] = {}
 
     def __init__(self, soup: BeautifulSoup, url: str):
-        if not is_makepure(url):
+        if not is_makepure(soup):
             return
         self.parse_html(soup=soup)
 
@@ -417,7 +422,7 @@ class SurugayaParse(htmlparse.ParseItems):
         self.postage = SurugayaMakepurePostage(soup=self.soup, url=url)
 
     def createObj(self, soup, id, date, url):
-        if is_makepure(url):
+        if is_makepure(soup):
             return SurugayaProduct_Other(soup, id, date, url)
         else:
             return SurugayaProduct(soup, id, date, url)
