@@ -1,7 +1,7 @@
 import sys
 import json
 import requests
-from requests.exceptions import Timeout
+from requests.exceptions import Timeout, ConnectionError
 
 from itemcomb.surugaya_postage.const_value import (
     SHIPPING_FEE_URL,
@@ -18,6 +18,8 @@ def getRawShippingFee(tenpo_cd):
         res = requests.post(url=url, data=payload, timeout=REQUESTS_TIMEOUT)
     except Timeout:
         # print('Timeout Error')
+        return None
+    except ConnectionError:
         return None
     if res.status_code != requests.codes.ok:
         # print('Error Status Code' + str(res.status_code))
@@ -74,7 +76,7 @@ def searchPrefecturePostage(jdict: dict, prefecture=DEFAULT_PREF):
     return res
 
 
-def getPrefecturePostage(tenpo_cd, prefs):
+def getPrefecturePostage(tenpo_cd, prefs) -> None | list[dict]:
     jsontext = getRawShippingFee(tenpo_cd)
     if not jsontext:
         return None
@@ -83,22 +85,6 @@ def getPrefecturePostage(tenpo_cd, prefs):
     except json.decoder.JSONDecodeError:
         return None
     if has_list_pref_fee(jdict):
-        rets = [searchPrefecturePostage(jdict, pref) for pref in prefs]
+        return [searchPrefecturePostage(jdict, pref) for pref in prefs]
     else:
-        rets = [searchPrefecturePostage(jdict)]
-    return rets
-
-
-def cmdstart():
-    if len(sys.argv) == 1 or len(sys.argv) > 3:
-        print("Error Param")
-        return
-    pref = DEFAULT_PREF
-    if len(sys.argv) == 3:
-        pref = sys.argv[2]
-    jdicts = getPrefecturePostage(sys.argv[1], [pref])
-    print(jdicts)
-
-
-if __name__ == "__main__":
-    cmdstart()
+        return [searchPrefecturePostage(jdict)]
