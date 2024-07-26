@@ -1,4 +1,4 @@
-from typing import List
+from urllib.parse import urlencode
 
 from fastapi import Query, Form
 from pydantic import BaseModel
@@ -39,19 +39,22 @@ class ShippingConditionQuery:
             results[filter_name.FilterQueryName.SORT.value] = self.sort
         return results
 
+    def get_cookie(self) -> str:
+        return str(self.item_id_list)
+
 
 class ItemCombinationResultForm(BaseModel):
-    item_id_list: List[int] = []
-    store_list: List[ItemCombStore] = []
+    item_id_list: list[int] = []
+    store_list: list[ItemCombStore] = []
     errmsg: str = ""
 
     def __init__(
         self,
-        item_id: List[str] = Form(),
+        item_id: list[str] = Form(),
     ):
         super().__init__()
         if item_id:
-            results: List[int] = []
+            results: list[int] = []
             for id in item_id:
                 if is_valid_id(id):
                     results.append(int(id))

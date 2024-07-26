@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 
 from accessor.read_sqlalchemy import get_session
-from common import read_templates
+from common import read_templates, cookie_name
 from parameter_parser.item import NewestFilterQuery
 from parameter_parser.calcitemcomb import (
     ShippingConditionQuery,
@@ -40,11 +40,17 @@ def read_input_shop_shipping_condition(
     db: Session = Depends(get_session),
 ):
     scc = ShippingConditionContext(db=db, scq=scq)
-    return templates.TemplateResponse(
+    res = templates.TemplateResponse(
         request=request,
         name="itemcomb/shipping_condition.html",
         context=scc.get_context(),
     )
+    if scq.is_valid():
+        res.set_cookie(
+            key=cookie_name.ItemComb.pre_select_ids.name,
+            value=scq.get_cookie(),
+        )
+    return res
 
 
 @router.post("/result/", response_class=HTMLResponse)

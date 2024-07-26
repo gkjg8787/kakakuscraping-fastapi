@@ -7,6 +7,7 @@ from common import (
     filter_name,
     templates_string,
     read_config,
+    cookie_name,
 )
 from template_value import BaseTemplateValue
 import parameter_parser.item as ppi
@@ -53,6 +54,7 @@ class ItemSelectionContext(BaseTemplateValue):
     MAX_PRICE_RANGE_NAME: str = filter_name.FilterQueryName.PRMAX.value
     MIN_PRICE_RANGE: Optional[int] = None
     MAX_PRICE_RANGE: Optional[int] = None
+    ITEM_SELECT_COOKIE: str = cookie_name.ItemComb.pre_select_ids.name
 
     def __init__(self, nfq: ppi.NewestFilterQuery, db: Session):
         fd = nfq.get_filter_dict()
