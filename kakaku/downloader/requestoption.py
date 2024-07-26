@@ -3,9 +3,36 @@ import datetime
 from common import cmnlog
 
 
+class UserAgent:
+    value = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
+
+    def to_dict(self) -> dict:
+        return {"User-Agent": self.value}
+
+
+class HttpClientHints:
+    sec_ch_ua: str = '"Not)A;Brand";v="99","Google Chrome";v="127","Chromium";v="127"'
+    sec_ch_ua_mobile: str = "?0"
+    sec_ch_ua_platform: str = '"Windows"'
+    sec_fetch_mode: str = "navigate"
+    sec_fetch_dest: str = "document"
+    sec_fetch_site: str = "none"
+    sec_fetch_user: str = "?1"
+
+    def to_dict(self) -> dict:
+        result = {
+            "Sec-Ch-Ua": self.sec_ch_ua,
+            "Sec-Ch-Ua-Moblie": self.sec_ch_ua_mobile,
+            "Sec-Ch-Ua-Platform": self.sec_ch_ua_platform,
+            "Sec-Fetch-Mode": self.sec_fetch_mode,
+            "Sec-Fetch-Dest": self.sec_fetch_dest,
+            "Sec-Fetch-Site": self.sec_fetch_site,
+            "Sec-Fetch-User": self.sec_fetch_user,
+        }
+        return result
+
+
 class RequestOpt:
-    __userAgentText = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
-    __header = {"User-Agent": __userAgentText}
 
     def __init__(self):
         self.userAgent = True
@@ -59,7 +86,9 @@ class RequestOpt:
     def getHeader(self):
         if not self.userAgent:
             return None
-        return RequestOpt.__header
+        header = UserAgent().to_dict()
+        header.update(HttpClientHints().to_dict())
+        return header
 
     def updateCookieJar(self, cookiejar):
         nd = datetime.datetime.now(datetime.timezone.utc)
