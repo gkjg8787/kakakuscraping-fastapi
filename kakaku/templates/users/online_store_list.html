@@ -3,6 +3,7 @@
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
     <title>自動取得した店舗一覧</title>
+    <script type="text/javascript" src="{{ url_for('static', path='/js/common.js') }}"></script>
 {% endblock %}
 
 {% block body %}
@@ -56,6 +57,9 @@
     {%- with EQST_NAME = EQST_NAME, storelist = storelist, fquery = fquery %}
     {%- include "users/item_store_filter.html" %}
     {%- endwith %}
+    </p>
+    <p>
+        <input type="button" value="一番下" onclick="gotoBottom()">
     </p>
     <p>
         件数
@@ -120,5 +124,8 @@
         {%- endfor %}
     </table>
     <p><a href="{{ url_for('read_users_stores') }}" class="plain-link">店舗一覧へ戻る</a></p>
+    <p>
+        <input type="button" value="一番上" onclick="gotoTop()">
+    </p>
     <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
 {% endblock %}

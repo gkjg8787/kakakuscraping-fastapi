@@ -41,7 +41,9 @@
             checkBoxes.forEach(checkBox => {
                 checkBox.checked = false;
             });
+            checkcountview[0].innerText = `0/${checkMax}`
         }
+
         function getCookieValue(key) {
             const cookies = document.cookie.split(';');
             const foundCookie = cookies.find(
@@ -70,6 +72,7 @@
                 }
                 if (checkCount > checkMax) { break; }
             }
+            checkcountview[0].innerText = `${checkCount}/${checkMax}`
         }
     </script>
     <h1>価格計算の対象アイテムの選択</h1>
