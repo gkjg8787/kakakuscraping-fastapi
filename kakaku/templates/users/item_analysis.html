@@ -9,10 +9,10 @@
 
 {% block body %}
     <h1>アイテム分析</h1>
-    <h2>({{ period_start }})から({{ period_end }})までのACTIVEなアイテムの分析</h2>
+    <h2>({{ period_start }})と({{ period_end }})のACTIVEなアイテムの分析</h2>
     
     <form method="get" action="">
-        対象期間 : <select name="{{ ANALYSIS_Q_NAME }}" onchange="submit(this.form)">
+        比較する時期 : <select name="{{ ANALYSIS_Q_NAME }}" onchange="submit(this.form)">
             {%- for ap in analysisPeriodList %}
             <option value="{{ ap.id }}" {{ ap.selected }}>
                 {{ ap.text }}

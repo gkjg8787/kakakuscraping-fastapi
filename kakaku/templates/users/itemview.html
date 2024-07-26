@@ -179,7 +179,7 @@
     <div class="flex_box">
         <div class="detail_log_filter">
         <form method="get" action="#log_list">
-            対象期間 : <select name="{{ TIME_PERIOD_Q_NAME }}" onchange="submit(this.form)">
+            表示する期間 : <select name="{{ TIME_PERIOD_Q_NAME }}" onchange="submit(this.form)">
                 {%- for tp in timePeriodList %}
                 <option value="{{ tp.id }}" {{ tp.selected }}>
                     {{ tp.text }}
