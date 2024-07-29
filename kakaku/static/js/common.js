@@ -1,7 +1,6 @@
 function gotoTop() {
   window.scroll({
     top: 0,
-    behavior: "smooth",
   });
 }
 function gotoBottom() {

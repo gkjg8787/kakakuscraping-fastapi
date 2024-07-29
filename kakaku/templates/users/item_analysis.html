@@ -11,6 +11,7 @@
     <h1>アイテム分析</h1>
     <h2>({{ period_start }})と({{ period_end }})のACTIVEなアイテムの分析</h2>
     
+    <div class="analysis_filter">
     <form method="get" action="">
         比較する時期 : <select name="{{ ANALYSIS_Q_NAME }}" onchange="submit(this.form)">
             {%- for ap in analysisPeriodList %}
@@ -20,6 +21,7 @@
             {%- endfor %}
         </select>
     </form>
+    </div>
 
     <h3>アイテム数の変動</h3>
     {%- with trend = item_count.trend %}
