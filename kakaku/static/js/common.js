@@ -1,10 +1,8 @@
 function gotoTop() {
-  window.scroll({
-    top: 0,
-  });
+  const elem = document.getElementsByTagName("html");
+  elem[elem.length - 1].scrollIntoView(true);
 }
 function gotoBottom() {
-  var element = document.documentElement;
-  var bottom = element.scrollHeight - element.clientHeight;
-  window.scroll(0, bottom);
+  const elem = document.getElementsByTagName("html");
+  elem[elem.length - 1].scrollIntoView(false);
 }

@@ -3,10 +3,17 @@
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
     <link rel="stylesheet" href="{{ url_for('static', path='/css/itemdetails.css') }}" type="text/css">
+    <script type="text/javascript" src="{{ url_for('static', path='/js/common.js') }}"></script>
     <title>アイテム詳細</title>
  {% endblock %}
 
 {% block body %}
+    <script type="text/javascript">
+        function gotoLogListTop() {
+            const elem = document.getElementById("log_list");
+            elem.scrollIntoView(true);
+        }
+    </script>
     <h1>アイテム詳細</h1>
     <h2>直近のアイテム価格</h2>
   
@@ -220,6 +227,9 @@
         </form>
     </p>
     <p>
+        <input type="button" value="一番下" onclick="gotoBottom()">
+    </p>
+    <p>
     件数 {{ loglist_length }}件
     </p>
     <table class="recent_table">
@@ -256,5 +266,10 @@
             {% endfor %}
         {% endif %}
     </table>
-    <p><a href="#" class="plain-link">TOPへ</a></p>
+    <p>
+        <input type="button" value="フィルターへ" onclick="gotoLogListTop()">
+    </p>
+    <p>
+        <input type="button" value="一番上" onclick="gotoTop()">
+    </p>
 {% endblock %}
