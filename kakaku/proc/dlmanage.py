@@ -67,18 +67,18 @@ class DlProc:
                 etime = time.time()
                 if etime - stime < 1:
                     time.sleep((1 - (etime - stime)))
-                logger.info(get_filename() + " get dltask url=" + task.url)
+                logger.debug(get_filename() + " get dltask url=" + task.url)
                 manager_util.writeProcActive(db, psa=psa)
                 dlhtml = download_html.downLoadHtml(task.url)
                 stime = time.time()
                 if len(dlhtml) == 0:
-                    logger.error(get_filename() + " fail download")
+                    logger.error(get_filename() + " fail download url=" + task.url)
                     manager_util.writeProcFault(db, psa=psa)
                     continue
-                logger.info(get_filename() + " download html=" + dlhtml)
+                logger.debug(get_filename() + " download html=" + dlhtml)
                 task.dlhtml = dlhtml
                 retq.put(task)
-                logger.info(get_filename() + " put parsetask")
+                logger.info(get_filename() + " put parsetask html=" + dlhtml)
             except queue.Empty:
                 manager_util.writeProcWaiting(db, psa=psa)
                 time.sleep(0.1)
@@ -103,7 +103,7 @@ class DlProc:
         task = DownloadResultTask(url=url, itemid=itemid)
         self.dlproclist[parsed_url.netloc].taskq.put(task)
         self.dlproclist[parsed_url.netloc].updatePutTime()
-        logger.info(get_filename() + " put task")
+        logger.debug(get_filename() + " put task")
 
     def createDlProc(self, id, parsed_url):
         p, taskq = self.startDlSchedule(id, self.taskretq)

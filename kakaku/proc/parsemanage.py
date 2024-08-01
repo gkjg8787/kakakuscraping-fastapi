@@ -110,7 +110,7 @@ class ParseProc:
                     logger=logger,
                 )
             is_parse = True
-            logger.info(
+            logger.debug(
                 get_filename() + " pid=" + str(id) + " end Parse url=" + task.url
             )
 
