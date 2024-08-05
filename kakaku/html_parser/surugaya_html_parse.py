@@ -43,6 +43,7 @@ class SurugayaProduct_Other(AB_SurugayaParse):
         item.timeStamp = date
         item.url = url
         return item
+
     @classmethod
     def getTitle(cls, soup):
         titlebody = "h1.title_product.mgnB15"
@@ -196,7 +197,7 @@ class SurugayaProduct(AB_SurugayaParse):
         return self.__itemInfo.name
 
 
-def is_makepure(soup :BeautifulSoup):
+def is_makepure(soup: BeautifulSoup):
     ret = SurugayaProduct_Other.getTitle(soup)
     if ret:
         return True
@@ -337,7 +338,7 @@ class SurugayaMakepurePostage:
         if "送料無料" in postage_text:
             return 0
         p_text = postage_text.replace(",", "")
-        range_ptn = r"[1-9][0-9]+～[1-9][0-9]+円"
+        range_ptn = r"[0-9]+～[1-9][0-9]+円"
         m = re.findall(range_ptn, p_text)
         if m:
             return -1
