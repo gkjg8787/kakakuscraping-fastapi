@@ -1,116 +1,137 @@
-
-
 {% extends "shared/layout.html" %}
 
 {% block head %}
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
-    <title id="title">グループ編集</title>
+<link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
+<title id="title">グループ編集</title>
+<script type="text/javascript" src="{{ url_for('static', path='/js/common.js') }}"></script>
 {% endblock %}
 
 {% block body %}
-    <h1>グループ編集</h1>
-    <p>{{ errmsg }}</p>
-    
-    <p>
-    <form method="get" action="#title">
-        グループ : <select name="{{ GROUPID_NAME }}" onchange="submit(this.form)">
-        {% if gfid | int <= 0%}
-            <option hidden>グループを選択してください</option>
-        {% endif %}
-        {% for g in groups %}
-            <option value="{{ g.group_id }}" {{ g.selected }}>{{ g.groupname }}</option>
-        {% endfor %}
-        </select>
-        
-    </form>
-    </p>
-    <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
-    <p>
-    <form method="post" action="{{ url_for('read_users_groups_delete') }}">
-        <input type="hidden" name="{{ POST_GROUP_ID }}" value="{{ gfid }}">
-        <button type="submit">グループを削除</button>
-    </form>
-    </p>
-    <h2>グループ内アイテム一覧</h2>
-    <form method="post" id="group_item_post_form" action="{{ url_for('read_users_groups_edit_update') }}">
-        <p>
-            件数
-            {{ group_items_length }}件
-        </p>
-        <table class='recent_table'>
-            <tr>
-                <th>グループ内</th>
-                <th>item_id</th>
-                <th>商品名</th>
-                <th>URL</th>
-                <th>直近価格</th>
-                <th>店名</th>
-                <th>更新時間</th>
-                <th>今までの最安値</th>
-                <th>活性数</th>
-            </tr>
-            {% for row in group_items %}
-                <tr id="item{{ row['item_id'] }}">
-                <td><input type="checkbox" name="{{ POST_GROUP_ITEM_LIST }}" value="{{ row['item_id'] }}"  form="group_item_post_form" checked></td>
-                <td>{{ row['item_id'] }}</td>
-                <td>{{ row['name'] }}</td>
-                <td>
-                    {%- with url = row['urlpath'] %}
-                    {%- include "shared/url_link.html" %}
-                    {%- endwith %}
-                </td>
-                <td>
-                    {%- with price = row['price'], lowestprice = row['lowestprice'] %}
-                    {%- include "shared/price_span.html" %}
-                    {%- endwith %}
-                </td>
-                <td>{{ row['storename'] }}</td>
-                {%- with updatetime = row['created_at'] %}
-                {%- include "shared/updatetime_td.html" %}
-                {%- endwith %}
-                <td>{{ row['lowestprice'] }}円</td>
-                <td>{{ row['act'] }}</td>
-            {% endfor %}
-        </table>
-        <button type="submit" form="group_item_post_form">グループを更新</button>
-    </form>
+<script type="text/javascript">
+    function gotoOtherItemsTop() {
+        const elem = document.getElementById("other_items_title");
+        elem.scrollIntoView(true);
+    }
+</script>
+<h1>グループ編集</h1>
+<p>{{ errmsg }}</p>
 
-    <h2 id="other_items_title">グループ外アイテム一覧</h2>
-    <h3>フィルタ</h3>
-    <p>
-    {%- with ITEMACT_NAME = ITEMACT_NAME, actstslist = actstslist, fquery = fquery, form_action = "#other_items_title" %}
-    {%- include "users/item_act_filter.html" %}
-    {%- endwith %}
-    </p>
-    <p>
-    {%- with STOCK_NAME = STOCK_NAME, STOCK_VALUE = STOCK_VALUE, ZAIKO_CHECKED = ZAIKO_CHECKED, fquery = fquery, form_action = "#other_items_title" %}
-    {%- include "users/item_in_stock_filter.html" %}
-    {%- endwith %}
-    </p>
-    <p>
-    {%- with ITEMSORT_NAME = ITEMSORT_NAME, itemSortList = itemSortList, fquery = fquery, form_action = "#other_items_title" %}
-    {%- include "users/item_sort_filter.html" %}
-    {%- endwith %}
-    </p>
-    <p>
-    {%- with
-        MIN_PRICE_RANGE_NAME = MIN_PRICE_RANGE_NAME,
-        MIN_PRICE_RANGE = MIN_PRICE_RANGE,
-        MAX_PRICE_RANGE_NAME = MAX_PRICE_RANGE_NAME,
-        MAX_PRICE_RANGE = MAX_PRICE_RANGE,
-        storelist = storelist,
-        fquery = fquery,
-        form_action = "#other_items_title"
-    %}
-    {%- include "users/item_price_range_filter.html" %}
-    {%- endwith %} 
-    </p>
-    <p><a href="{{ url_for('read_users_groups_edit') }}?{{ GROUPID_NAME }}={{ gfid }}#other_items_title" class="plain-link">検索条件クリア</a></p>
+<p>
+<form method="get" action="#title">
+    グループ : <select name="{{ GROUPID_NAME }}" onchange="submit(this.form)">
+        {% if gfid | int <= 0%} <option hidden>グループを選択してください</option>
+            {% endif %}
+            {% for g in groups %}
+            <option value="{{ g.group_id }}" {{ g.selected }}>{{ g.groupname }}</option>
+            {% endfor %}
+    </select>
+
+</form>
+</p>
+<p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
+<p>
+<form method="post" action="{{ url_for('read_users_groups_delete') }}">
+    <input type="hidden" name="{{ POST_GROUP_ID }}" value="{{ gfid }}">
+    <button type="submit">グループを削除</button>
+</form>
+</p>
+<p>
+    <input type="button" value="一番下" onclick="gotoBottom()">
+</p>
+<p>
+    <input type="button" value="グループ外アイテムへ" onclick="gotoOtherItemsTop()">
+</p>
+<h2>グループ内アイテム一覧</h2>
+<form method="post" id="group_item_post_form" action="{{ url_for('read_users_groups_edit_update') }}">
     <p>
         件数
-        {{ other_items_length }}件
+        {{ group_items_length }}件
     </p>
     <table class='recent_table'>
+        <tr>
+            <th>グループ内</th>
+            <th>item_id</th>
+            <th>商品名</th>
+            <th>URL</th>
+            <th>直近価格</th>
+            <th>店名</th>
+            <th>更新時間</th>
+            <th>今までの最安値</th>
+            <th>活性数</th>
+        </tr>
+        {% for row in group_items %}
+        <tr id="item{{ row['item_id'] }}">
+            <td><input type="checkbox" name="{{ POST_GROUP_ITEM_LIST }}" value="{{ row['item_id'] }}"
+                    form="group_item_post_form" checked></td>
+            <td>{{ row['item_id'] }}</td>
+            <td>{{ row['name'] }}</td>
+            <td>
+                {%- with url = row['urlpath'] %}
+                {%- include "shared/url_link.html" %}
+                {%- endwith %}
+            </td>
+            <td>
+                {%- with price = row['price'], lowestprice = row['lowestprice'] %}
+                {%- include "shared/price_span.html" %}
+                {%- endwith %}
+            </td>
+            <td>{{ row['storename'] }}</td>
+            {%- with updatetime = row['created_at'] %}
+            {%- include "shared/updatetime_td.html" %}
+            {%- endwith %}
+            <td>{{ row['lowestprice'] }}円</td>
+            <td>{{ row['act'] }}</td>
+            {% endfor %}
+    </table>
+    <button type="submit" form="group_item_post_form">グループを更新</button>
+</form>
+<p>
+    <input type="button" value="一番上" onclick="gotoTop()">
+</p>
+<p>
+    <input type="button" value="一番下" onclick="gotoBottom()">
+</p>
+
+<h2 id="other_items_title">グループ外アイテム一覧</h2>
+<h3>フィルタ</h3>
+<p>
+    {%- with ITEMACT_NAME = ITEMACT_NAME, actstslist = actstslist, fquery = fquery, form_action = "#other_items_title"
+    %}
+    {%- include "users/item_act_filter.html" %}
+    {%- endwith %}
+</p>
+<p>
+    {%- with STOCK_NAME = STOCK_NAME, STOCK_VALUE = STOCK_VALUE, ZAIKO_CHECKED = ZAIKO_CHECKED, fquery = fquery,
+    form_action = "#other_items_title" %}
+    {%- include "users/item_in_stock_filter.html" %}
+    {%- endwith %}
+</p>
+<p>
+    {%- with ITEMSORT_NAME = ITEMSORT_NAME, itemSortList = itemSortList, fquery = fquery, form_action =
+    "#other_items_title" %}
+    {%- include "users/item_sort_filter.html" %}
+    {%- endwith %}
+</p>
+<p>
+    {%- with
+    MIN_PRICE_RANGE_NAME = MIN_PRICE_RANGE_NAME,
+    MIN_PRICE_RANGE = MIN_PRICE_RANGE,
+    MAX_PRICE_RANGE_NAME = MAX_PRICE_RANGE_NAME,
+    MAX_PRICE_RANGE = MAX_PRICE_RANGE,
+    storelist = storelist,
+    fquery = fquery,
+    form_action = "#other_items_title"
+    %}
+    {%- include "users/item_price_range_filter.html" %}
+    {%- endwith %}
+</p>
+<p><a href="{{ url_for('read_users_groups_edit') }}?{{ GROUPID_NAME }}={{ gfid }}#other_items_title"
+        class="plain-link">検索条件クリア</a></p>
+<p>
+    件数
+    {{ other_items_length }}件
+</p>
+<table class='recent_table'>
     <tr>
         <th>グループ内</th>
         <th>item_id</th>
@@ -123,8 +144,9 @@
         <th>活性数</th>
     </tr>
     {% for row in other_items %}
-        <tr id="item{{ row['item_id'] }}">
-        <td><input type="checkbox" name="{{ POST_GROUP_ITEM_LIST }}" value="{{ row['item_id'] }}" form="group_item_post_form"></td>
+    <tr id="item{{ row['item_id'] }}">
+        <td><input type="checkbox" name="{{ POST_GROUP_ITEM_LIST }}" value="{{ row['item_id'] }}"
+                form="group_item_post_form"></td>
         <td>{{ row['item_id'] }}</td>
         <td>{{ row['name'] }}</td>
         <td>
@@ -143,9 +165,15 @@
         {%- endwith %}
         <td>{{ row['lowestprice'] }}円</td>
         <td>{{ row['act'] }}</td>
-    {% endfor %}
-    </table>
-    <input type="hidden" name="{{ POST_GROUP_ID }}" value="{{ gfid }}" form="group_item_post_form">
-    <button type="submit" form="group_item_post_form">グループを更新</button>
-    <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
+        {% endfor %}
+</table>
+<input type="hidden" name="{{ POST_GROUP_ID }}" value="{{ gfid }}" form="group_item_post_form">
+<button type="submit" form="group_item_post_form">グループを更新</button>
+<p>
+    <input type="button" value="グループ外アイテムへ" onclick="gotoOtherItemsTop()">
+</p>
+<p>
+    <input type="button" value="一番上" onclick="gotoTop()">
+</p>
+<p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
 {% endblock %}
