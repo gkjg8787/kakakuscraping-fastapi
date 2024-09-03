@@ -16,9 +16,9 @@ class SearchBookoff(SearchParser):
         for v in ret:
             itemd = {}
             itemd[self.STORENAME] = "ブックオフ"
-            itemd[
-                self.IMAGE_ON_ERR
-            ] = "https://content.bookoff.co.jp/images/goods/item_ll.gif"
+            itemd[self.IMAGE_ON_ERR] = (
+                "https://content.bookoff.co.jp/images/goods/item_ll.gif"
+            )
             self.setTitle(v, itemd)
             self.setImage(v, itemd)
             self.setCategory(v, itemd)
@@ -88,7 +88,7 @@ class SearchBookoff(SearchParser):
 
     def setSinagire(self, elem, itemd):
         stocko = elem.select(".productItem__stock--alert")
-        if len(stocko) != 0:
+        if len(stocko) == 0:
             itemd[self.SINAGIRE] = "品切れ"
 
     def parsePageNum(self, info):

@@ -30,7 +30,7 @@ class BookoffParse(htmlparse.ParseItems):
     def existZaiko(self, soup):
         q = r".productInformation__stock__alert"
         elem = soup.select(q)
-        if len(elem) == 0:
+        if len(elem) != 0:
             return True
         return False
 
@@ -115,7 +115,9 @@ class BookoffOrderParse:
         return results
 
     def parse_free_shipping(self, target_text: str):
-        m = re.findall(r"([1-9][0-9]+)円(以上)の注文で送料(無料)", target_text.replace(",", ""))
+        m = re.findall(
+            r"([1-9][0-9]+)円(以上)の注文で送料(無料)", target_text.replace(",", "")
+        )
         if not m:
             return None
         if not m[0][0] or not m[0][1] or not m[0][2]:
@@ -130,7 +132,8 @@ class BookoffOrderParse:
         target_text: str,
     ):
         m = re.findall(
-            r"([1-9][0-9]+)円(未満)の場合、日本全国一律([1-9][0-9]+)円", target_text.replace(",", "")
+            r"([1-9][0-9]+)円(未満)の場合、日本全国一律([1-9][0-9]+)円",
+            target_text.replace(",", ""),
         )
         if not m:
             return None
