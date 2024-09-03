@@ -151,6 +151,7 @@ def __get_update_for_pricelog_by_2days(
                 dic["log_id"] = pricelog.log_id
                 update_dict_list.append(dic)
                 # print(f"two={two}, pricelog={pricelog}")
+                exist_log = True
                 continue
             if eq_log(two=two, pricelog=pricelog):
                 exist_log = True
