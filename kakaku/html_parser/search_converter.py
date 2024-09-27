@@ -198,9 +198,7 @@ class SearchDictConverter:
                 )
                 maini.new = ip
 
-        if maini.new or maini.used:
-            return maini
-        return None
+        return maini
 
     @classmethod
     def createURLParamForTemplateValue(cls, urlparam: Dict, pageinfo: Dict) -> str:

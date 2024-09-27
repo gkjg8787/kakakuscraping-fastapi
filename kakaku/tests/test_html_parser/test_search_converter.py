@@ -1,4 +1,3 @@
-from typing import Dict
 from html_parser.search_converter import (
     SearchDictConverter,
     SearchResultItem,
@@ -105,6 +104,9 @@ def test_convertToSearchResultItems_full():
         if num == 2:
             __item_common_assert(i, items, num)
             assert i.sinagire == items[num][SearchParser.SINAGIRE]
+            assert i.main != None
+            assert i.main.new is None
+            assert i.main.used is None
         if num == 3:
             __item_common_assert(i, items, num)
             assert i.state == items[num][SearchParser.STATE]
