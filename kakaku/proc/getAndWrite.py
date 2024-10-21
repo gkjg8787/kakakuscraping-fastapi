@@ -3,7 +3,6 @@ import datetime
 from enum import Enum, auto
 from typing import Dict, List, Optional
 
-from distutils.util import strtobool
 from sqlalchemy.orm import Session
 
 from accessor.item import (
@@ -26,8 +25,6 @@ from itemcomb import postage_data as posd
 
 def deleteTempFile(fname):
     isAutoDel = read_config.is_auto_del_dl_file()
-    if type(isAutoDel) is str:
-        isAutoDel = strtobool(isAutoDel)
     if isAutoDel:
         os.remove(fname)
 
