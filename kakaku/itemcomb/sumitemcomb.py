@@ -1,5 +1,7 @@
 import re
+import itertools
 from dataclasses import dataclass
+
 from .sumitem import SumItem, Store, SelectItem, StoreOperator
 
 
@@ -75,28 +77,6 @@ def createSelectItem(item: dict):
     return SelectItem(item["itemname"], item["storename"], item["price"])
 
 
-# @stop_watch
-def makeComb(ary1, *args):
-    def arycomb(a, b):
-        if len(b) == 0:
-            return a
-        if len(a) > 0 and hasattr(a[0], "__iter__"):
-            retary = [[*ia, ib] for ia in a for ib in b]
-        else:
-            retary = [[ia, ib] for ia in a for ib in b]
-        return retary
-
-    retary = ary1
-    if len(args) == 0:
-        return [[i] for i in retary]
-
-    for a in args:
-        if not isinstance(a, list) and not isinstance(a, tuple):
-            return retary
-        retary = arycomb(retary, a)
-    return retary
-
-
 def getStore(stca: list[Store], name: str):
     for s in stca:
         if name == s.getName():
@@ -149,7 +129,7 @@ def createBulkBuy(cmd: SearchcombCommand):
     stca = createStoreCatalog(cmd.storeconf)
     itemptn = createItemPtn(cmd.itemlist)
     argary = removeHighPriceItem(stca, itemptn, cmd.itemlist, cmd.options)
-    mc = makeComb(*argary)
+    mc = itertools.product(*argary)
     for comb in mc:
         ptn = SumItem(stca)
         for ind in comb:
