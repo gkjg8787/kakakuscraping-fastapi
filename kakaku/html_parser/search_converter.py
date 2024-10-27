@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional
+from typing import Optional
 import re
 import urllib
 
@@ -49,21 +49,21 @@ class PageInfo(BaseModel):
 
 
 class SearchResultPage(BaseModel):
-    pages: List[PageInfo] = []
+    pages: list[PageInfo] = []
     pre_url: Optional[str] = None
     next_url: Optional[str] = None
     more_page: bool = False
 
 
 class SearchResult(BaseModel):
-    items: List[SearchResultItem] = []
+    items: list[SearchResultItem] = []
     page: SearchResultPage = None
 
 
 class SearchDictConverter:
     @classmethod
     def convertToSearchResult(
-        cls, items: List, pageinfo: Dict, urlparam: Dict
+        cls, items: list, pageinfo: dict, urlparam: dict
     ) -> SearchResult:
         items = cls.convertToSearchResultItems(items)
         page = cls.convertToSearchResultPage(pageinfo, urlparam)
@@ -71,10 +71,10 @@ class SearchDictConverter:
 
     @classmethod
     def convertToSearchResultPage(
-        cls, pageinfo: Dict, urlparam: Dict
+        cls, pageinfo: dict, urlparam: dict
     ) -> SearchResultPage:
         srp = SearchResultPage()
-        pages: List[PageInfo] = []
+        pages: list[PageInfo] = []
         current_page_num = None
         if SearchCmn.CURRENT in pageinfo:
             current_page_num = int(pageinfo[SearchCmn.CURRENT])
@@ -124,8 +124,8 @@ class SearchDictConverter:
         return "?" + str(urllib.parse.urlencode(uparam, True))
 
     @classmethod
-    def convertToSearchResultItems(cls, items: List[Dict]):
-        results: List[SearchResultItem] = []
+    def convertToSearchResultItems(cls, items: list[dict]):
+        results: list[SearchResultItem] = []
         for item in items:
             sri = SearchResultItem(
                 storename=item[SearchParser.STORENAME],
@@ -151,7 +151,7 @@ class SearchDictConverter:
         return results
 
     @classmethod
-    def convertMakepureItem(cls, item: Dict) -> MakepureItem:
+    def convertMakepureItem(cls, item: dict) -> MakepureItem:
         mkpr = MakepureItem()
         if SearchParser.TITLE in item:
             mkpr.title = item[SearchParser.TITLE]
@@ -159,15 +159,15 @@ class SearchDictConverter:
             mkpr.biko = item[SearchParser.MAKEPURE_BIKO]
         if SearchParser.MAKEPURE_URL in item:
             mkpr.url = item[SearchParser.MAKEPURE_URL]
-        stptn = r"(マケプレ)(￥[0-9,]*)"
+        stptn = r"(￥[0-9,]*)"
         val = item[SearchParser.MAKEPURE]
         m = re.findall(stptn, val)
         if len(m) != 0:
-            mkpr.price = str(m[0][1])
+            mkpr.price = str(m[0])
         return mkpr
 
     @classmethod
-    def convertMainItem(cls, item: Dict) -> Optional[MainItem]:
+    def convertMainItem(cls, item: dict) -> Optional[MainItem]:
         maini = MainItem()
         if SearchParser.TITLE in item:
             maini.title = item[SearchParser.TITLE]
@@ -201,7 +201,7 @@ class SearchDictConverter:
         return maini
 
     @classmethod
-    def createURLParamForTemplateValue(cls, urlparam: Dict, pageinfo: Dict) -> str:
+    def createURLParamForTemplateValue(cls, urlparam: dict, pageinfo: dict) -> str:
         current_page_num = FilterDefault.PAGE
         if SearchCmn.CURRENT in pageinfo:
             current_page_num = int(pageinfo[SearchCmn.CURRENT])

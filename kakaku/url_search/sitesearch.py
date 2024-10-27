@@ -2,8 +2,6 @@ import sys
 import json
 import queue
 
-from typing import Dict
-
 from downloader import download_html
 from html_parser.search_parser import SearchCmn, SearchParser
 from url_search import readoption
@@ -37,7 +35,7 @@ def deleteLogger():
     return cmnlog.deleteLogger(logname)
 
 
-def getCacheKey(sword, optjson):
+def getCacheKey(sword: str, optjson: dict | None):
     key = sword
     if optjson is not None:
         jsontext = json.dumps(optjson)
@@ -45,7 +43,7 @@ def getCacheKey(sword, optjson):
     return key
 
 
-def getCache(sword, optjson):
+def getCache(sword: str, optjson: dict | None):
     if getcache.isSearchCacheFunc():
         key = getCacheKey(sword, optjson)
         text = getcache.getSearchCache().read(key)
@@ -53,14 +51,14 @@ def getCache(sword, optjson):
     return ""
 
 
-def setCache(sword, optjson, text):
+def setCache(sword: str, optjson: dict | None, text: str):
     if getcache.isSearchCacheFunc():
         key = getCacheKey(sword, optjson)
         getcache.getSearchCache().write(key, text)
     return
 
 
-def getSearch(sword, optjson=None):
+def getSearch(sword: str, optjson: dict | None = None) -> dict:
     cache = getCache(sword, optjson)
     if len(cache) > 0:
         return json.loads(cache)
@@ -71,35 +69,7 @@ def getSearch(sword, optjson=None):
     return res
 
 
-def createOption(sword, optjson=None):
-    sopt = SearchOpt(sword)
-    sopt.setParamOpt(optjson)
-    return sopt
-
-
-def outputCompress(text, optjson=None):
-    logger = getLogger()
-    if len(text) == 0:
-        logger.error(__file__ + " no text no output")
-        print("")
-        return
-
-    if (
-        optjson is None
-        or "output" not in optjson
-        or "type" not in optjson["output"]
-        or optjson["output"]["type"] != "gzip"
-    ):
-        print(text)
-        return
-
-    logger.debug(__file__ + " output gzip")
-    btext = text.encode(encoding="utf-8")
-    gzipret = gzip.compress(btext)
-    sys.stdout.buffer.write(gzipret)
-
-
-def get_search_for_inner(sword: str, optdict=None) -> dict:
+def get_search_for_inner(sword: str, optdict: dict | None = None) -> dict:
     ERR_KEY = "errmsg"
     errmsg = ""
     RESULT_KEY = "result"
@@ -110,7 +80,7 @@ def get_search_for_inner(sword: str, optdict=None) -> dict:
     logger.setLevel(cmnlog.LOGGING_LEVEL)
     logger.info(__file__ + " start url_search")
 
-    logger.info(__file__ + " sword=" + sword)
+    logger.info(f"{__file__} sword={sword}")
     if len(sword) > SearchConst.WORD_MAX_LENGTH:
         errmsg = f"parameter error p1 more_then_max length={len(sword)}"
         return {ERR_KEY: errmsg}
@@ -125,52 +95,11 @@ def get_search_for_inner(sword: str, optdict=None) -> dict:
     return {RESULT_KEY: res}
 
 
-def start_cmd():
-    argslen = len(sys.argv)
-    maxlen = 512
-    cmnlog.createLogger(cmnlog.LogName.SEARCH)
-    logger = getLogger()
-    logger.setLevel(logging.DEBUG)
-    logger.info(__file__ + " start searchcmd")
-
-    if argslen < 2 or argslen > 3:
-        print("ERROR PARAMETER_NUM")
-        logger.error(__file__ + " parameter error length=" + str(argslen))
-        sys.exit()
-
-    logger.info(__file__ + " sword=" + sys.argv[1])
-    if len(sys.argv[1]) > maxlen:
-        print("ERROR PARAMTER_LENGTH")
-        logger.error(
-            __file__
-            + " parameter error p1 more_then_max length="
-            + str(len(sys.argv[1]))
-        )
-        sys.exit()
-
-    optjson = None
-    if argslen == 3:
-        # option
-        if len(sys.argv[2]) > maxlen:
-            print("ERROR PARAMETER_LENGTH")
-            logger.error(
-                __file__
-                + " parameter error p2 more_then_max length="
-                + str(len(sys.argv[2]))
-            )
-            sys.exit()
-        logger.info(__file__ + " optparam=" + sys.argv[2])
-        optjson = json.loads(sys.argv[2])
-
-    logger.debug(__file__ + " start Search")
-    text = getSearch(sys.argv[1], optjson)
-    logger.debug(__file__ + " end Search")
-    outputCompress(text, optjson)
-    logger.debug(__file__ + " print Search Result")
-    logger.debug(__file__ + " end searchcmd")
-
-
 class SearchProcResult:
+    items: dict
+    htmlpart: str
+    pageinfo: dict
+
     def __init__(self):
         self.items = {}
         self.htmlpart = ""
@@ -198,147 +127,21 @@ class SearchProcResult:
         return self.pageinfo
 
 
-class SearchItem:
-    def __init__(self, sword, optjson=None):
-        self.sopt = self.createOption(sword, optjson)
-
-    def createOption(self, sword, optjson=None):
-        sopt = SearchOpt(sword)
-        sopt.setParamOpt(optjson)
-        return sopt
-
-    def start(self):
-        self.allitems = []
-        self.pageinfo = None
-        pageinfo = {SearchCmn.ENABLE: SearchCmn.FALSE}
-        sopt = self.sopt
-        self.setCurrentPage(pageinfo, sopt.getParamOpt())
-
-        logger = getLogger()
-        logger.debug(__file__ + " start SearchItem")
-        m = Manager()
-        retq = m.Queue()
-        taskq = m.Queue()
-        procs = []
-        waittime = QUEUE_TIMEOUT
-        for sitename in sopt.targetstore:
-            searcho = sopt.getSiteSearch(sitename)
-            taskq.put(searcho)
-            proc = Process(target=self.searchResult, args=(taskq, retq, waittime))
-            proc.start()
-            procs.append(proc)
-
-        for proc in procs:
-            proc.join()
-
-        for i in range(len(procs)):
-            try:
-                spr: SearchProcResult = retq.get(timeout=waittime)
-                self.allitems.extend(spr.getItems())
-                self.setPage(pageinfo, spr.getPageInfo())
-                self.pageinfo = pageinfo
-            except queue.Empty:
-                logger.error("{}  [{}] retqueue timeout".format(__file__, str(i)))
-
-        if SearchCmn.TRUE != pageinfo[SearchCmn.ENABLE]:
-            logger.debug(__file__ + " end SearchItem")
-            return
-
-        logger.debug(__file__ + " end SearchItem")
-
-    def setCurrentPage(self, pageinfo, urlparam):
-        if SearchCmn.PAGE not in urlparam:
-            pageinfo[SearchCmn.CURRENT] = "1"
-            return
-        pageinfo[SearchCmn.CURRENT] = urlparam[SearchCmn.PAGE]
-
-    def searchResult(self, taskq, retq, wtime: int):
-        logger = getLogger()
-        spr = SearchProcResult()
-        try:
-            searcho: SiteSearchOpt = taskq.get(timeout=wtime)
-        except queue.Empty:
-            logger.error(__file__ + " taskqueue timeout")
-            retq.put(spr)
-            return
-        site = searcho.getSite()
-        if not site.isExistCategory():
-            logger.info(
-                "{} {} {}".format(__file__, searcho.getName(), " no exist category")
-            )
-            retq.put(spr)
-            return
-        retbool, html = self.downloadHtml(searcho, logger)
-        if not retbool:
-            logger.error(__file__ + " fail download")
-            retq.put(spr)
-            return
-        self.parseHtml(searcho, logger, spr, html)
-        retq.put(spr)
-
-    def downloadHtml(self, searcho: SiteSearchOpt, logger):
-        site = searcho.getSite()
-        dlopt = searcho.getRequestOpt()
-        logger.debug(__file__ + " start DownLoad")
-        retbool, html = download_html.getUrlHtml(site.createURL(), dlopt)
-        logger.debug(__file__ + " end DownLoad")
-        return retbool, html
-
-    def parseHtml(
-        self, searcho: SiteSearchOpt, logger, spr: SearchProcResult, html: str
-    ):
-        logger.debug(__file__ + " start item parse")
-        parser = searcho.getParser()
-        parser.parseSearch(html)
-        logger.debug(__file__ + " end item parse")
-        items = parser.getItems()
-        spr.setItems(items)
-        if len(items) > 0:
-            logger.debug(__file__ + " start page parse")
-            spr.setPageInfo(parser.getPage())
-            logger.debug(__file__ + " end page parse")
-
-    def setPage(self, pageinfo, searchret):
-        if searchret is None:
-            return
-        if SearchCmn.ENABLE not in searchret:
-            return
-        if SearchCmn.TRUE != searchret[SearchCmn.ENABLE]:
-            return
-
-        pageinfo[SearchCmn.ENABLE] = SearchCmn.TRUE
-        MAX = SearchCmn.MAX
-        MIN = SearchCmn.MIN
-
-        if MAX not in pageinfo:
-            pageinfo[MAX] = int(searchret[MAX])
-        elif int(pageinfo[MAX]) < int(searchret[MAX]):
-            pageinfo[MAX] = int(searchret[MAX])
-
-        if MIN not in pageinfo:
-            pageinfo[MIN] = int(searchret[MIN])
-        elif int(pageinfo[MIN]) > int(searchret[MIN]):
-            pageinfo[MIN] = int(searchret[MIN])
-
-        if SearchCmn.MOREPAGE in searchret:
-            pageinfo[SearchCmn.MOREPAGE] = SearchCmn.TRUE
-
-    def getPageInfo(self):
-        return self.pageinfo
-
-    def getItems(self):
-        return self.allitems
-
-
 class SearchOpt:
     SURUGAYA = "surugaya"
     BOOKOFF = "bookoff"
     NETOFF = "netoff"
     GEO = "geo"
 
+    confopts: readoption.ReadSearchOpt
+    searchs: dict[str, SiteSearchOpt]
+    targetstore: list[str]
+    urlparam: dict
+    supportSite: list[str]
+
     def __init__(self, word):
         self.confopts = readoption.ReadSearchOpt()
-        self.searchs: Dict[str, SiteSearchOpt] = {
+        self.searchs: dict[str, SiteSearchOpt] = {
             SearchOpt.SURUGAYA: surugayaSearchOpt.SurugayaSearchOpt(self.confopts),
             SearchOpt.NETOFF: netoffSearchOpt.NetoffSearchOpt(self.confopts),
             SearchOpt.BOOKOFF: bookoffSearchOpt.BookoffSearchOpt(self.confopts),
@@ -405,5 +208,141 @@ class SearchOpt:
         return self.searchs[name].getParser()
 
 
-if __name__ == "__main__":
-    start_cmd()
+class SearchItem:
+    sopt: SearchOpt
+    allitems: list[dict]
+    pageinfo: dict
+
+    def __init__(self, sword: str, optjson: dict | None = None):
+        self.sopt = self.createOption(sword, optjson)
+
+    def createOption(self, sword: str, optjson: dict | None = None):
+        sopt = SearchOpt(sword)
+        sopt.setParamOpt(optjson)
+        return sopt
+
+    def start(self):
+        self.allitems = []
+        self.pageinfo = None
+        pageinfo = {SearchCmn.ENABLE: SearchCmn.FALSE}
+        sopt = self.sopt
+        self.setCurrentPage(pageinfo, sopt.getParamOpt())
+
+        logger = getLogger()
+        logger.debug(__file__ + " start SearchItem")
+        m = Manager()
+        retq = m.Queue()
+        taskq = m.Queue()
+        procs: list[Process] = []
+        waittime = QUEUE_TIMEOUT
+        for sitename in sopt.targetstore:
+            searcho = sopt.getSiteSearch(sitename)
+            taskq.put(searcho)
+            proc = Process(target=self.searchResult, args=(taskq, retq, waittime))
+            proc.start()
+            procs.append(proc)
+
+        for proc in procs:
+            proc.join()
+
+        for i in range(len(procs)):
+            try:
+                spr: SearchProcResult = retq.get(timeout=waittime)
+                self.allitems.extend(spr.getItems())
+                self.setPage(pageinfo, spr.getPageInfo())
+                self.pageinfo = pageinfo
+            except queue.Empty:
+                logger.error("{}  [{}] retqueue timeout".format(__file__, str(i)))
+        logger.debug(f"{__file__} + allitems={self.allitems}")
+        logger.debug(f"{__file__} + pageinfo={self.pageinfo}")
+        if SearchCmn.TRUE != pageinfo[SearchCmn.ENABLE]:
+            logger.debug(__file__ + " end SearchItem")
+            return
+
+        logger.debug(__file__ + " end SearchItem")
+
+    def setCurrentPage(self, pageinfo, urlparam):
+        if SearchCmn.PAGE not in urlparam:
+            pageinfo[SearchCmn.CURRENT] = "1"
+            return
+        pageinfo[SearchCmn.CURRENT] = urlparam[SearchCmn.PAGE]
+
+    def searchResult(self, taskq, retq, wtime: int):
+        logger = getLogger()
+        spr = SearchProcResult()
+        try:
+            searcho: SiteSearchOpt = taskq.get(timeout=wtime)
+        except queue.Empty:
+            logger.error(f"{__file__} taskqueue timeout")
+            retq.put(spr)
+            return
+        site = searcho.getSite()
+        if not site.isExistCategory():
+            logger.info(f"{__file__} {searcho.getName()} no exist category")
+            retq.put(spr)
+            return
+        retbool, html = self.downloadHtml(searcho, logger)
+        if not retbool:
+            logger.error(__file__ + " fail download")
+            retq.put(spr)
+            return
+        self.parseHtml(searcho, logger, spr, html)
+        retq.put(spr)
+
+    def downloadHtml(self, searcho: SiteSearchOpt, logger: logging.Logger):
+        site = searcho.getSite()
+        dlopt = searcho.getRequestOpt()
+        url = site.createURL()
+        logger.debug(f"{__file__} start DownLoad url={url}")
+        retbool, html = download_html.getUrlHtml(url, dlopt)
+        logger.debug(__file__ + " end DownLoad")
+        return retbool, html
+
+    def parseHtml(
+        self,
+        searcho: SiteSearchOpt,
+        logger: logging.Logger,
+        spr: SearchProcResult,
+        html: str,
+    ):
+        logger.debug(f"{__file__} start item parse name={searcho.name}")
+        parser = searcho.getParser()
+        parser.parseSearch(html)
+        logger.debug(f"{__file__} end item parse name={searcho.name}")
+        items = parser.getItems()
+        spr.setItems(items)
+        if len(items) > 0:
+            logger.debug(f"{__file__} start page parse name={searcho.name}")
+            spr.setPageInfo(parser.getPage())
+            logger.debug(f"{__file__} end page parse name={searcho.name}")
+
+    def setPage(self, pageinfo, searchret):
+        if searchret is None:
+            return
+        if SearchCmn.ENABLE not in searchret:
+            return
+        if SearchCmn.TRUE != searchret[SearchCmn.ENABLE]:
+            return
+
+        pageinfo[SearchCmn.ENABLE] = SearchCmn.TRUE
+        MAX = SearchCmn.MAX
+        MIN = SearchCmn.MIN
+
+        if MAX not in pageinfo:
+            pageinfo[MAX] = int(searchret[MAX])
+        elif int(pageinfo[MAX]) < int(searchret[MAX]):
+            pageinfo[MAX] = int(searchret[MAX])
+
+        if MIN not in pageinfo:
+            pageinfo[MIN] = int(searchret[MIN])
+        elif int(pageinfo[MIN]) > int(searchret[MIN]):
+            pageinfo[MIN] = int(searchret[MIN])
+
+        if SearchCmn.MOREPAGE in searchret:
+            pageinfo[SearchCmn.MOREPAGE] = SearchCmn.TRUE
+
+    def getPageInfo(self):
+        return self.pageinfo
+
+    def getItems(self):
+        return self.allitems

@@ -28,7 +28,7 @@ class SearchSurugaya(SearchParser):
         print(self.allitem)
 
     def setCategory(self, elem, itemd):
-        conditiono = elem.select(".condition")
+        conditiono = elem.select(".background-kishu")
         ptn = r"([^\s]+)\s*?|"
         text = self.trimStr(conditiono[0].text)
         m = re.findall(ptn, text)
@@ -41,7 +41,7 @@ class SearchSurugaya(SearchParser):
     def setTitle(self, elem, itemd):
         titleo = elem.select(".title a")
         # print(titleo[0].text)
-        itemd[self.TITLE] = titleo[0].text
+        itemd[self.TITLE] = str(titleo[0].text).strip()
         itemd[self.TITLE_URL] = self.getPerfectURL(titleo[0]["href"])
 
     def getPerfectURL(self, url):
@@ -84,7 +84,7 @@ class SearchSurugaya(SearchParser):
         self.setErrorThrough(in_teika, priceo[0], itemd)
 
         def in_makepure(priceo, itemd):
-            makepure = priceo.select(".mgnB5")
+            makepure = priceo.select(".makeplaTit .text-red")
             if len(makepure) == 0:
                 return
             # print('makepure='+makepure[0].text)

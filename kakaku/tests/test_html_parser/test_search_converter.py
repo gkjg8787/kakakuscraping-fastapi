@@ -21,7 +21,7 @@ def test_convertToSearchResultItems_full():
             SearchParser.TITLE_URL: "https://www.suruga-ya.jp/product-other/109000860",
             SearchParser.CATEGORY: "ニンテンドースイッチソフト",
             SearchParser.MAKEPURE_URL: "https://www.suruga-ya.jp/product-other/109000860",
-            SearchParser.MAKEPURE: "マケプレ￥2,790",
+            SearchParser.MAKEPURE: "￥2,790",
             SearchParser.MAKEPURE_BIKO: "(16点の中古品)",
         },
         {
@@ -33,7 +33,7 @@ def test_convertToSearchResultItems_full():
             SearchParser.NEW: "新品：￥6,600税込",
             SearchParser.USED: "中古：￥5,980税込",
             SearchParser.MAKEPURE_URL: "https://www.suruga-ya.jp/product-other/109002738",
-            SearchParser.MAKEPURE: "マケプレ￥5,801",
+            SearchParser.MAKEPURE: "￥5,801",
             SearchParser.MAKEPURE_BIKO: "(16点の中古品と新品)",
         },
         {
@@ -148,7 +148,7 @@ def __item_common_assert(i: SearchResultItem, items, num: int):
 
 def __item_makepure_assert(i: SearchResultItem, items, num: int):
     assert i.makepure != None
-    assert i.makepure.price == items[num][SearchParser.MAKEPURE][4:]
+    assert i.makepure.price == items[num][SearchParser.MAKEPURE]
     assert i.makepure.biko == items[num][SearchParser.MAKEPURE_BIKO]
     assert i.makepure.url == items[num][SearchParser.MAKEPURE_URL]
 
@@ -318,7 +318,7 @@ def test_convertMainItem_for_new():
             SearchParser.CATEGORY: "ニンテンドースイッチソフト",
             SearchParser.NEW: "新品：￥6,600税込",
             SearchParser.MAKEPURE_URL: "https://www.suruga-ya.jp/product-other/109002738",
-            SearchParser.MAKEPURE: "マケプレ￥5,801",
+            SearchParser.MAKEPURE: "￥5,801",
             SearchParser.MAKEPURE_BIKO: "(16点の中古品と新品)",
         },
         GEO: {

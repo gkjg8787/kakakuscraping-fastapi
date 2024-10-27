@@ -1,4 +1,4 @@
-from typing import Dict
+from abc import abstractmethod
 
 
 class SearchCmn:
@@ -40,8 +40,14 @@ class SearchParser:
     TRUE = SearchCmn.TRUE
     FALSE = SearchCmn.FALSE
 
+    allitem: dict
+
     def __init__(self):
-        self.allitem: Dict = {}
+        self.allitem: dict = {}
+
+    @abstractmethod
+    def parseSearch(self, htmltext):
+        pass
 
     def getItems(self):
         return self.allitem[self.ITEMS]

@@ -1,7 +1,15 @@
 from abc import ABCMeta
+from downloader import requestoption
+from html_parser.search_parser import SearchParser
+from .urlcreator import URLCreator
 
 
 class SiteSearchOpt(metaclass=ABCMeta):
+    name: str
+    site: URLCreator
+    parser: SearchParser
+    requestOpt: requestoption
+
     def __init__(self):
         self.name = ""
         self.site = None
@@ -22,3 +30,6 @@ class SiteSearchOpt(metaclass=ABCMeta):
 
     def getRequestOpt(self):
         return self.requestOpt
+
+    def setParamOpt(self, paramopt):
+        pass
