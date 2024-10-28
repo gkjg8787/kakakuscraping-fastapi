@@ -5,6 +5,9 @@ from html_parser import surugaya_html_parse
 other_fpath = os.path.dirname(__file__) + "/data/surugaya_other.html"
 shiharai_fpath = os.path.dirname(__file__) + "/data/shiharai.html"
 other_url = "https://www.suruga-ya.jp/product/other/128002938"
+redirect_detail_fpath = (
+    os.path.dirname(__file__) + "/data/surugaya_detail_redirect.html"
+)
 
 
 def test_surugaya_makepure_postage_storepostage():
@@ -96,3 +99,31 @@ def test_surugaya_shiharai_parse():
                 assert psp.terms[2].boundary == "10000<="
                 assert psp.terms[2].postage == "0"
                 continue
+
+
+def test_surugaya_detail_redirect():
+    correct = {
+        "url_id": 1,
+        "uniqname": "WiiUソフトマリオパーティ10 amiiboセット(状態：外箱欠品)",
+        "usedprice": 3209,
+        "newprice": -1,
+        "taxin": True,
+        "onsale": False,
+        "salename": "",
+        "issuccess": True,
+        "oldprice": -1,
+        "trendrate": 0,
+        "url": "https://www.suruga-ya.jp/product/detail/106000370?tenpo_cd=400438",
+        "storename": "バリQ古河ホビー館 Supported by 駿河屋",
+        "created_at": "2024-10-28 10:30:00",
+    }
+    with open(redirect_detail_fpath, encoding="utf-8") as fp:
+        sp = surugaya_html_parse.SurugayaParse(
+            fp=fp,
+            id=correct["url_id"],
+            date=correct["created_at"],
+            url=correct["url"],
+        )
+        for item in sp.getItems():
+            for key, val in item.getOrderedDict().items():
+                assert val == correct[key]

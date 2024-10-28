@@ -133,7 +133,7 @@ class SurugayaProduct(AB_SurugayaParse):
         self.parsePrice(self.soup, self.__itemInfo)
         self.isSale(self.soup, self.__itemInfo)
         self.__itemInfo.isSuccess = self.checkSuccess(self.__itemInfo)
-        self.__itemInfo.storename = DEFAULT_STORENAME
+        self.__itemInfo.storename = self.getStoreName(self.soup)
 
     def getItems(self):
         return (self.__itemInfo,)
@@ -195,6 +195,21 @@ class SurugayaProduct(AB_SurugayaParse):
 
     def getName(self):
         return self.__itemInfo.name
+
+    def getStoreName(self, soup) -> str:
+        tags = soup.select(".mb-2")
+        ptn = r"この商品は、(.*)が販売、発送します"
+        storename = None
+        if not tags:
+            return DEFAULT_STORENAME
+        for tag in tags:
+            m = re.findall(ptn, str(tag.text))
+            if m is None or len(m) == 0:
+                continue
+            storename = self.trimStr(m[0])
+            if storename:
+                return storename
+        return DEFAULT_STORENAME
 
 
 def is_makepure(soup: BeautifulSoup):
