@@ -176,16 +176,27 @@ class SearchDictConverter:
         if SearchParser.PRICE in item:
             maini.used = ItemPrice(price=item[SearchParser.PRICE])
         if SearchParser.USED in item:
-            stptn = r"(中古(価格)?：)?(￥?[0-9,]*円?).*?(（?税込）?)?"
             val = item[SearchParser.USED]
+            stptn = r"(中古：)(￥[0-9,]*～￥[0-9,]*)(税込)"
             m = re.findall(stptn, val)
+            print(f"len(m) = {len(m)}")
             if len(m) != 0:
                 ip = ItemPrice(
-                    price=str(m[0][2]),
+                    price=str(m[0][1]),
                     price_pre_text=str(m[0][0]),
-                    price_tail_text=str(m[0][3]),
+                    price_tail_text=str(m[0][2]),
                 )
                 maini.used = ip
+            else:
+                stptn = r"(中古(価格)?：)?(￥?[0-9,]*円?).*?(（?税込）?)?"
+                m = re.findall(stptn, val)
+                if len(m) != 0:
+                    ip = ItemPrice(
+                        price=str(m[0][2]),
+                        price_pre_text=str(m[0][0]),
+                        price_tail_text=str(m[0][3]),
+                    )
+                    maini.used = ip
         if SearchParser.NEW in item:
             stptn = r"(新品(価格)?：)?(￥?[0-9,]*円?).*?(（?税込）?)?"
             val = item[SearchParser.NEW]

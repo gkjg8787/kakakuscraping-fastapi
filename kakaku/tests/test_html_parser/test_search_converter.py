@@ -368,3 +368,48 @@ def __check_new(
     assert main.new.price == price
     assert main.new.price_pre_text == pre_text
     assert main.new.price_tail_text == tail_text
+
+
+def test_convertMainItem_for_range():
+    SURUGAYA = "駿河屋"
+    GEO = "ゲオ"
+    item_dict = {
+        SURUGAYA: {
+            SearchParser.STORENAME: "駿河屋",
+            SearchParser.IMAGE_URL: "https://www.suruga-ya.jp/database/photo.php?shinaban=109102234&size=m",
+            SearchParser.TITLE: "マリオカート ライブ ホームサーキット マリオセット",
+            SearchParser.TITLE_URL: "https://www.suruga-ya.jp/product/detail/109102234",
+            SearchParser.CATEGORY: "ニンテンドースイッチハード",
+            SearchParser.USED: "中古：￥3,440～￥4,300税込",
+            SearchParser.MAKEPURE_URL: "https://www.suruga-ya.jp/product/other/109102234",
+            SearchParser.MAKEPURE: "￥3,040",
+            SearchParser.MAKEPURE_BIKO: "(11点の中古品)",
+        },
+    }
+    results = {}
+    results[SURUGAYA] = SearchDictConverter.convertMainItem(item_dict[SURUGAYA])
+    __check_used(
+        results[SURUGAYA],
+        item_dict[SURUGAYA][SearchParser.TITLE],
+        item_dict[SURUGAYA][SearchParser.TITLE_URL],
+        item_dict[SURUGAYA][SearchParser.USED][3:16],
+        item_dict[SURUGAYA][SearchParser.USED][:3],
+        item_dict[SURUGAYA][SearchParser.USED][16:],
+    )
+
+
+def __check_used(
+    main: MainItem,
+    title: str,
+    title_url: str,
+    price: str,
+    pre_text: str,
+    tail_text: str,
+):
+    assert main != None
+    assert main.title == title
+    assert main.url == title_url
+    assert main.used != None
+    assert main.used.price == price
+    assert main.used.price_pre_text == pre_text
+    assert main.used.price_tail_text == tail_text

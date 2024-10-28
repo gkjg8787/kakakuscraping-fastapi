@@ -253,8 +253,8 @@ class SearchItem:
                 self.pageinfo = pageinfo
             except queue.Empty:
                 logger.error("{}  [{}] retqueue timeout".format(__file__, str(i)))
-        logger.debug(f"{__file__} + allitems={self.allitems}")
-        logger.debug(f"{__file__} + pageinfo={self.pageinfo}")
+        logger.debug(f"{__file__} allitems={self.allitems}")
+        logger.debug(f"{__file__} pageinfo={self.pageinfo}")
         if SearchCmn.TRUE != pageinfo[SearchCmn.ENABLE]:
             logger.debug(__file__ + " end SearchItem")
             return
