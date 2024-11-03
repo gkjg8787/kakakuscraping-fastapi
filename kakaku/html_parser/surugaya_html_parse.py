@@ -458,6 +458,8 @@ class SurugayaMakepurePostage:
         self.shopid_dict = sidinf_results
 
         pss = htmlparse.ParseStorePostage()
+        if not sidinf_results:
+            return
         pss.storename = [k for k in sidinf_results.keys()][0]
         self.parseStorePostageList = [pss]
 
