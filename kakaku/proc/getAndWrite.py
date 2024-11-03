@@ -504,12 +504,12 @@ def get_now_db_datetime():
     return date
 
 
-def get_parse_data(fname, url_id, url):
+def get_parse_data(fname: str, url_id: int, url: str):
     date = get_now_db_datetime()
     return gethtmlparse.getParser(fname, url_id, date, url)
 
 
-def startParse(db: Session, url: str, item_id, fname: str, logger=None) -> None:
+def startParse(db: Session, url: str, item_id: int, fname: str, logger=None) -> None:
     url_id = UrlQuery.add_url(db, urlpath=url)
     try:
         gp = get_parse_data(fname, url_id, url)

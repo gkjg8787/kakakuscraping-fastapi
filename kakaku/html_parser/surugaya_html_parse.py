@@ -1,7 +1,8 @@
 import re
 from html_parser import htmlparse
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from abc import ABCMeta
+from datetime import datetime
 
 from itemcomb import postage_data
 
@@ -9,7 +10,8 @@ DEFAULT_STORENAME = "駿河屋"
 
 
 class AB_SurugayaParse(htmlparse.ParseItems, metaclass=ABCMeta):
-    def checkSuccess(self, itemInfo):
+    @classmethod
+    def checkSuccess(cls, itemInfo: htmlparse.ParseItemInfo):
         np = int(itemInfo.newPrice)
         up = int(itemInfo.usedPrice)
         if np <= 0 and up <= 0:
@@ -19,7 +21,10 @@ class AB_SurugayaParse(htmlparse.ParseItems, metaclass=ABCMeta):
 
 
 class SurugayaProduct_Other(AB_SurugayaParse):
-    def __init__(self, soup, id, date, url):
+    soup: BeautifulSoup
+    iteminfos: tuple[htmlparse.ParseItemInfo]
+
+    def __init__(self, soup: BeautifulSoup, id: int, date: datetime, url: str):
         self.soup = soup
         self.iteminfos = []
         title = self.getTitle(self.soup)
@@ -35,7 +40,10 @@ class SurugayaProduct_Other(AB_SurugayaParse):
     def getItems(self):
         return self.iteminfos
 
-    def createParseItemInfo(self, storename, id, title, date, url):
+    @classmethod
+    def createParseItemInfo(
+        cls, storename: str, id: int, title: str, date: datetime, url: str
+    ):
         item = htmlparse.ParseItemInfo()
         item.storename = storename
         item.id = id
@@ -45,7 +53,7 @@ class SurugayaProduct_Other(AB_SurugayaParse):
         return item
 
     @classmethod
-    def getTitle(cls, soup):
+    def getTitle(cls, soup: BeautifulSoup):
         titlebody = "h1.title_product.mgnB15"
         retstr = soup.select_one(titlebody)
         if not retstr:
@@ -53,35 +61,37 @@ class SurugayaProduct_Other(AB_SurugayaParse):
         namestr = cls.trimStr(retstr.text).replace("の取り扱い店舗一覧", "")
         return namestr
 
-    def createSinagire(self, binfo):
+    @classmethod
+    def createSinagire(cls, binfo: dict):
         return [
-            self.createParseItemInfo(
-                binfo["storename"],
-                binfo["id"],
-                binfo["title"],
-                binfo["date"],
-                binfo["url"],
+            cls.createParseItemInfo(
+                storename=binfo["storename"],
+                id=binfo["id"],
+                title=binfo["title"],
+                date=binfo["date"],
+                url=binfo["url"],
             )
         ]
 
-    def parseStoreItem(self, soup, binfo):
+    @classmethod
+    def parseStoreItem(cls, soup: BeautifulSoup, binfo: dict):
         retitems = []
         tableq = r"table#tbl_all .item"
         storeitems = soup.select(tableq)
         if len(storeitems) == 0:
-            return self.createSinagire(binfo)
+            return cls.createSinagire(binfo)
 
         for storeitem in storeitems:
-            item = self.createParseItemInfo(
+            item = cls.createParseItemInfo(
                 binfo["storename"],
                 binfo["id"],
                 binfo["title"],
                 binfo["date"],
                 binfo["url"],
             )
-            price = self.getPrice(storeitem)
-            isNew = self.isNewItem(storeitem)
-            storename = self.getStoreName(storeitem)
+            price = cls.getPrice(storeitem)
+            isNew = cls.isNewItem(storeitem)
+            storename = cls.getStoreName(storeitem)
             if isNew:
                 item.newPrice = price
             else:
@@ -90,11 +100,12 @@ class SurugayaProduct_Other(AB_SurugayaParse):
                 item.storename = storename
             item.onSale = False
             item.taxin = True
-            item.isSuccess = self.checkSuccess(item)
+            item.isSuccess = cls.checkSuccess(item)
             retitems.append(item)
         return retitems
 
-    def getPrice(self, storeitem):
+    @classmethod
+    def getPrice(cls, storeitem: Tag):
         pattern = r'<strong class="text-red text-bold mgnL10.+?>(.*?)円'
         m = re.findall(pattern, str(storeitem))
         # print("------------isTblPrice-----------")
@@ -103,18 +114,20 @@ class SurugayaProduct_Other(AB_SurugayaParse):
         price = int(re.sub("\\D", "", price))
         return price
 
-    def isNewItem(self, storeitem):
+    @classmethod
+    def isNewItem(cls, storeitem: Tag):
         pattern = r'<h2 class="title_product">(.+?)</h2>'
         # print(text)
         m = re.findall(pattern, str(storeitem))
         # print("------------isTblNewUsed-----------")
         # print(m)
-        statusstr = self.trimStr(str(m[0]))
+        statusstr = cls.trimStr(str(m[0]))
         if "新品" in statusstr:
             return True
         return False
 
-    def getStoreName(self, storeitem):
+    @classmethod
+    def getStoreName(cls, storeitem: Tag):
         q = r"div.space_text_1.mgnB5 a"
         elem = storeitem.select(q)
         if len(elem) == 0:
@@ -123,36 +136,39 @@ class SurugayaProduct_Other(AB_SurugayaParse):
 
 
 class SurugayaProduct(AB_SurugayaParse):
-    def __init__(self, soup, id, date, url):
+    soup: BeautifulSoup
+    iteminfo: htmlparse.ParseItemInfo
+
+    def __init__(self, soup: BeautifulSoup, id: int, date: datetime, url: str):
         self.soup = soup
-        self.__itemInfo = htmlparse.ParseItemInfo()
-        self.__itemInfo.id = id
-        self.__itemInfo.timeStamp = date
-        self.__itemInfo.url = url
-        self.parseTitle(self.soup, self.__itemInfo)
-        self.parsePrice(self.soup, self.__itemInfo)
-        self.isSale(self.soup, self.__itemInfo)
-        self.__itemInfo.isSuccess = self.checkSuccess(self.__itemInfo)
-        self.__itemInfo.storename = self.getStoreName(self.soup)
+        self.iteminfo = htmlparse.ParseItemInfo()
+        self.iteminfo.id = id
+        self.iteminfo.timeStamp = date
+        self.iteminfo.url = url
+        self.iteminfo.name = self.parseTitle(self.soup)
+        self.set_parsePrice(self.soup, self.iteminfo)
+        self.set_isSale(self.soup, self.iteminfo)
+        self.iteminfo.isSuccess = self.checkSuccess(self.iteminfo)
+        self.iteminfo.storename = self.getStoreName(self.soup)
 
     def getItems(self):
-        return (self.__itemInfo,)
+        return (self.iteminfo,)
 
-    def parseTitle(self, soup, itemInfo):
+    @classmethod
+    def parseTitle(cls, soup: BeautifulSoup):
         titlebody = "#item_title"
         retstr = soup.select_one(titlebody)
-        namestr = self.trimStr(retstr.text)
-        itemInfo.name = namestr
+        namestr = cls.trimStr(retstr.text)
         # print("title:"+namestr)
         return namestr
 
-    def parseTaxin(self, text, itemInfo):
-        if itemInfo.taxin:
+    def parseTaxin(self, text: str, iteminfo: htmlparse.ParseItemInfo):
+        if iteminfo.taxin:
             return
         if "税込み" in str(text) or "税込" in str(text):
-            itemInfo.taxin = True
+            iteminfo.taxin = True
 
-    def parsePrice(self, soup, itemInfo):
+    def set_parsePrice(self, soup: BeautifulSoup, iteminfo: htmlparse.ParseItemInfo):
         basebody = "div.container_suru.padB40 > .row > .col-8.padL32 .price_group.mb-3 label.mgnB0"
         datal = soup.select(basebody)
         isNew = False
@@ -168,35 +184,36 @@ class SurugayaProduct(AB_SurugayaParse):
             retlen = len(ret)
             if retlen == 0:
                 continue
-            self.parseTaxin(val.text, itemInfo)
+            self.parseTaxin(val.text, iteminfo)
             if isNew:
                 # print("newPrice:"+str(val.text))
-                itemInfo.newPrice = int(re.sub("\\D", "", str(ret[0])))
+                iteminfo.newPrice = int(re.sub("\\D", "", str(ret[0])))
             else:
                 # print("usedPrice:"+str(val.text))
-                itemInfo.usedPrice = int(re.sub("\\D", "", str(ret[0])))
+                iteminfo.usedPrice = int(re.sub("\\D", "", str(ret[0])))
 
-    def isSale(self, soup, itemInfo):
+    def set_isSale(self, soup: BeautifulSoup, iteminfo: htmlparse.ParseItemInfo):
         timesalebase = soup.select_one(
             "div.container_suru.padB40 > .row > .col-8.padL32 .flash_sale_title"
         )
         if timesalebase is not None:
             # print("Sale:"+str(timesalebase.text))
-            itemInfo.onSale = True
-            itemInfo.saleName = self.trimStr(timesalebase.text)
+            iteminfo.onSale = True
+            iteminfo.saleName = self.trimStr(timesalebase.text)
         else:
-            itemInfo.onSale = False
+            iteminfo.onSale = False
 
     def getOrderedDict(self):
-        return self.__itemInfo.getOrderedDict()
+        return self.iteminfo.getOrderedDict()
 
     def getTrendRate(self):
-        return self.__itemInfo.getTrendRate()
+        return self.iteminfo.getTrendRate()
 
     def getName(self):
-        return self.__itemInfo.name
+        return self.iteminfo.name
 
-    def getStoreName(self, soup) -> str:
+    @classmethod
+    def getStoreName(cls, soup: BeautifulSoup) -> str:
         tags = soup.select(".mb-2")
         ptn = r"この商品は、(.*)が販売、発送します"
         storename = None
@@ -206,7 +223,7 @@ class SurugayaProduct(AB_SurugayaParse):
             m = re.findall(ptn, str(tag.text))
             if m is None or len(m) == 0:
                 continue
-            storename = self.trimStr(m[0])
+            storename = cls.trimStr(m[0])
             if storename:
                 return storename
         return DEFAULT_STORENAME
@@ -223,10 +240,13 @@ class SurugayaMakepurePostage:
     parseStorePostageList: list[htmlparse.ParseStorePostage] = []
     shopid_dict: dict[str, htmlparse.ParseShopIDInfo] = {}
 
-    def __init__(self, soup: BeautifulSoup, url: str):
+    def __init__(self, soup: BeautifulSoup):
         if not is_makepure(soup):
+            if DEFAULT_STORENAME == SurugayaProduct.getStoreName(soup):
+                return
+            self.parse_html_for_detail(soup=soup)
             return
-        self.parse_html(soup=soup)
+        self.parse_html_for_other(soup=soup)
 
     def get_ParseStorePostage(self):
         return self.parseStorePostageList
@@ -235,7 +255,7 @@ class SurugayaMakepurePostage:
         return self.shopid_dict
 
     @classmethod
-    def parse_storename(cls, elem: BeautifulSoup):
+    def parse_storename(cls, elem: Tag):
         storeret = elem.select_one(r".space_text_1")
         if storeret:
             t = str(storeret.text).strip()
@@ -244,7 +264,7 @@ class SurugayaMakepurePostage:
         else:
             return DEFAULT_STORENAME
 
-    def parse_html(self, soup: BeautifulSoup):
+    def parse_html_for_other(self, soup: BeautifulSoup):
         storepos_results: dict[str, htmlparse.ParseStorePostage] = {}
         sidinf_results: dict[str, htmlparse.ParseShopIDInfo] = {}
         store_row = soup.select(r"#tabs-all tr.item")
@@ -265,9 +285,10 @@ class SurugayaMakepurePostage:
         self.parseStorePostageList = [v for v in storepos_results.values()]
         self.shopid_dict = sidinf_results
 
+    @classmethod
     def parse_shopidinfo(
-        self,
-        elem: BeautifulSoup,
+        cls,
+        elem: Tag,
         storename: str,
         sidinf_results: dict[str, htmlparse.ParseShopIDInfo],
     ):
@@ -288,9 +309,10 @@ class SurugayaMakepurePostage:
         sidinf.shop_id = int(m[0])
         return sidinf
 
+    @classmethod
     def parse_storepostage(
-        self,
-        elem: BeautifulSoup,
+        cls,
+        elem: Tag,
         storename: str,
         storepos_results: dict[str, htmlparse.ParseStorePostage],
     ):
@@ -316,7 +338,7 @@ class SurugayaMakepurePostage:
                 continue
             pre_terms: htmlparse.ParsePostageTerms | None = None
             for prr, pll in zip(pr, pl):
-                terms = self.create_terms(
+                terms = cls.create_terms(
                     boundary_text=prr.text.strip(),
                     postage_text=pll.text.strip(),
                     pre_terms=pre_terms,
@@ -430,14 +452,57 @@ class SurugayaMakepurePostage:
         ret = ret.replace(",", "")
         return ret
 
+    def parse_html_for_detail(self, soup: BeautifulSoup):
+        sidinf_results: dict[str, htmlparse.ParseShopIDInfo] = {}
+        sidinf_results = self.parse_shopidinfo_for_detail(soup=soup)
+        self.shopid_dict = sidinf_results
+
+        pss = htmlparse.ParseStorePostage()
+        pss.storename = [k for k in sidinf_results.keys()][0]
+        self.parseStorePostageList = [pss]
+
+    @classmethod
+    def parse_shopidinfo_for_detail(
+        cls, soup: BeautifulSoup
+    ) -> dict[str, htmlparse.ParseItemInfo]:
+        sidinf = htmlparse.ParseShopIDInfo()
+
+        tags = soup.select(".mb-2")
+        ptn = r"この商品は、(.*)が販売、発送します"
+        storename = None
+        if not tags:
+            return {}
+        for tag in tags:
+            m = re.findall(ptn, str(tag.text))
+            if m is None or len(m) == 0:
+                continue
+            storename = htmlparse.ParseItems.trimStr(m[0])
+            if not storename:
+                continue
+            sidinf.storename = storename
+            tag_a = tag.select_one("a")
+            if not tag_a:
+                continue
+            sidinf.url = "https://www.suruga-ya.jp" + tag_a["href"]
+            m = re.findall(r"[1-9][0-9]+", tag_a["href"])
+            if not m:
+                return {}
+            sidinf.shop_id = int(m[0])
+            return {storename: sidinf}
+        return {}
+
 
 class SurugayaParse(htmlparse.ParseItems):
-    def __init__(self, fp, id, date, url):
+    soup: BeautifulSoup
+    parse: AB_SurugayaParse
+    postage: SurugayaMakepurePostage
+
+    def __init__(self, fp, id: int, date: datetime, url: str):
         self.soup = BeautifulSoup(fp, "html.parser", from_encoding="utf-8")
         self.parse = self.createObj(self.soup, id, date, url)
-        self.postage = SurugayaMakepurePostage(soup=self.soup, url=url)
+        self.postage = SurugayaMakepurePostage(soup=self.soup)
 
-    def createObj(self, soup, id, date, url):
+    def createObj(self, soup: BeautifulSoup, id: int, date: datetime, url: str):
         if is_makepure(soup):
             return SurugayaProduct_Other(soup, id, date, url)
         else:

@@ -1,6 +1,7 @@
 import os
 
 from html_parser import surugaya_html_parse
+from html_parser import htmlparse
 
 other_fpath = os.path.dirname(__file__) + "/data/surugaya_other.html"
 shiharai_fpath = os.path.dirname(__file__) + "/data/shiharai.html"
@@ -127,3 +128,21 @@ def test_surugaya_detail_redirect():
         for item in sp.getItems():
             for key, val in item.getOrderedDict().items():
                 assert val == correct[key]
+
+        assert sp.hasPostage()
+        assert len(sp.getPostageList()) == 1
+        for pos in sp.getPostageList():
+            assert pos.storename == correct["storename"]
+            assert pos.campaign_msg == ""
+            assert len(pos.target_prefectures) == 0
+            assert len(pos.terms) == 0
+
+        assert sp.hasShopIDInfo()
+        assert (
+            sp.getShopIDInfo()[correct["storename"]].storename == correct["storename"]
+        )
+        assert sp.getShopIDInfo()[correct["storename"]].shop_id == 400438
+        assert (
+            sp.getShopIDInfo()[correct["storename"]].url
+            == "https://www.suruga-ya.jp/shop/400438"
+        )

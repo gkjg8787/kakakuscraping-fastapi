@@ -1,4 +1,5 @@
 from urllib.parse import urlparse
+from datetime import datetime
 
 from html_parser import (
     surugaya_html_parse,
@@ -10,7 +11,9 @@ from html_parser import (
 from common.read_config import get_support_url
 
 
-def getParser(filepath, url_id, date, url) -> htmlparse.ParseItems | None:
+def getParser(
+    filepath: str, url_id: int, date: datetime, url: str
+) -> htmlparse.ParseItems | None:
     fp = open(filepath, encoding="utf-8")
     parsed_url = urlparse(url)
     supdict = get_support_url()
