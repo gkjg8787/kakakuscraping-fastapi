@@ -179,7 +179,6 @@ class SearchDictConverter:
             val = item[SearchParser.USED]
             stptn = r"(中古：)(￥[0-9,]*～￥[0-9,]*)(税込)"
             m = re.findall(stptn, val)
-            print(f"len(m) = {len(m)}")
             if len(m) != 0:
                 ip = ItemPrice(
                     price=str(m[0][1]),
