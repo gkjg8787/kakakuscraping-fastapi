@@ -169,7 +169,7 @@ class SurugayaProduct(AB_SurugayaParse):
             iteminfo.taxin = True
 
     def set_parsePrice(self, soup: BeautifulSoup, iteminfo: htmlparse.ParseItemInfo):
-        basebody = "div.container_suru.padB40 > .row > .col-8.padL32 .price_group.mb-3 label.mgnB0"
+        basebody = r"label.mgnB0.d-block"
         datal = soup.select(basebody)
         isNew = False
         pattern = '<span.+?buy">(.+?)</span>'
