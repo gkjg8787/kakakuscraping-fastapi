@@ -9,6 +9,10 @@ other_url = "https://www.suruga-ya.jp/product/other/128002938"
 redirect_detail_fpath = (
     os.path.dirname(__file__) + "/data/surugaya_detail_redirect.html"
 )
+detail_timesale_fpath = (
+    os.path.dirname(__file__) + "/data/surugaya_detail_timesale.html"
+)
+other_timesale_fpath = os.path.dirname(__file__) + "/data/surugaya_other_timesale.html"
 
 
 def test_surugaya_makepure_postage_storepostage():
@@ -145,4 +149,105 @@ def test_surugaya_detail_redirect():
         assert (
             sp.getShopIDInfo()[correct["storename"]].url
             == "https://www.suruga-ya.jp/shop/400438"
+        )
+
+
+def test_surugaya_detail_timesale():
+    correct = {
+        "url_id": 1,
+        "uniqname": "アニメDVDもののけ姫",
+        "usedprice": 2800,
+        "newprice": -1,
+        "taxin": True,
+        "onsale": True,
+        "salename": "タイムセール",
+        "issuccess": True,
+        "oldprice": -1,
+        "trendrate": 0,
+        "url": "https://www.suruga-ya.jp/product/detail/128049960",
+        "storename": "駿河屋",
+        "created_at": "2024-12-06 20:03:00",
+    }
+    with open(detail_timesale_fpath, encoding="utf-8") as fp:
+        sp = surugaya_html_parse.SurugayaParse(
+            fp=fp,
+            id=correct["url_id"],
+            date=correct["created_at"],
+            url=correct["url"],
+        )
+        for item in sp.getItems():
+            for key, val in item.getOrderedDict().items():
+                assert val == correct[key]
+
+        assert not sp.hasPostage()
+
+
+def test_surugaya_other_timesale():
+    corrects = [
+        {
+            "url_id": 1,
+            "uniqname": "もののけ姫",
+            "usedprice": 2800,
+            "newprice": -1,
+            "taxin": True,
+            "onsale": True,
+            "salename": "タイムセール",
+            "issuccess": True,
+            "oldprice": -1,
+            "trendrate": 0,
+            "url": "https://www.suruga-ya.jp/product/other/128049960",
+            "storename": "駿河屋",
+            "created_at": "2024-12-06 20:03:00",
+            "campaign_msg": "12/6 ～ 12/7【999円以上】代引き+送料無料 2024/12/06 00:00 ～ 2024/12/07 23:59 999円未満 440円 999円以上 送料無料",
+            "target_prefectures_length": 0,
+            "terms_length": 2,
+        },
+        {
+            "url_id": 1,
+            "uniqname": "もののけ姫",
+            "usedprice": 2950,
+            "newprice": -1,
+            "taxin": True,
+            "onsale": False,
+            "salename": "",
+            "issuccess": True,
+            "oldprice": -1,
+            "trendrate": 0,
+            "url": "https://www.suruga-ya.jp/product/other/128049960",
+            "storename": "駿河屋 佐大通り店",
+            "created_at": "2024-12-06 20:03:00",
+            "campaign_msg": "",
+            "target_prefectures_length": 0,
+            "terms_length": 0,
+        },
+    ]
+    with open(other_timesale_fpath, encoding="utf-8") as fp:
+        sp = surugaya_html_parse.SurugayaParse(
+            fp=fp,
+            id=corrects[0]["url_id"],
+            date=corrects[0]["created_at"],
+            url=corrects[0]["url"],
+        )
+        for item, correct in zip(sp.getItems(), corrects):
+            for key, val in item.getOrderedDict().items():
+                assert val == correct[key]
+
+        assert sp.hasPostage()
+
+        assert len(sp.getPostageList()) == 2
+        for pos, correct in zip(sp.getPostageList(), corrects):
+            assert pos.storename == correct["storename"]
+            assert pos.campaign_msg == correct["campaign_msg"]
+            assert len(pos.target_prefectures) == correct["target_prefectures_length"]
+            assert len(pos.terms) == correct["terms_length"]
+
+        assert sp.hasShopIDInfo()
+        assert (
+            sp.getShopIDInfo()[corrects[1]["storename"]].storename
+            == corrects[1]["storename"]
+        )
+        assert sp.getShopIDInfo()[corrects[1]["storename"]].shop_id == 400506
+        assert (
+            sp.getShopIDInfo()[corrects[1]["storename"]].url
+            == "https://www.suruga-ya.jp/shop/400506"
         )

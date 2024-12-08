@@ -99,6 +99,10 @@ class SurugayaProduct_Other(AB_SurugayaParse):
             if storename:
                 item.storename = storename
             item.onSale = False
+            if item.storename == DEFAULT_STORENAME:
+                item.saleName = cls.getSaleName(storeitem)
+                if item.saleName:
+                    item.onSale = True
             item.taxin = True
             item.isSuccess = cls.checkSuccess(item)
             retitems.append(item)
@@ -133,6 +137,18 @@ class SurugayaProduct_Other(AB_SurugayaParse):
         if len(elem) == 0:
             return ""
         return re.sub(r"\s+", " ", str(elem[0].text).strip())
+
+    @classmethod
+    def getSaleName(cls, storeitem: Tag) -> str:
+        pattern = r'<strong class="mgnL10 text-line-through.+?>(.*?)円'
+        m = re.findall(pattern, str(storeitem))
+        if not m:
+            return ""
+        price = str(m[0]).replace(",", "")
+        price = int(re.sub("\\D", "", price))
+        if price == 0:
+            return ""
+        return "タイムセール"
 
 
 class SurugayaProduct(AB_SurugayaParse):
