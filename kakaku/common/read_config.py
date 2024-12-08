@@ -115,3 +115,7 @@ def get_itemcomb_price_margin():
 
 def get_auto_copy_of_online_store_info_to_local():
     return settings.AUTO_COPY_OF_ONLINE_STORE_INFO_TO_LOCAL
+
+
+def get_surugaya_search_result_url_convert():
+    return settings.SURUGAYA_SEARCH_RESULT_URL_CONVERT

@@ -1,9 +1,17 @@
 import re
+import urllib.parse
+
 from bs4 import BeautifulSoup
 from html_parser.search_parser import SearchParser
 
 
 class SearchSurugaya(SearchParser):
+    is_converturl: bool
+
+    def __init__(self, is_converturl: bool = True):
+        super().__init__()
+        self.is_converturl = is_converturl
+
     def parseSearch(self, htmltext):
         self.soup = BeautifulSoup(htmltext, "html.parser")
         self.allitem[self.ITEMS] = self.parseItems()
@@ -20,6 +28,8 @@ class SearchSurugaya(SearchParser):
             self.setCategory(v, itemd)
             self.setPrice(v, itemd)
             self.setImage(v, itemd)
+            if self.is_converturl:
+                self.convertURL(itemd)
             sresult.append(itemd)
         return sresult
 
@@ -103,6 +113,17 @@ class SearchSurugaya(SearchParser):
             func(elem, itemd)
         except AttributeError:
             pass
+
+    def convertURL(self, itemd):
+        if self.TITLE_URL in itemd and itemd[self.TITLE_URL]:
+            itemd[self.TITLE_URL] = (
+                urllib.parse.urlparse(itemd[self.TITLE_URL])._replace(query="").geturl()
+            )
+        if self.MAKEPURE_URL in itemd and itemd[self.MAKEPURE_URL]:
+            parsed_url = urllib.parse.urlparse(itemd[self.TITLE_URL])
+            itemd[self.MAKEPURE_URL] = parsed_url._replace(
+                path=parsed_url.path.replace("detail", "other"), query=""
+            ).geturl()
 
     def getPageElem(self):
         q = "div#pager"

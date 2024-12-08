@@ -3,11 +3,22 @@ import os
 from html_parser import surugaya_search
 
 search_fpath = os.path.dirname(__file__) + "/data/surugaya_search_marika.html"
+search_detail_direct_fpath = (
+    os.path.dirname(__file__) + "/data/surugaya_search_mononoke_detail_direct.html"
+)
 
 
-def assert_has_keys(required_keys: list, target_dict: dict) -> bool:
+def assert_has_keys(required_keys: list, target_dict: dict):
     for k in required_keys:
         assert k in target_dict.keys()
+
+
+def assert_item(item: dict[str], correct: dict[str, str]):
+    for k in correct.keys():
+        if type(item[k]) is str:
+            assert item[k].strip() == correct[k]
+        else:
+            assert item[k] == correct[k]
 
 
 def test_surugaya_search():
@@ -26,7 +37,7 @@ def test_surugaya_search():
     ]
     with open(search_fpath, encoding="utf-8") as fp:
         sp = fp.read()
-    ss = surugaya_search.SearchSurugaya()
+    ss = surugaya_search.SearchSurugaya(is_converturl=True)
     ss.parseSearch(sp)
     items_required_key_list = [
         "storename",
@@ -44,13 +55,7 @@ def test_surugaya_search():
         assert_has_keys(items_required_key_list, item_dict)
         print(item_dict)
 
-    one = ss.getItems()[0]
-    correct_one = corrects[0]
-    for k in correct_one.keys():
-        if type(one[k]) is str:
-            assert one[k].strip() == correct_one[k]
-        else:
-            assert one[k] == correct_one[k]
+    assert_item(item=ss.getItems()[0], correct=corrects[0])
 
     pages_required_key_list = ["enable", "min", "max"]
     page = ss.getPage()
@@ -76,13 +81,109 @@ def test_surugaya_search_range_usedprice():
     ]
     with open(search_fpath, encoding="utf-8") as fp:
         sp = fp.read()
-    ss = surugaya_search.SearchSurugaya()
+    ss = surugaya_search.SearchSurugaya(is_converturl=True)
     ss.parseSearch(sp)
 
-    one = ss.getItems()[1]
-    correct_one = corrects[0]
-    for k in correct_one.keys():
-        if type(one[k]) is str:
-            assert one[k].strip() == correct_one[k]
-        else:
-            assert one[k] == correct_one[k]
+    assert_item(item=ss.getItems()[1], correct=corrects[0])
+
+
+def test_surugaya_search_detail_direct():
+    corrects = [
+        {
+            "storename": "駿河屋",
+            "title": "もののけ姫",
+            "titleURL": "https://www.suruga-ya.jp/product/detail/428046271",
+            "category": "アニメBlu-rayDisc",
+            "used_price": "中古：￥4,800税込",
+            "makepure": "￥3,520",
+            "makepurebiko": "(7点の中古品)",
+            "makepureURL": "https://www.suruga-ya.jp/product/other/428046271",
+            "imageURL": "https://www.suruga-ya.jp/database/photo.php?shinaban=428046271&size=m",
+        },
+        {},
+        {
+            "storename": "駿河屋",
+            "title": "もののけ姫",
+            "titleURL": "https://www.suruga-ya.jp/product/detail/128049960",
+            "category": "アニメDVD",
+            "sinagire": "品切れ",
+            "makepure": "￥2,950",
+            "makepurebiko": "(1点の中古品)",
+            "makepureURL": "https://www.suruga-ya.jp/product/other/128049960",
+            "imageURL": "https://www.suruga-ya.jp/database/photo.php?shinaban=128049960&size=m",
+        },
+    ]
+    with open(search_detail_direct_fpath, encoding="utf-8") as fp:
+        sp = fp.read()
+    ss = surugaya_search.SearchSurugaya(is_converturl=True)
+    ss.parseSearch(sp)
+    items_required_key_list = [
+        "storename",
+        "title",
+        "titleURL",
+        "category",
+        "imageURL",
+    ]
+    for item_dict in ss.getItems():
+        assert_has_keys(items_required_key_list, item_dict)
+
+    assert_item(item=ss.getItems()[0], correct=corrects[0])
+    assert_item(item=ss.getItems()[2], correct=corrects[2])
+
+    pages_required_key_list = ["enable", "min", "max"]
+    page = ss.getPage()
+    assert_has_keys(pages_required_key_list, page)
+    assert page["enable"] == "true"
+    assert page["min"] == 1
+    assert page["max"] == 3
+
+
+def test_surugaya_search_detail_direct_not_converturl():
+    corrects = [
+        {
+            "storename": "駿河屋",
+            "title": "もののけ姫",
+            "titleURL": "https://www.suruga-ya.jp/product/detail/428046271",
+            "category": "アニメBlu-rayDisc",
+            "used_price": "中古：￥4,800税込",
+            "makepure": "￥3,520",
+            "makepurebiko": "(7点の中古品)",
+            "makepureURL": "https://www.suruga-ya.jp/product/other/428046271",
+            "imageURL": "https://www.suruga-ya.jp/database/photo.php?shinaban=428046271&size=m",
+        },
+        {},
+        {
+            "storename": "駿河屋",
+            "title": "もののけ姫",
+            "titleURL": "https://www.suruga-ya.jp/product/detail/128049960?tenpo_cd=400506",
+            "category": "アニメDVD",
+            "sinagire": "品切れ",
+            "makepure": "￥2,950",
+            "makepurebiko": "(1点の中古品)",
+            "makepureURL": "https://www.suruga-ya.jp/product/detail/128049960?tenpo_cd=400506",
+            "imageURL": "https://www.suruga-ya.jp/database/photo.php?shinaban=128049960&size=m",
+        },
+    ]
+    with open(search_detail_direct_fpath, encoding="utf-8") as fp:
+        sp = fp.read()
+    ss = surugaya_search.SearchSurugaya(is_converturl=False)
+    ss.parseSearch(sp)
+    items_required_key_list = [
+        "storename",
+        "title",
+        "titleURL",
+        "category",
+        "imageURL",
+    ]
+    for item_dict in ss.getItems():
+        assert_has_keys(items_required_key_list, item_dict)
+
+    assert_item(item=ss.getItems()[0], correct=corrects[0])
+    assert_item(item=ss.getItems()[2], correct=corrects[2])
+
+    pages_required_key_list = ["enable", "min", "max"]
+    page = ss.getPage()
+    assert_has_keys(pages_required_key_list, page)
+    assert page["enable"] == "true"
+    assert page["min"] == 1
+    assert page["max"] == 3

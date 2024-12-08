@@ -17,7 +17,10 @@ class SurugayaSearchOpt(siteSearchOpt.SiteSearchOpt):
         self.confopt = confopt
         self.site = surugayaURL.SurugayaURL(confopt)
         self.requestOpt = requestoption.RequestOpt()
-        self.parser = surugaya_search.SearchSurugaya()
+        is_surugaya_url_convert = read_config.get_surugaya_search_result_url_convert()
+        self.parser = surugaya_search.SearchSurugaya(
+            is_converturl=is_surugaya_url_convert or False
+        )
 
     def setSearchWord(self, word: str):
         self.site.setWord(word)
