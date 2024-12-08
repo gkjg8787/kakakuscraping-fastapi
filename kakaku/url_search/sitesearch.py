@@ -1,4 +1,3 @@
-import sys
 import json
 import queue
 
@@ -19,7 +18,6 @@ from cache import getcache
 
 import logging
 from multiprocessing import Process, Manager
-import gzip
 
 
 QUEUE_TIMEOUT = 10

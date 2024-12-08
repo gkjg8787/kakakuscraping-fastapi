@@ -7,7 +7,7 @@ flake_cmd = f"flake8 --exclude tests,{__file__} --max-line-length 119"
 
 list_of_error_to_ignore = """
 ./accessor/read_sqlalchemy.py:7:1: F401 'sqlalchemy.orm.Session' imported but unused
-./downloader/requestoption.py:7:120: E501 line too long (153 > 119 characters)
+./downloader/requestoption.py:7:120: E501 line too long (125 > 119 characters)
 ./itemcomb/surugaya_postage/const_value.py:1:120: E501 line too long (143 > 119 characters)
 ./proc/proc_status.py:79:61: E203 whitespace before ':'
 ./tool/create_pricelog_2days.py:7:1: E402 module level import not at top of file

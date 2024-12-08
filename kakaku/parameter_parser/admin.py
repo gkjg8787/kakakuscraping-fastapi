@@ -26,9 +26,9 @@ class LogFilterQuery:
         self, level: list[str] = Query([]), min_date: str = "", max_date: str = ""
     ):
         self.level_list = []
-        for l in level:
-            if self.is_valid_log_level(l):
-                self.level_list.append(l)
+        for le in level:
+            if self.is_valid_log_level(le):
+                self.level_list.append(le)
         if min_date and self.is_valid_date(min_date):
             self.min_date = min_date
         if max_date and self.is_valid_date(max_date):
@@ -45,8 +45,8 @@ class LogFilterQuery:
     def is_valid_date(self, value: str):
         fmt = "%Y-%m-%d"
         try:
-            d = datetime.strptime(value, fmt)
-        except Exception as e:
+            datetime.strptime(value, fmt)
+        except Exception:
             return False
         return True
 

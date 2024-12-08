@@ -77,11 +77,11 @@ class CreateExtractServerLogCommand:
             loglevel_name_list=loglevel_name_list
         ):
             ret: str = ""
-            for l in loglevel_name_list:
+            for lname in loglevel_name_list:
                 if ret:
-                    ret += f"|{l}"
+                    ret += f"|{lname}"
                 else:
-                    ret = f"{l}"
+                    ret = f"{lname}"
             if ret:
                 if cmd:
                     cmd += f" | grep -E '({ret})'"

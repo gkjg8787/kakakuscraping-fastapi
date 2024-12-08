@@ -41,17 +41,17 @@ class ServerLogFileFactory:
     @classmethod
     def create(cls, rawtext: str, filename: str):
         slll: list[ServerLogLine] = []
-        for l in rawtext.split("\n"):
-            if not l:
+        for text in rawtext.split("\n"):
+            if not text:
                 continue
-            slll.append(ServerLogLineFactory.create(rawtext=l))
+            slll.append(ServerLogLineFactory.create(rawtext=text))
         return ServerLogFile(logs=slll, filename=filename)
 
     @classmethod
     def create_by_list(cls, textlist: list[str], filename: str):
         slll: list[ServerLogLine] = []
-        for l in textlist:
-            if not l:
+        for text in textlist:
+            if not text:
                 continue
-            slll.append(ServerLogLineFactory.create(rawtext=l))
+            slll.append(ServerLogLineFactory.create(rawtext=text))
         return ServerLogFile(logs=slll, filename=filename)

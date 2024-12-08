@@ -255,7 +255,7 @@ class ServerLogDisplay(BaseTemplateValue):
         datefmt = "%Y-%m-%d"
         selected_id_list: list[int] = []
         if lfq.level_list:
-            selected_id_list = [int(l) for l in lfq.level_list]
+            selected_id_list = [int(level) for level in lfq.level_list]
         if not lfq.level_list and not lfq.min_date and not lfq.max_date:
             lfq.min_date = (today - timedelta(days=3)).astimezone(JST).strftime(datefmt)
         super().__init__(
@@ -288,9 +288,9 @@ class ServerLogDisplay(BaseTemplateValue):
             start_date = datetime.strptime(lfq.min_date, datefmt)
         loglevel_name_list: list[str] = []
         if selected_id_list:
-            for l in LogLevelFilterName:
-                if l.id in selected_id_list:
-                    loglevel_name_list.append(l.name)
+            for lname in LogLevelFilterName:
+                if lname.id in selected_id_list:
+                    loglevel_name_list.append(lname.name)
 
         loglist = self.get_logname_list()
         esl = ExtractServerLogByCommand()
@@ -324,7 +324,7 @@ class ServerLogDisplay(BaseTemplateValue):
                 logfilelist.append(eslresult)
             except queue.Empty:
                 pass
-        return sorted(logfilelist, key=lambda l: l.filename)
+        return sorted(logfilelist, key=lambda logf: logf.filename)
 
     @staticmethod
     def start_func_for_process(

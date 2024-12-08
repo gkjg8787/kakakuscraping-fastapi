@@ -1,5 +1,3 @@
-from urllib.parse import urlencode
-
 from fastapi import Query, Form
 from pydantic import BaseModel
 
