@@ -224,7 +224,11 @@ def get_item_sort_list(f: Dict) -> List:
     return results
 
 
-def get_extract_store_sort_list(f: Dict) -> List:
+def convert_itemsort_to_extractstoresort(f: dict):
+    pass
+
+
+def get_extract_store_sort_list(f: dict) -> list[TemplatesItemSort]:
     results = [
         TemplatesItemSort(name=i.qname, id=i.id, text=i.jname)
         for i in ExtractStoreSortName
@@ -693,6 +697,7 @@ class ExtractStoreFilterQuery:
         ex_store: str = "",
         store: str = "",
         essort: str = "",
+        isort: str = "",
         zaiko: str = "",
         prmin: str = "",
         prmax: str = "",
@@ -709,6 +714,10 @@ class ExtractStoreFilterQuery:
             self.ex_store = store
         if essort and essort.isdigit() and ExtractStoreSortName.hasId(int(essort)):
             self.essort = essort
+        elif isort and isort.isdigit() and ItemSortName.hasId(int(isort)):
+            convert_result = self.convert_itemsort_to_essort(int(isort))
+            if convert_result:
+                self.essort = str(convert_result)
         if zaiko and zaiko.isdigit() and int(zaiko) == FilterOnOff.ON:
             self.zaiko = zaiko
         if prmin and is_num(prmin) and int(prmin) >= const_value.INIT_PRICE:
@@ -720,7 +729,7 @@ class ExtractStoreFilterQuery:
                 self.prmax = prmax
                 break
 
-    def get_filter_dict(self) -> Dict:
+    def get_filter_dict(self) -> dict:
         results = {}
         if self.gid:
             results[FilterQueryName.GID.value] = self.gid
@@ -737,6 +746,14 @@ class ExtractStoreFilterQuery:
         if self.prmax:
             results[FilterQueryName.PRMAX.value] = self.prmax
         return results
+
+    @classmethod
+    def convert_itemsort_to_essort(cls, isort: int) -> int | None:
+        if isort == ItemSortName.STORE_NAME.id:
+            return None
+        if ExtractStoreSortName.hasId(isort):
+            return isort
+        return None
 
 
 def get_in_stock_filter_checked(f: dict) -> str:
