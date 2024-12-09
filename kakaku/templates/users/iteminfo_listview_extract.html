@@ -1,179 +1,178 @@
 {% extends "shared/layout.html" %}
 
 {% block head %}
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
-    <title>アイテムを店舗名で抽出</title>
+<link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
+<title>アイテムを店舗名で抽出</title>
 {% endblock %}
 
 {% block body %}
-    <script type="text/javascript">
-        function displayOnOffClick(name) {
-            var val = document.getElementById(name).style;
-            var btnstr = document.getElementById(name + 'btn');
-            if (val.display == '') {
-                cssval = getComputedStyle(document.getElementById(name));
-                setDisplayOnOff(cssval, val, btnstr);
-            } else {
-                setDisplayOnOff(val, val, btnstr);
-            }
+<script type="text/javascript">
+    function displayOnOffClick(name) {
+        var val = document.getElementById(name).style;
+        var btnstr = document.getElementById(name + 'btn');
+        if (val.display == '') {
+            cssval = getComputedStyle(document.getElementById(name));
+            setDisplayOnOff(cssval, val, btnstr);
+        } else {
+            setDisplayOnOff(val, val, btnstr);
         }
-        function setDisplayOnOff(tar, val, btnstr) {
-            if (tar.display == 'none' || tar.display == '') {
-                val.display = 'inline';
-                btnstr.value = '－';
-            } else {
-                val.display = 'none';
-                btnstr.value = '＋';
-            }
+    }
+    function setDisplayOnOff(tar, val, btnstr) {
+        if (tar.display == 'none' || tar.display == '') {
+            val.display = 'inline';
+            btnstr.value = '－';
+        } else {
+            val.display = 'none';
+            btnstr.value = '＋';
         }
-    </script>
-    <h1>アイテムを店舗名で抽出</h1>
-    <h2>操作メニュー <input id="ctrlmenubtn" class="displaybtn ctrlmenubtn" type="button" value="＋"
-            onclick="displayOnOffClick('ctrlmenu');"></h2>
-    <div id="ctrlmenu">
-        <p><a href="{{ url_for('read_users_items_add') }}" class="like_button_link">アイテム追加</a></p>
-        <p><a href="{{ url_for('read_search') }}" class="like_button_link">アイテムを探して追加</a></p>
+    }
+</script>
+<h1>アイテムを店舗名で抽出</h1>
+<h2>操作メニュー <input id="ctrlmenubtn" class="displaybtn ctrlmenubtn" type="button" value="＋"
+        onclick="displayOnOffClick('ctrlmenu');"></h2>
+<div id="ctrlmenu">
+    <p><a href="{{ url_for('read_users_items_add') }}" class="like_button_link">アイテム追加</a></p>
+    <p><a href="{{ url_for('read_search') }}" class="like_button_link">アイテムを探して追加</a></p>
+    <p>
+        {%- if res %}
+    <form action="{{ url_for('read_users_items_update_all') }}" method="post">
+        <button type="submit" name="{{ POST_ITEM_ALL_UPDATE }}" value="{{ item_all_update_value }}">一括情報取得</button>
+    </form>
+    {%- else %}
+    <button disabled>一括情報取得</button>
+    {%- endif %}
+    </p>
+    {%- if res %}
+    <p><a href="{{ url_for('read_select_item_price_combination') }}" class="like_button_link">アイテムの価格計算</a></p>
+    {%- else %}
+    <p><button disabled>アイテムの価格計算</button></p>
+    {%- endif %}
+    {%- if res %}
+    <p><a href="{{ url_for('read_users_analysis') }}" class="like_button_link">アイテムの分析</a></p>
+    {%- else %}
+    <p><button disabled>アイテムの分析</button></p>
+    {%- endif %}
+    <p><a href="{{ url_for('read_users_urls_view') }}" class="like_button_link">URL一覧</a></p>
+    <p><a href="{{ url_for('read_users_stores') }}" class="like_button_link">店舗一覧</a></p>
+    <p><a href="{{ url_for('read_users_items_purchase') }}" class="like_button_link">買取URL一覧</a></p>
+    <p><a href="{{ url_for('read_admin_dashboard') }}" class="like_button_link">管理画面</a></p>
+</div>
+<h2>アイテム一覧</h2>
+<h3>フィルタ <input id="itemfilterbtn" class="displaybtn itemfilterbtn" type="button" value="－"
+        onclick="displayOnOffClick('itemfilter');"></h3>
+<div id="itemfilter">
+    <div class="top_group_select">
         <p>
-        {%- if res %}
-        <form action="{{ url_for('read_users_items_update_all') }}" method="post">
-            <button type="submit" name="{{ POST_ITEM_ALL_UPDATE }}" value="{{ item_all_update_value }}">一括情報取得</button>
-        </form>
-        {%- else %}
-        <button disabled>一括情報取得</button>
-        {%- endif %}
-        </p>
-        {%- if res %}
-        <p><a href="{{ url_for('read_select_item_price_combination') }}" class="like_button_link">アイテムの価格計算</a></p>
-        {%- else %}
-        <p><button disabled>アイテムの価格計算</button></p>
-        {%- endif %}
-        {%- if res %}
-        <p><a href="{{ url_for('read_users_analysis') }}" class="like_button_link">アイテムの分析</a></p>
-        {%- else %}
-        <p><button disabled>アイテムの分析</button></p>
-        {%- endif %}
-        <p><a href="{{ url_for('read_users_urls_view') }}" class="like_button_link">URL一覧</a></p>
-        <p><a href="{{ url_for('read_users_stores') }}" class="like_button_link">店舗一覧</a></p>
-        <p><a href="{{ url_for('read_users_items_purchase') }}" class="like_button_link">買取URL一覧</a></p>
-        <p><a href="{{ url_for('read_admin_dashboard') }}" class="like_button_link">管理画面</a></p>
-    </div>
-    <h2>アイテム一覧</h2>
-    <h3>フィルタ <input id="itemfilterbtn" class="displaybtn itemfilterbtn" type="button" value="－"
-            onclick="displayOnOffClick('itemfilter');"></h3>
-    <div id="itemfilter">
-        <div class="top_group_select">
-            <p>
             {%- with GROUPID_NAME = GROUPID_NAME, groups = groups, fquery = fquery %}
             {%- include "users/item_group_filter.html" %}
             {%- endwith %}
-            <form action="{{ url_for('read_users_groups_add') }}" method="get"><button type="submit">グループ追加</button></form>
-            {% if GROUPID_NAME in fquery and fquery[GROUPID_NAME] | int >= 0 %}
-            <form action="{{ url_for('read_users_groups_edit') }}" method="get">
-                <button type="submit" name="{{ GROUPID_NAME }}" value="{{ fquery[GROUPID_NAME] }}">編集</button>
-            </form>
-            <form action="{{ url_for('read_users_groups_rename') }}" method="post">
-                <button type="submit" name="{{ POST_GROUP_ID }}"
-                    value="{{ fquery[GROUPID_NAME] }}">グループ名変更</button>
-            </form>
-            {% endif %}
-            </p>
-        </div>
-        <p>
+        <form action="{{ url_for('read_users_groups_add') }}" method="get"><button type="submit">グループ追加</button></form>
+        {% if GROUPID_NAME in fquery and fquery[GROUPID_NAME] | int >= 0 %}
+        <form action="{{ url_for('read_users_groups_edit') }}" method="get">
+            <button type="submit" name="{{ GROUPID_NAME }}" value="{{ fquery[GROUPID_NAME] }}">編集</button>
+        </form>
+        <form action="{{ url_for('read_users_groups_rename') }}" method="post">
+            <button type="submit" name="{{ POST_GROUP_ID }}" value="{{ fquery[GROUPID_NAME] }}">グループ名変更</button>
+        </form>
+        {% endif %}
+        </p>
+    </div>
+    <p>
         {%- with ITEMACT_NAME = ITEMACT_NAME, actstslist = actstslist, fquery = fquery %}
         {%- include "users/item_act_filter.html" %}
         {%- endwith %}
-        </p>
-        <p>
+    </p>
+    <p>
         {%- with STOCK_NAME = STOCK_NAME, STOCK_VALUE = STOCK_VALUE, ZAIKO_CHECKED = ZAIKO_CHECKED, fquery = fquery %}
         {%- include "users/item_in_stock_filter.html" %}
-        {%- endwith %}    
-        </p>
-        <p>
+        {%- endwith %}
+    </p>
+    <p>
         {%- with ITEMSORT_NAME = ESSORT_NAME, itemSortList = esSortList, fquery = fquery %}
         {%- include "users/item_sort_filter.html" %}
         {%- endwith %}
-        </p>
-        <p>
+    </p>
+    <p>
         {%- with EXST_NAME = EXST_NAME, storelist = storelist, fquery = fquery %}
         {%- include "users/extract_store_filter.html" %}
         {%- endwith %}
-        </p>
-        <p>
-            {%- with
-                MIN_PRICE_RANGE_NAME = MIN_PRICE_RANGE_NAME,
-                MIN_PRICE_RANGE = MIN_PRICE_RANGE,
-                MAX_PRICE_RANGE_NAME = MAX_PRICE_RANGE_NAME,
-                MAX_PRICE_RANGE = MAX_PRICE_RANGE,
-                storelist = storelist,
-                fquery = fquery
-            %}
-            {%- include "users/item_price_range_filter.html" %}
-            {%- endwith %} 
-            </p>
-        <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
-        <p><a href="{{ url_for('read_users_filter_clear') }}" class="plain-link">検索条件クリア</a></p>
-    </div>
-    <p>
-        件数
-        {{ res_length }}件
     </p>
-    <table class='recent_table'>
-        <tr>
-            <th>item_id</th>
-            <th>商品名</th>
-            <th>url_id</th>
-            <th>URL</th>
-            <th>直近価格</th>
-            <th>変動率</th>
-            <th>セール名</th>
-            <th>店名</th>
-            <th>更新時間</th>
-            <th>今までの最安値</th>
-            <th>活性数</th>
-        </tr>
-        {% for row in res %}
-            <tr id="item{{ row['item_id'] }}">
-            <td>{{ row['item_id'] }}</td>
-            <td>{{ row['name'] }}</td>
-            <td>{{ row['url_id'] }}</td>
-            <td>
-                {%- with url = row['urlpath'] %}
-                {%- include "shared/url_link.html" %}
-                {%- endwith %}
-            </td>
-            <td>
-                {%- with price = row['price'], lowestprice = row['lowestprice'] %}
-                {%- include "shared/price_span.html" %}
-                {%- endwith %}
-            </td>
-            <td>
-                {%- with trendrate = row['trendrate'] %}
-                {%- include "shared/trendrate_span.html" %}
-                {%- endwith %}
-            </td>
-            <td>{{ row['salename'] }}</td>
-            <td>{{ row['storename'] }}</td>
-            {%- with updatetime = row['created_at'] %}
-            {%- include "shared/updatetime_td.html" %}
+    <p>
+        {%- with
+        MIN_PRICE_RANGE_NAME = MIN_PRICE_RANGE_NAME,
+        MIN_PRICE_RANGE = MIN_PRICE_RANGE,
+        MAX_PRICE_RANGE_NAME = MAX_PRICE_RANGE_NAME,
+        MAX_PRICE_RANGE = MAX_PRICE_RANGE,
+        storelist = storelist,
+        fquery = fquery
+        %}
+        {%- include "users/item_price_range_filter.html" %}
+        {%- endwith %}
+    </p>
+    <p><a href="{{ url_for('read_users') }}" class="plain-link">アイテム一覧へ戻る</a></p>
+    <p><a href="{{ url_for('read_users_extract') }}" class="plain-link">検索条件クリア</a></p>
+</div>
+<p>
+    件数
+    {{ res_length }}件
+</p>
+<table class='recent_table'>
+    <tr>
+        <th>item_id</th>
+        <th>商品名</th>
+        <th>url_id</th>
+        <th>URL</th>
+        <th>直近価格</th>
+        <th>変動率</th>
+        <th>セール名</th>
+        <th>店名</th>
+        <th>更新時間</th>
+        <th>今までの最安値</th>
+        <th>活性数</th>
+    </tr>
+    {% for row in res %}
+    <tr id="item{{ row['item_id'] }}">
+        <td>{{ row['item_id'] }}</td>
+        <td>{{ row['name'] }}</td>
+        <td>{{ row['url_id'] }}</td>
+        <td>
+            {%- with url = row['urlpath'] %}
+            {%- include "shared/url_link.html" %}
             {%- endwith %}
-            <td>{{ row['lowestprice'] }}円</td>
-            <td>{{ row['act'] }}</td>
-            <td class="noborder nobreak">
-                <a href="{{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ row['item_id'] }}"
-                 target="_blank" rel="noopener noreferrer" class="like_button_link">詳細</a>
-            </td>
-            <td class="noborder">
+        </td>
+        <td>
+            {%- with price = row['price'], lowestprice = row['lowestprice'] %}
+            {%- include "shared/price_span.html" %}
+            {%- endwith %}
+        </td>
+        <td>
+            {%- with trendrate = row['trendrate'] %}
+            {%- include "shared/trendrate_span.html" %}
+            {%- endwith %}
+        </td>
+        <td>{{ row['salename'] }}</td>
+        <td>{{ row['storename'] }}</td>
+        {%- with updatetime = row['created_at'] %}
+        {%- include "shared/updatetime_td.html" %}
+        {%- endwith %}
+        <td>{{ row['lowestprice'] }}円</td>
+        <td>{{ row['act'] }}</td>
+        <td class="noborder nobreak">
+            <a href="{{ url_for('read_users_items_view') }}?{{ ITEMID_Q_NAME }}={{ row['item_id'] }}" target="_blank"
+                rel="noopener noreferrer" class="like_button_link">詳細</a>
+        </td>
+        <td class="noborder">
             <form action="{{ url_for('read_users_items_update') }}" method="post">
                 <input type="hidden" name="{{ POST_RETURN_USER }}" value="{{ return_user }}">
                 <button type="submit" class="t_b4s" name="{{ POST_ITEM_ID }}" value="{{ row['item_id'] }}">情報取得</button>
             </form>
-            </td>
-            </tr>
-        {% endfor %}
-    </table>
-    {%- if not res %}
-    <p>表示するアイテムがありません</p>
-    {%- else %}
-    <p><a href="#" class="plain-link">TOPへ</a></p>
-    {%- endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{%- if not res %}
+<p>表示するアイテムがありません</p>
+{%- else %}
+<p><a href="#" class="plain-link">TOPへ</a></p>
+{%- endif %}
 {% endblock %}
