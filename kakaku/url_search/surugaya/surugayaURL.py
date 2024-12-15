@@ -13,7 +13,7 @@ class SurugayaURL:
             "category": "",
             "search_word": "",
             "is_marketplace": 0,
-            "ch": "true",
+            # "ck": "true",
             "inStock": "On",
         }
         self.rsopts = rsopts
