@@ -5,7 +5,6 @@ from html_parser import (
     surugaya_html_parse,
     netoff_html_parse,
     bookoff_html_parse,
-    geo_html_parse,
     htmlparse,
 )
 from common.read_config import get_support_url
@@ -25,8 +24,5 @@ def getParser(
 
     if "bookoff" in supdict and supdict["bookoff"] == parsed_url.netloc:
         return bookoff_html_parse.BookoffParse(fp, url_id, date, url)
-
-    if "geo" in supdict and supdict["geo"] == parsed_url.netloc:
-        return geo_html_parse.GeoParse(fp, url_id, date, url)
 
     return None

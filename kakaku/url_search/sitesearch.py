@@ -11,7 +11,6 @@ from url_search.siteSearchOpt import SiteSearchOpt
 from url_search.surugaya import surugayaSearchOpt
 from url_search.netoff import netoffSearchOpt
 from url_search.bookoff import bookoffSearchOpt
-from url_search.geo import geoSearchOpt
 
 
 from cache import getcache
@@ -129,7 +128,6 @@ class SearchOpt:
     SURUGAYA = "surugaya"
     BOOKOFF = "bookoff"
     NETOFF = "netoff"
-    GEO = "geo"
 
     confopts: readoption.ReadSearchOpt
     searchs: dict[str, SiteSearchOpt]
@@ -143,7 +141,6 @@ class SearchOpt:
             SearchOpt.SURUGAYA: surugayaSearchOpt.SurugayaSearchOpt(self.confopts),
             SearchOpt.NETOFF: netoffSearchOpt.NetoffSearchOpt(self.confopts),
             SearchOpt.BOOKOFF: bookoffSearchOpt.BookoffSearchOpt(self.confopts),
-            SearchOpt.GEO: geoSearchOpt.GeoSearchOpt(self.confopts),
         }
         self.targetstore = []
         self.urlparam = {FilterQueryName.WORD.value: word}
@@ -151,7 +148,6 @@ class SearchOpt:
             SearchOpt.SURUGAYA,
             SearchOpt.NETOFF,
             SearchOpt.BOOKOFF,
-            SearchOpt.GEO,
         ]
 
         self.setWord(word)

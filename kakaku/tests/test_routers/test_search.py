@@ -129,7 +129,6 @@ def test_read_search_top_option_no_check_store(mocker):
     assert '<input type="checkbox" name="store" value="1" >' in response.text
     assert '<input type="checkbox" name="store" value="2" >' in response.text
     assert '<input type="checkbox" name="store" value="3" >' in response.text
-    assert '<input type="checkbox" name="store" value="4" >' in response.text
 
 
 def test_read_search_top_option_checked_store_bookoff(mocker):
@@ -144,11 +143,16 @@ def test_read_search_top_option_checked_store_bookoff(mocker):
     assert '<input type="checkbox" name="store" value="1" >' in response.text
     assert '<input type="checkbox" name="store" value="2" checked>' in response.text
     assert '<input type="checkbox" name="store" value="3" >' in response.text
-    assert '<input type="checkbox" name="store" value="4" >' in response.text
 
 
-def test_read_search_top_option_checked_store_surugaya_netoff_geo(mocker):
-    mock_config = {"STORE": {"駿河屋": "ON", "ブックオフ": "OFF", "ネットオフ": "ON", "ゲオ": "ON"}}
+def test_read_search_top_option_checked_store_surugaya_netoff(mocker):
+    mock_config = {
+        "STORE": {
+            "駿河屋": "ON",
+            "ブックオフ": "OFF",
+            "ネットオフ": "ON",
+        }
+    }
     mocker.patch(
         "common.read_config.get_search_options_default", return_value=mock_config
     )
@@ -159,7 +163,6 @@ def test_read_search_top_option_checked_store_surugaya_netoff_geo(mocker):
     assert '<input type="checkbox" name="store" value="1" checked>' in response.text
     assert '<input type="checkbox" name="store" value="2" >' in response.text
     assert '<input type="checkbox" name="store" value="3" checked>' in response.text
-    assert '<input type="checkbox" name="store" value="4" checked>' in response.text
 
 
 def test_read_search_search():

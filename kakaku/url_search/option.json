@@ -56,25 +56,11 @@
                 ,"71":"1001"
             }
         }
-        ,"geo":{
-            "param":"tree"
-            ,"idtable":{
-                "0":""
-                ,"2":"22"
-                ,"3":""
-                ,"4":""
-                ,"80":"17"
-                ,"81":"18"
-                ,"82":"10"
-                ,"10":"21"
-            }
-        }
     }
     ,"store": {
         "1": { "name":"surugaya", "jpname":"駿河屋" }
         ,"2": { "name":"bookoff", "jpname":"ブックオフ" }
         ,"3": { "name":"netoff", "jpname":"ネットオフ" }
-        ,"4": { "name":"geo", "jpname":"ゲオ" }
     }
     ,"output": {
         "type" : [ "text", "gzip" ]

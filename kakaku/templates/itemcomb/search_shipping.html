@@ -1,74 +1,76 @@
 {% extends "shared/layout.html" %}
 
 {% block head %}
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
-    <title>送料検索ツール</title>
+<link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
+<title>送料検索ツール</title>
 {% endblock %}
 
 {% block body %}
-    <h1>送料検索ツール</h1>
-    <p>ここでは駿河屋マーケットプレイスの送料を検索することができます。
-        <br>マーケットプレイス以外は下記のサイトのリンクから確認して下さい。
-    </p>
-    <p>※マーケットプレイスでもうまく検索できない店舗があります</p>
-    <h3>使い方</h3>
-    <p>送付先を指定し、検索するワード（店舗名）を入力してください
-    </p>
-    <form id="search_inputform" action="{{ url_for('read_input_search_shop_shipping') }}#shipping_result" method="get" accept-charset="utf-8">
-        <div>送付先：<select name="{{ PREF_NAME }}">
+<h1>送料検索ツール</h1>
+<p>ここでは駿河屋マーケットプレイスの送料を検索することができます。
+    <br>マーケットプレイス以外は下記のサイトのリンクから確認して下さい。
+</p>
+<p>※マーケットプレイスでもうまく検索できない店舗があります</p>
+<h3>使い方</h3>
+<p>送付先を指定し、検索するワード（店舗名）を入力してください
+</p>
+<form id="search_inputform" action="{{ url_for('read_input_search_shop_shipping') }}#shipping_result" method="get"
+    accept-charset="utf-8">
+    <div>送付先：<select name="{{ PREF_NAME }}">
             {%- for pref in pref_list %}
             <option value="{{ pref.name }}" {{ pref.selected }}>{{ pref.name }}</option>
             {%- endfor %}
-            </select>
-        </div>
-        <div>
-            <input type="text" name="{{ SEARCH_WORD_NAME }}" value="{{ sword }}">
-            <input type="submit" value="検索">
-        </div>
-    </form>
-    <div class="shipping_result" id="shipping_result">
-        {%- if errmsg %}
-        <p style="color:red;">{{ errmsg }}</p>
-        {%- endif %}
-        {%- for r in search_result %}
-        <ul>
+        </select>
+    </div>
+    <div>
+        <input type="text" name="{{ SEARCH_WORD_NAME }}" value="{{ sword }}">
+        <input type="submit" value="検索">
+    </div>
+</form>
+<div class="shipping_result" id="shipping_result">
+    {%- if errmsg %}
+    <p style="color:red;">{{ errmsg }}</p>
+    {%- endif %}
+    {%- for r in search_result %}
+    <ul>
         <li>店名：{{ r.shop_name }}</li>
         <li>
-        {%- if r.url | isSupportDomain %}
-        URL：<a href="{{ r.url }}" target="_blank" rel="noopener noreferrer" class="plain-link">{{ r.url }}</a>
-        {%- else %}  
-        URL：{{ r.url }}
-        {%- endif %}
+            {%- if r.url | isSupportDomain %}
+            URL：<a href="{{ r.url }}" target="_blank" rel="noopener noreferrer" class="plain-link">{{ r.url }}</a>
+            {%- else %}
+            URL：{{ r.url }}
+            {%- endif %}
         </li>
         <li>shop_id：{{ r.shop_id }}</li>
         <li>送料：{{ r.postage }}</li>
-        </ul>
-        {%- endfor %}
-    </div>
-    <input type="button" onclick="window.close();" value="閉じる">
-    <table class="store_shipping_link">
-        <tr>
-            <th>サイト</th><th>URLリンク</th>
-        </tr>
-        <tr>
-            <td>駿河屋：送料について</td>
-            <td><a href="https://www.suruga-ya.jp/man/qa/hanbai_qa/haisou.html" target="_blank" rel="noopener noreferrer">https://www.suruga-ya.jp/man/qa/hanbai_qa/haisou.html</a></td>
-        </tr>
-        <tr>
-            <td>駿河屋：販売手数料について</td>
-            <td><a href="https://www.suruga-ya.jp/man/qa/hanbai_qa/shiharai.html" target="_blank" rel="noopener noreferrer">https://www.suruga-ya.jp/man/qa/hanbai_qa/shiharai.html</a></td>
-        </tr>
-        <tr>
-            <td>ブックオフ公式オンラインストア</td>
-            <td><a href="https://www.bookoffonline.co.jp/files/user-guide/order.html" target="_blank" rel="noopener noreferrer">https://www.bookoffonline.co.jp/files/user-guide/order.html</a></td>
-        </tr>
-        <tr>
-            <td>ネットオフ</td>
-            <td><a href="https://www.netoff.co.jp/guide/delivery.jsp" target="_blank" rel="noopener noreferrer">https://www.netoff.co.jp/guide/delivery.jsp</a></td>
-        </tr>
-        <tr>
-            <td>ゲオオンラインストア</td>
-            <td><a href="https://ec.geo-online.co.jp/shop/pages/guide.aspx" target="_blank" rel="noopener noreferrer">https://ec.geo-online.co.jp/shop/pages/guide.aspx</a></td>
-        </tr>
-    </table>
+    </ul>
+    {%- endfor %}
+</div>
+<input type="button" onclick="window.close();" value="閉じる">
+<table class="store_shipping_link">
+    <tr>
+        <th>サイト</th>
+        <th>URLリンク</th>
+    </tr>
+    <tr>
+        <td>駿河屋：送料について</td>
+        <td><a href="https://www.suruga-ya.jp/man/qa/hanbai_qa/haisou.html" target="_blank"
+                rel="noopener noreferrer">https://www.suruga-ya.jp/man/qa/hanbai_qa/haisou.html</a></td>
+    </tr>
+    <tr>
+        <td>駿河屋：販売手数料について</td>
+        <td><a href="https://www.suruga-ya.jp/man/qa/hanbai_qa/shiharai.html" target="_blank"
+                rel="noopener noreferrer">https://www.suruga-ya.jp/man/qa/hanbai_qa/shiharai.html</a></td>
+    </tr>
+    <tr>
+        <td>ブックオフ公式オンラインストア</td>
+        <td><a href="https://www.bookoffonline.co.jp/files/user-guide/order.html" target="_blank"
+                rel="noopener noreferrer">https://www.bookoffonline.co.jp/files/user-guide/order.html</a></td>
+    </tr>
+    <tr>
+        <td>ネットオフ</td>
+        <td><a href="https://www.netoff.co.jp/guide/delivery.jsp" target="_blank"
+                rel="noopener noreferrer">https://www.netoff.co.jp/guide/delivery.jsp</a></td>
+    </tr>
+</table>
 {% endblock %}

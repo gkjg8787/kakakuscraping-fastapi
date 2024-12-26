@@ -27,7 +27,7 @@ def test_online_store_get_todays_storenames(test_db):
 def test_online_store_delete_postage_by_not_in_storename_list(test_db):
     PrefectureDBSetting.init_setting(test_db)
     db_test_data.add_online_store_data_set_1(test_db)
-    sn_list = [db_test_data.SURUGAYA, db_test_data.GEO]
+    sn_list = [db_test_data.SURUGAYA]
     store.OnlineStoreQuery.delete_postage_by_not_in_storename_list(
         db=test_db, storename_list=sn_list
     )

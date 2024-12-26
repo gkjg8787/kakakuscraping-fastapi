@@ -22,13 +22,12 @@ SURUGAYA_OTHER_KOKURIKO = "https://www.suruga-ya.jp/product-other/428003178"
 SURUGAYA_OTHER_HAURU = "https://www.suruga-ya.jp/product-other/128016917"
 NETOFF_HAURU = "https://www.netoff.co.jp/detail/0010173144"
 BOOKOFF_SENTOCHIHIRO = "https://www.bookoffonline.co.jp/old/0001243579"
-GEO_PONYO = "https://ec.geo-online.co.jp/shop/g/g192218002/"
+SURUGAYA_PONYO = "https://www.suruga-ya.jp/product/detail/128030031"
 
 SURUGAYA = "駿河屋"
 SURUGAYA_CHIBA = "駿河屋千葉中央店"
 NETOFF = "ネットオフ"
 BOOKOFF = "ブックオフ"
-GEO = "ゲオ"
 
 
 def add_data_set_1(db):
@@ -50,7 +49,7 @@ def add_data_set_1(db):
         {"url_id": 5, "urlpath": SURUGAYA_OTHER_KOKURIKO},
         {"url_id": 6, "urlpath": NETOFF_HAURU},
         {"url_id": 7, "urlpath": BOOKOFF_SENTOCHIHIRO},
-        {"url_id": 8, "urlpath": GEO_PONYO},
+        {"url_id": 8, "urlpath": SURUGAYA_PONYO},
     ]
     urlinitem_list = [
         {"item_id": 1, "url_id": 1, "active": "True"},
@@ -165,7 +164,7 @@ def add_data_set_1(db):
             "salename": None,
             "issuccess": True,
             "trendrate": 0,
-            "storename": GEO,
+            "storename": SURUGAYA,
         },
     ]
     newestitem_list = [
@@ -262,7 +261,7 @@ def add_data_set_1(db):
             "onsale": False,
             "salename": None,
             "trendrate": 0,
-            "storename": GEO,
+            "storename": SURUGAYA,
             "lowestprice": 1900,
         },
     ]
@@ -384,7 +383,7 @@ def add_data_store(db):
         {"store_id": 1, "storename": SURUGAYA},
         {"store_id": 2, "storename": NETOFF},
         {"store_id": 3, "storename": BOOKOFF},
-        {"store_id": 4, "storename": GEO},
+        {"store_id": 4, "storename": SURUGAYA},
     ]
     insert_store_dict_list(db, storename_dict_list=storename_list)
 
@@ -763,7 +762,7 @@ def add_data_online_store(db):
         {"shop_id": 2, "storename": SURUGAYA_CHIBA},
         {"shop_id": 3, "storename": NETOFF},
         {"shop_id": 4, "storename": BOOKOFF},
-        {"shop_id": 5, "storename": GEO},
+        {"shop_id": 5, "storename": SURUGAYA},
     ]
     insert_online_store_dict_list(db, store_dict_list=store_list)
 
@@ -859,7 +858,7 @@ def add_online_store_data_set_of_pricelog(db):
             "salename": None,
             "issuccess": True,
             "trendrate": -0.07,
-            "storename": GEO,
+            "storename": SURUGAYA,
         },
         {
             "url_id": 4,

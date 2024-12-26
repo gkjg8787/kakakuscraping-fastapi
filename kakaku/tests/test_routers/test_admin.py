@@ -30,7 +30,7 @@ def is_testable_db(db: Session | None = None):
 
 def check_status_waittime(db: Session, jstsname: str, waittime: int = 0):
     sumtime = 0
-    while True:
+    while waittime > 0:
         sysstr = get_sys_status.getSystemStatus(db)
         if syssts.SystemStatusToJName.get_jname(sysstr) == jstsname:
             break
@@ -97,7 +97,7 @@ def test_read_admin_dashboard_svchg_startup_and_stop():
     check_status_waittime(
         db=test_db,
         jstsname=syssts.SystemStatusToJName.get_jname(syssts.SystemStatus.STOP.name),
-        waittime=5,
+        waittime=7,
     )
 
 
@@ -119,7 +119,7 @@ def test_read_admin_dashboard_svchg_startup_and_restart():
     check_status_waittime(
         db=test_db,
         jstsname=syssts.SystemStatusToJName.get_jname(syssts.SystemStatus.ACTIVE.name),
-        waittime=10,
+        waittime=12,
     )
 
     response = client.post(

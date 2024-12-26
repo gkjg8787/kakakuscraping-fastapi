@@ -516,7 +516,7 @@ class SurugayaParse(htmlparse.ParseItems):
     postage: SurugayaMakepurePostage
 
     def __init__(self, fp, id: int, date: datetime, url: str):
-        self.soup = BeautifulSoup(fp, "html.parser", from_encoding="utf-8")
+        self.soup = BeautifulSoup(fp, "html.parser")
         self.parse = self.createObj(self.soup, id, date, url)
         self.postage = SurugayaMakepurePostage(soup=self.soup)
 

@@ -12,7 +12,7 @@ DEFAULT_STORENAME = "ネットオフ"
 
 class NetoffParse(htmlparse.ParseItems):
     def __init__(self, fp, id, date, url):
-        soup = BeautifulSoup(fp, "html.parser", from_encoding="utf-8")
+        soup = BeautifulSoup(fp, "html.parser")
         self.iteminfo = htmlparse.ParseItemInfo()
         self.iteminfo.id = id
         self.iteminfo.timeStamp = date

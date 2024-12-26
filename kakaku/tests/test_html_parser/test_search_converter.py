@@ -7,14 +7,13 @@ from html_parser.search_converter import (
 from html_parser.search_parser import SearchParser, SearchCmn
 from common.filter_name import FilterQueryName
 
-geo_img_on_err = "https://ec.geo-online.co.jp/img/sys/sorryL.jpg"
 netoff_img_on_err = "https://st.netoff.co.jp/ebimage/noimage_comic_01.gif"
 bookoff_img_on_err = "https://content.bookoffonline.co.jp/images/goods/item_l.gif"
 
 
 def test_convertToSearchResultItems_full():
-    items = [
-        {
+    items_dict = {
+        "surugaya1": {
             SearchParser.STORENAME: "駿河屋",
             SearchParser.IMAGE_URL: "https://www.suruga-ya.jp/database/photo.php?shinaban=109000860&size=m",
             SearchParser.TITLE: "ポケモン不思議のダンジョン 救助隊DX",
@@ -24,7 +23,7 @@ def test_convertToSearchResultItems_full():
             SearchParser.MAKEPURE: "￥2,790",
             SearchParser.MAKEPURE_BIKO: "(16点の中古品)",
         },
-        {
+        "surugaya2": {
             SearchParser.STORENAME: "駿河屋",
             SearchParser.IMAGE_URL: "https://www.suruga-ya.jp/database/photo.php?shinaban=109002738&amp;size=m",
             SearchParser.TITLE: "ゼルダの伝説 ティアーズ オブ ザ キングダム [通常版]",
@@ -36,7 +35,7 @@ def test_convertToSearchResultItems_full():
             SearchParser.MAKEPURE: "￥5,801",
             SearchParser.MAKEPURE_BIKO: "(16点の中古品と新品)",
         },
-        {
+        "surugaya3": {
             SearchParser.STORENAME: "駿河屋",
             SearchParser.IMAGE_URL: "https://www.suruga-ya.jp/database/photo.php?shinaban=128079420&size=m",
             SearchParser.TITLE: "ジブリがいっぱい 監督もいっぱい コレクション",
@@ -44,27 +43,7 @@ def test_convertToSearchResultItems_full():
             SearchParser.CATEGORY: "アニメDVD",
             SearchParser.SINAGIRE: "品切れ",
         },
-        {
-            SearchParser.STORENAME: "ゲオ",
-            SearchParser.IMAGE_URL: "https://eccdn.geo-online.co.jp/ec_media_images/5151459-01.jpg",
-            SearchParser.TITLE: "【新品】ゼルダの伝説 ティアーズ オブ ザ キングダム",
-            SearchParser.TITLE_URL: "https://ec.geo-online.co.jp/shop/g/g515145901/",
-            SearchParser.CATEGORY: "Nintendo Switch",
-            SearchParser.STATE: "新品",
-            SearchParser.NEW: "7,120円",
-            SearchParser.IMAGE_ON_ERR: geo_img_on_err,
-        },
-        {
-            SearchParser.STORENAME: "ゲオ",
-            SearchParser.IMAGE_URL: "https://ec.geo-online.co.jp/img/sys/sorryL.jpg",
-            SearchParser.TITLE: "【中古】ゲド戦記 【DVD】／岡田准一",
-            SearchParser.TITLE_URL: "https://ec.geo-online.co.jp/shop/g/g586234102/",
-            SearchParser.CATEGORY: "DVD",
-            SearchParser.STATE: "状態A",
-            SearchParser.USED: "2,445円",
-            SearchParser.IMAGE_ON_ERR: geo_img_on_err,
-        },
-        {
+        "bookoff1": {
             SearchParser.STORENAME: "ブックオフ",
             SearchParser.IMAGE_URL: "https://content.bookoff.co.jp/goodsimages/LL/001046/0010467610LL.jpg",
             SearchParser.TITLE: "ハウルの動く城",
@@ -73,7 +52,7 @@ def test_convertToSearchResultItems_full():
             SearchParser.USED: "1,430円",
             SearchParser.IMAGE_ON_ERR: bookoff_img_on_err,
         },
-        {
+        "bookoff2": {
             SearchParser.STORENAME: "ネットオフ",
             SearchParser.IMAGE_URL: "https://www.netoff.co.jp/ebimage/cmdty/0013442958.jpg",
             SearchParser.TITLE: "【特典ディスク付】耳をすませば",
@@ -83,74 +62,60 @@ def test_convertToSearchResultItems_full():
             SearchParser.SINAGIRE: "品切れ",
             SearchParser.IMAGE_ON_ERR: netoff_img_on_err,
         },
-    ]
-    sris: list[SearchResultItem] = SearchDictConverter.convertToSearchResultItems(items)
-    for num, i in enumerate(sris):
-        if num == 0:
-            __item_common_assert(i, items, num)
-            __item_makepure_assert(i, items, num)
-        if num == 1:
-            __item_common_assert(i, items, num)
+    }
+    sris: list[SearchResultItem] = SearchDictConverter.convertToSearchResultItems(
+        list(items_dict.values())
+    )
+    for i, key in zip(sris, items_dict.keys()):
+        if key == "surugaya1":
+            __item_common_assert(i, items_dict, key)
+            __item_makepure_assert(i, items_dict, key)
+        if key == "surugaya2":
+            __item_common_assert(i, items_dict, key)
             assert i.main != None
             assert i.main.new != None
-            assert i.main.new.price == items[num][SearchParser.NEW][3:9]
-            assert i.main.new.price_pre_text == items[num][SearchParser.NEW][:3]
-            assert i.main.new.price_tail_text == items[num][SearchParser.NEW][9:]
-            __item_makepure_assert(i, items, num)
+            assert i.main.new.price == items_dict[key][SearchParser.NEW][3:9]
+            assert i.main.new.price_pre_text == items_dict[key][SearchParser.NEW][:3]
+            assert i.main.new.price_tail_text == items_dict[key][SearchParser.NEW][9:]
+            __item_makepure_assert(i, items_dict, key)
             assert i.main.used != None
-            assert i.main.used.price == items[num][SearchParser.USED][3:9]
-            assert i.main.used.price_pre_text == items[num][SearchParser.USED][:3]
-            assert i.main.used.price_tail_text == items[num][SearchParser.USED][9:]
-        if num == 2:
-            __item_common_assert(i, items, num)
-            assert i.sinagire == items[num][SearchParser.SINAGIRE]
+            assert i.main.used.price == items_dict[key][SearchParser.USED][3:9]
+            assert i.main.used.price_pre_text == items_dict[key][SearchParser.USED][:3]
+            assert i.main.used.price_tail_text == items_dict[key][SearchParser.USED][9:]
+        if key == "surugaya3":
+            __item_common_assert(i, items_dict, key)
+            assert i.sinagire == items_dict[key][SearchParser.SINAGIRE]
             assert i.main != None
             assert i.main.new is None
             assert i.main.used is None
-        if num == 3:
-            __item_common_assert(i, items, num)
-            assert i.state == items[num][SearchParser.STATE]
-            assert i.main.new != None
-            assert i.main.new.price == items[num][SearchParser.NEW]
-            assert i.main.new.price_pre_text == ""
-            assert i.main.new.price_tail_text == ""
-            assert i.img_on_err == items[num][SearchParser.IMAGE_ON_ERR]
-        if num == 4:
-            __item_common_assert(i, items, num)
-            assert i.state == items[num][SearchParser.STATE]
+        if key == "bookoff1":
+            __item_common_assert(i, items_dict, key)
             assert i.main.used != None
-            assert i.main.used.price == items[num][SearchParser.USED]
+            assert i.main.used.price == items_dict[key][SearchParser.USED]
+            assert i.img_on_err == items_dict[key][SearchParser.IMAGE_ON_ERR]
+        if key == "bookoff2":
+            __item_common_assert(i, items_dict, key)
+            assert i.sinagire == items_dict[key][SearchParser.SINAGIRE]
+            assert i.main.used != None
+            assert i.main.used.price == ""
             assert i.main.used.price_pre_text == ""
             assert i.main.used.price_tail_text == ""
-            assert i.img_on_err == items[num][SearchParser.IMAGE_ON_ERR]
-        if num == 5:
-            __item_common_assert(i, items, num)
-            assert i.main.used != None
-            assert i.main.used.price == items[num][SearchParser.USED]
-            assert i.img_on_err == items[num][SearchParser.IMAGE_ON_ERR]
-        if num == 6:
-            __item_common_assert(i, items, num)
-            assert i.sinagire == items[num][SearchParser.SINAGIRE]
-            assert i.main.used != None
-            assert i.main.used.price == ""  # items[num][SearchParser.USED][3:9]
-            assert i.main.used.price_pre_text == ""
-            assert i.main.used.price_tail_text == ""
-            assert i.img_on_err == items[num][SearchParser.IMAGE_ON_ERR]
+            assert i.img_on_err == items_dict[key][SearchParser.IMAGE_ON_ERR]
 
 
-def __item_common_assert(i: SearchResultItem, items, num: int):
-    assert i.storename == items[num][SearchParser.STORENAME]
-    assert i.img == items[num][SearchParser.IMAGE_URL]
-    assert i.title == items[num][SearchParser.TITLE]
-    assert i.item_url == items[num][SearchParser.TITLE_URL]
-    assert i.category == items[num][SearchParser.CATEGORY]
+def __item_common_assert(i: SearchResultItem, items, key: str):
+    assert i.storename == items[key][SearchParser.STORENAME]
+    assert i.img == items[key][SearchParser.IMAGE_URL]
+    assert i.title == items[key][SearchParser.TITLE]
+    assert i.item_url == items[key][SearchParser.TITLE_URL]
+    assert i.category == items[key][SearchParser.CATEGORY]
 
 
-def __item_makepure_assert(i: SearchResultItem, items, num: int):
+def __item_makepure_assert(i: SearchResultItem, items, key: str):
     assert i.makepure != None
-    assert i.makepure.price == items[num][SearchParser.MAKEPURE]
-    assert i.makepure.biko == items[num][SearchParser.MAKEPURE_BIKO]
-    assert i.makepure.url == items[num][SearchParser.MAKEPURE_URL]
+    assert i.makepure.price == items[key][SearchParser.MAKEPURE]
+    assert i.makepure.biko == items[key][SearchParser.MAKEPURE_BIKO]
+    assert i.makepure.url == items[key][SearchParser.MAKEPURE_URL]
 
 
 def test_convertToSearchResultPage_full():
@@ -308,7 +273,6 @@ def test_convertToSearchResultPage_many_page():
 
 def test_convertMainItem_for_new():
     SURUGAYA = "駿河屋"
-    GEO = "ゲオ"
     item_dict = {
         SURUGAYA: {
             SearchParser.STORENAME: "駿河屋",
@@ -321,16 +285,6 @@ def test_convertMainItem_for_new():
             SearchParser.MAKEPURE: "￥5,801",
             SearchParser.MAKEPURE_BIKO: "(16点の中古品と新品)",
         },
-        GEO: {
-            SearchParser.STORENAME: "ゲオ",
-            SearchParser.IMAGE_URL: "https://eccdn.geo-online.co.jp/ec_media_images/5151459-01.jpg",
-            SearchParser.TITLE: "【新品】ゼルダの伝説 ティアーズ オブ ザ キングダム",
-            SearchParser.TITLE_URL: "https://ec.geo-online.co.jp/shop/g/g515145901/",
-            SearchParser.CATEGORY: "Nintendo Switch",
-            SearchParser.STATE: "新品",
-            SearchParser.NEW: "7,120円",
-            SearchParser.IMAGE_ON_ERR: geo_img_on_err,
-        },
     }
     results = {}
     results[SURUGAYA] = SearchDictConverter.convertMainItem(item_dict[SURUGAYA])
@@ -341,15 +295,6 @@ def test_convertMainItem_for_new():
         item_dict[SURUGAYA][SearchParser.NEW][3:9],
         item_dict[SURUGAYA][SearchParser.NEW][:3],
         item_dict[SURUGAYA][SearchParser.NEW][9:],
-    )
-    results[GEO] = SearchDictConverter.convertMainItem(item_dict[GEO])
-    __check_new(
-        results[GEO],
-        item_dict[GEO][SearchParser.TITLE],
-        item_dict[GEO][SearchParser.TITLE_URL],
-        item_dict[GEO][SearchParser.NEW],
-        "",
-        "",
     )
 
 
@@ -372,7 +317,6 @@ def __check_new(
 
 def test_convertMainItem_for_range():
     SURUGAYA = "駿河屋"
-    GEO = "ゲオ"
     item_dict = {
         SURUGAYA: {
             SearchParser.STORENAME: "駿河屋",

@@ -46,7 +46,6 @@ SEARCHOPTIONS_DEFAULT = {
         "駿河屋": "OFF",
         "ブックオフ": "OFF",
         "ネットオフ": "OFF",
-        "ゲオ": "OFF",
     },
 }
 
@@ -64,7 +63,6 @@ SUPPORT_DOMAIN = {
     "surugaya": "www.suruga-ya.jp",
     "netoff": "www.netoff.co.jp",
     "bookoff": "shopping.bookoff.co.jp",
-    "geo": "ec.geo-online.co.jp",
 }
 
 SCRAPING_BACK_SERVER = {
