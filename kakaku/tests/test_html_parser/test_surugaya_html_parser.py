@@ -90,19 +90,19 @@ def test_surugaya_shiharai_parse():
                 assert len(psp.target_prefectures) == 34 + 7 + 4
                 assert len(psp.terms) == 2
                 assert psp.terms[0].boundary == "5000>"
-                assert psp.terms[0].postage == "240"
+                assert psp.terms[0].postage == 240
                 assert psp.terms[1].boundary == "5000<="
-                assert psp.terms[1].postage == "0"
+                assert psp.terms[1].postage == 0
                 continue
             if "北海道" in psp.target_prefectures:
                 assert len(psp.target_prefectures) == 2
                 assert len(psp.terms) == 3
                 assert psp.terms[0].boundary == "5000>"
-                assert psp.terms[0].postage == "570"
+                assert psp.terms[0].postage == 570
                 assert psp.terms[1].boundary == "5000<=:10000>"
-                assert psp.terms[1].postage == "285"
+                assert psp.terms[1].postage == 285
                 assert psp.terms[2].boundary == "10000<="
-                assert psp.terms[2].postage == "0"
+                assert psp.terms[2].postage == 0
                 continue
 
 

@@ -554,11 +554,8 @@ class SurugayaShiharaiParse:
 
     def situmon_parse(self, soup: BeautifulSoup):
         results: set[htmlparse.ParseStorePostage] = set()
-        situmon_list = soup.select(r".yokuarusitumon ul")
+        situmon_list = soup.select(r".yokuarusitumon ul#shiharai_1_2")
         for situmon in situmon_list:
-            tagid = situmon.select_one(r"#shiharai_1_2")
-            if not tagid:
-                continue
             answer = situmon.select_one(r"li.answer")
             if not answer:
                 continue
@@ -574,7 +571,7 @@ class SurugayaShiharaiParse:
                     continue
                 if "お買上金額" in text:
                     m = re.findall(
-                        r"([1-9][0-9]+)円?(未満|以上)(([1-9][0-9]+)(未満|以上))?…(無料|[1-9][0-9]+円)",
+                        r"([1-9][0-9]+)円?(未満|以上)(([1-9][0-9]+)円?(未満|以上))?…(無料|[1-9][0-9]+円)",
                         text.replace(",", ""),
                     )
                     if not m:
