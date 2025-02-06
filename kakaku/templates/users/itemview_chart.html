@@ -1,65 +1,81 @@
 {% extends "shared/layout.html" %}
 
 {% block head %}
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
-    <title>価格グラフ</title> 
+<link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
+<title>価格グラフ</title>
 {% endblock %}
 
 {% block body %}
-    <h1>価格グラフ</h1>
-    <canvas id="myLineChart"></canvas>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>
+<h1>価格グラフ</h1>
+<canvas id="myLineChart"></canvas>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>
 
-    <script>
-    var ctx = document.getElementById("myLineChart");
-    var myLineChart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        datasets: [
-          {
-            label: '中古価格',
-            data:[ 
-              {%- for row in upjp %}
-                { x:"{{ row['x'] }}", y:"{{ row['y'] }}" },
-              {%- endfor %}  
-              ],
-                borderColor: "rgba(255,0,0,1)",
-                backgroundColor: "rgba(0,0,0,0)",
-                lineTension: 0,
+<script>
+  var ctx = document.getElementById("myLineChart");
+  var myLineChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      datasets: [
+        {
+          label: '中古価格',
+          data: [
+            {% for row in used_list %}
+                  { x: "{{ row['x'] }}", y: "{{ row['y'] }}" },
+        {% endfor %}  
+                ],
+  borderColor: "rgba(255,0,0,1)",
+    backgroundColor: "rgba(0,0,0,0)",
+      lineTension: 0,
               },
-              {
-            label: '新品価格',
-            data: [ 
-              {%- for row in npjp %}
-                { x:"{{ row['x'] }}", y:"{{ row['y'] }}" },
-              {%- endfor %}  
+  {% if new_list %}
+  {
+    label: '新品価格',
+      data: [
+        {% for row in new_list %}
+  { x: "{{ row['x'] }}", y: "{{ row['y'] }}" },
+  {% endfor %}  
               ],
-                borderColor: "rgba(0,255,0,1)",
-                backgroundColor: "rgba(0,0,0,0)",
-                lineTension: 0,
-          }
+  borderColor: "rgba(0,255,0,1)",
+    backgroundColor: "rgba(0,0,0,0)",
+      lineTension: 0,
+          },
+  {% endif %}
+  {% if used_predict %}
+  {
+    label: '中古予想価格',
+      data: [
+        {% for row in used_predict %}
+  { x: "{{ row['x'] }}", y: "{{ row['y'] }}" },
+  {% endfor %}
+            ],
+  borderColor: "rgba(0,0,255,1)",
+    backgroundColor: "rgba(0,0,0,0)",
+      lineTension: 0,
+          },
+  {% endif %}
         ],
       },
-      options: {
-        title: {
-          display: true,
+  options: {
+    title: {
+      display: true,
         },
-        scales: {
-          xAxes: [{
-          type : 'time',
-          time : {
-              unit: 'month'
-              }
-          }
-          ]
-        },
-        animation: false,
-        tooltips: {
-          mode: 'nearest',
-          intersect: false,
-        },
+    scales: {
+      xAxes: [{
+        type: 'time',
+        time: {
+          unit: 'month'
+        }
       }
+      ]
+    },
+    animation: false,
+      tooltips: {
+      mode: 'nearest',
+        intersect: false,
+        },
+  }
     });
-    </script>
-    <p><a href="{{ url_for('read_users_items_view',) }}?{{ ITEMID_Q_NAME }}={{ item_id }}" class="plain-link">アイテム詳細へ戻る</a></p>
+</script>
+<p><a href="{{ url_for('read_users_items_view',) }}?{{ ITEMID_Q_NAME }}={{ item_id }}" class="plain-link">アイテム詳細へ戻る</a>
+</p>
 {% endblock %}

@@ -168,3 +168,10 @@ def drop_database():
 
     drop_database_func("default")
     drop_database_func("old_db")
+
+
+def get_test_enging():
+    TEST_DB_URL = URL.create(**DATABASES["default"])
+    is_echo = DATABASES["is_echo"]
+    engine = create_engine(TEST_DB_URL, echo=is_echo)
+    return engine

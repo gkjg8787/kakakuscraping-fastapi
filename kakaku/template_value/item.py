@@ -1,5 +1,5 @@
 from typing import List, Dict, Optional, Type
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import copy
 
 
@@ -368,29 +368,36 @@ class CompressLogByStorename:
 
 class ItemDetailChartContext(BaseTemplateValue):
     ITEMID_Q_NAME: str = filter_name.ItemDetailQueryName.ITEMID.value
-    upjp: List
-    npjp: List
+    used_list: list
+    new_list: list
+    used_predict: list
     item_id: int = const_value.NONE_ID
 
     def __init__(self, idq: ppi.ItemDetailQuery, db: Session):
         super().__init__(
-            upjp=[],
-            npjp=[],
+            used_list=[],
+            new_list=[],
+            used_predict=[],
         )
         if not idq.itemid:
             return
         self.item_id = int(idq.itemid)
-        self.upjp = self.__get_used_point_data(db, self.item_id)
-        self.npjp = self.__get_new_point_data(db, self.item_id)
+        self.used_list = self._get_used_point_data(db, self.item_id)
+        self.new_list = self._get_new_point_data(db, self.item_id)
+
+        predict_length = 14
+        self.used_predict = self._get_used_predict_point_data(
+            item_id=self.item_id, predict_length=predict_length
+        )
 
     def has_data(self):
         if self.item_id == const_value.NONE_ID:
             return False
-        if len(self.upjp) == 0 and len(self.npjp) == 0:
+        if len(self.used_list) == 0 and len(self.new_list) == 0:
             return False
         return True
 
-    def __get_used_point_data(self, db: Session, item_id: int):
+    def _get_used_point_data(self, db: Session, item_id: int):
         u = ItemQuery.get_daily_min_used_pricelog_by_item_id_and_since_year_ago(
             db=db,
             item_id=item_id,
@@ -402,7 +409,7 @@ class ItemDetailChartContext(BaseTemplateValue):
         # return upj
         return results
 
-    def __get_new_point_data(self, db: Session, item_id: int):
+    def _get_new_point_data(self, db: Session, item_id: int):
         n = ItemQuery.get_daily_min_new_pricelog_by_item_id_and_since_year_ago(
             db=db,
             item_id=item_id,
@@ -414,8 +421,44 @@ class ItemDetailChartContext(BaseTemplateValue):
         # return npj
         return results
 
+    def _get_used_predict_point_data(
+        self,
+        item_id: int,
+        predict_length: int,
+        start: datetime | None = None,
+        end: datetime | None = None,
+    ):
+        from proc.predict import MinPricePredict
+        from ml.predict_model import MinPriceModel
+        import pandas as pd
+
+        mpp = MinPricePredict(MinPriceModel)
+        if not start:
+            now = datetime.now(timezone.utc)
+            start = now - timedelta(days=365)
+        if start:
+            start = cm_util.utcTolocaltime(start)
+        if end:
+            end = cm_util.utcTolocaltime(end)
+        result = mpp.get_predict_by_item_id_concat_url(
+            item_id=item_id,
+            start=start,
+            end=end,
+            predict_length=predict_length,
+        )
+        if not result.predict:
+            return []
+        if isinstance(result.predict.index, pd.DatetimeIndex):
+            x_list = result.predict.index.strftime("%Y-%m-%d").tolist()
+            y_list = list(result.predict.predict)
+            return [{"x": x, "y": int(y)} for x, y in zip(x_list, y_list)]
+        else:
+            x_list = result.predict.index
+            y_list = result.predict.predict
+            return [{"x": x, "y": int(y)} for x, y in zip(x_list, y_list)]
+
     @staticmethod
-    def __get_pricelist_of_uniq_point_data(pl: List) -> List:
+    def __get_pricelist_of_uniq_point_data(pl: list) -> list:
         initflg = True
         results = []
         for d in pl:

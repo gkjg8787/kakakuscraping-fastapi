@@ -9,3 +9,7 @@ jinja2 >=3.1.2,<4.0
 bs4
 python-dateutil
 psutil
+pandas >=2.2.3,<3.0
+numpy
+scikit-learn >=1.6.1,<2.0
+statsmodels >=0.14.4,<1.0
