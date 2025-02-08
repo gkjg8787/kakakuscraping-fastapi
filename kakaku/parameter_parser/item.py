@@ -1,5 +1,7 @@
 from typing import Dict, List, Optional
 from urllib.parse import urlencode, parse_qs
+import dataclasses
+from datetime import datetime
 
 from fastapi import Form, Cookie
 from pydantic import BaseModel
@@ -193,6 +195,49 @@ class ItemDetailQuery:
             results[FilterQueryName.STORE.value] = self.store
         if self.press:
             results[FilterQueryName.PRESS.value] = self.press
+        return results
+
+
+class ItemDetailChartQuery:
+    itemid: str = ""
+    min_date: str = ""
+    max_date: str = ""
+    period: str = ""
+
+    def __init__(
+        self,
+        itemid: str = "",
+        min_date: str = "",
+        max_date: str = "",
+        period: str = "",
+    ):
+        if is_valid_id(itemid):
+            self.itemid = itemid
+        if min_date and self.is_valid_date(min_date):
+            self.min_date = min_date
+        if max_date and self.is_valid_date(max_date):
+            self.max_date = max_date
+        if is_valid_id(period):
+            self.period = period
+
+    def is_valid_date(self, value: str):
+        fmt = "%Y-%m-%d"
+        try:
+            datetime.strptime(value, fmt)
+        except Exception:
+            return False
+        return True
+
+    def get_filter_dict(self) -> dict:
+        results = {}
+        if self.itemid:
+            results[ItemDetailQueryName.ITEMID.value] = self.itemid
+        if self.min_date:
+            results[FilterQueryName.MIN_DATE.value] = self.min_date
+        if self.max_date:
+            results[FilterQueryName.MAX_DATE.value] = self.max_date
+        if self.period:
+            results[FilterQueryName.PERIOD.value] = self.period
         return results
 
 

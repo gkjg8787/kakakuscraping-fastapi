@@ -84,3 +84,7 @@ AUTO_COPY_OF_ONLINE_STORE_INFO_TO_LOCAL = {"auto": False, "type": "overwrite"}
 AUTO_STARTUP_BACKSERVER = {"auto": False}
 ITEMCOMB_PRICE_MARGIN = {"type": "fix", "value": "250", "min-value": "250"}
 SURUGAYA_SEARCH_RESULT_URL_CONVERT = True
+PREDICTION = {
+    "predict": True,
+    "forecast_length": 14,
+}

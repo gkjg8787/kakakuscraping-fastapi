@@ -3,16 +3,33 @@ from pathlib import Path
 import time
 import hashlib
 import glob
+import datetime
 
-from common import read_config
+from common import util as cm_util
 from cache.rwcache import RWCache
 
 
 class FileCache(RWCache):
     HASHFILE_EXT = ".hf"
+    group: str
+    cachedir: str
+    cache_max_num: int
+    cache_time: int
+    span_over_days: bool
 
-    def __init__(self, group=""):
+    def __init__(
+        self,
+        cachedir: str,
+        cache_max_num: int,
+        cache_time: int,
+        group: str = "",
+        span_over_days: bool = True,
+    ):
         self.group = group
+        self.cachedir = cachedir
+        self.cache_max_num = cache_max_num
+        self.cache_time = cache_time
+        self.span_over_days = span_over_days
 
     def read(self, title):
         hd = self.hasHashData(title)
@@ -44,7 +61,7 @@ class FileCache(RWCache):
         return self.group + ":" + ht + self.HASHFILE_EXT
 
     def getCacheDir(self):
-        return read_config.get_dl_temp_dir()
+        return self.cachedir
 
     def getHashPath(self, ht):
         cachedir = self.getCacheDir()
@@ -79,20 +96,24 @@ class FileCache(RWCache):
     def fullHashDataNum(self):
         cachedir = self.getCacheDir()
         pl = list(Path(cachedir).glob(self.getHashFileName("*")))
-        cache_max_num = int(read_config.get_cache_max_num())
-        if len(pl) >= cache_max_num:
+        if len(pl) >= self.cache_max_num:
             pl.sort(key=os.path.getmtime)
-            for i in range(len(pl) - cache_max_num + 1):
+            for i in range(len(pl) - self.cache_max_num + 1):
                 os.remove(pl[0])
                 pl.pop(0)
 
     def expireHashData(self, title):
         ht = self.createHash(title)
         f_ut = self.getHashFileTimeStamp(ht)
+        if not self.span_over_days:
+            modified_time = datetime.datetime.fromtimestamp(f_ut)
+            now = datetime.datetime.now(datetime.timezone.utc)
+            now = cm_util.utcTolocaltime(now)
+            if modified_time.date() < now.date():
+                return True
         ut_now = time.time()
         elapsed_time = ut_now - f_ut
-        cache_time = int(read_config.get_cache_time())
-        if elapsed_time > cache_time:
+        if elapsed_time > self.cache_time:
             self.deleteHashData(ht)
             return True
         else:

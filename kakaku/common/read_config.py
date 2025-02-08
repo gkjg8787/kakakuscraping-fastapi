@@ -1,3 +1,5 @@
+from pydantic import BaseModel
+
 import settings
 
 
@@ -119,3 +121,12 @@ def get_auto_copy_of_online_store_info_to_local():
 
 def get_surugaya_search_result_url_convert():
     return settings.SURUGAYA_SEARCH_RESULT_URL_CONVERT
+
+
+class PredictionConfig(BaseModel):
+    predict: bool
+    forecast_length: int
+
+
+def get_prediction_setting():
+    return PredictionConfig(**settings.PREDICTION)

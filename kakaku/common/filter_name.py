@@ -31,6 +31,7 @@ class FilterQueryName(AutoLowerName):
     LEVEL = auto()
     MIN_DATE = auto()
     MAX_DATE = auto()
+    PERIOD = auto()
 
 
 @unique

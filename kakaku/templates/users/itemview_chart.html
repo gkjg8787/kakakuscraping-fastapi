@@ -7,9 +7,37 @@
 
 {% block body %}
 <h1>価格グラフ</h1>
+{% if is_predict %}
+<h3>予測設定</h3>
+<div class="predict_config_list">
+  <form method="{{ date_range_filter.form.method }}" action="{{ date_range_filter.form.action }}"
+    id="{{ date_range_form }}">
+    <div class="date_range_box config_box">
+      {{ date_range_filter.range_input.title }} : <input type="date"
+        name="{{ date_range_filter.range_input.lower.input_name }}"
+        min="{{ date_range_filter.range_input.lower.min_value }}"
+        max="{{ date_range_filter.range_input.lower.max_value }}"
+        value="{{ date_range_filter.range_input.lower.value }}">
+      　～　<input type="date" name="{{ date_range_filter.range_input.upper.input_name }}"
+        min="{{ date_range_filter.range_input.upper.min_value }}"
+        max="{{ date_range_filter.range_input.upper.max_value }}"
+        value="{{ date_range_filter.range_input.upper.value }}">
+    </div>
+    <div class="predict_period_box config_box">
+      予測する日数 : <input type="number" step="1" name="{{ PERIOD_NAME }}" value="{{ predict_length }}">
+    </div>
+    <button type="submit">予測する</button>
+    {% for k, v in fquery.items() %}
+    {% if k != date_range_filter.range_input.lower.input_name and k != date_range_filter.range_input.upper.input_name
+    and k != PERIOD_NAME and v != "" %}
+    <input type="hidden" name="{{ k }}" value="{{ v }}">
+    {% endif %}
+    {% endfor %}
+  </form>
+</div>
+{% endif %}
 <canvas id="myLineChart"></canvas>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>
-
 <script>
   var ctx = document.getElementById("myLineChart");
   var myLineChart = new Chart(ctx, {

@@ -128,9 +128,9 @@ class MinPriceModel(MachineLearnModel):
     data: pd.DataFrame | None = None
     model: any = None
 
-    def set_data(self, data: DataPreProcessing):
+    def set_data(self, data: DataPreProcessing, model: any = None):
         self.data = data.get_dataframe()
-        self.model = None
+        self.model = model
 
     def fit(self, y_column_name: str, exog_column_names: list[str] = []):
         train_y, train_x = self.get_training_data(y_column_name)

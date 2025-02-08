@@ -289,10 +289,10 @@ def read_users_items_url_remove(
 @router.get("/items/v/chart/", response_class=HTMLResponse)
 def read_users_items_view_chart(
     request: Request,
-    idq: ppi.ItemDetailQuery = Depends(),
+    idcq: ppi.ItemDetailChartQuery = Depends(),
     db: Session = Depends(get_session),
 ):
-    idcc = template_value.item.ItemDetailChartContext(idq=idq, db=db)
+    idcc = template_value.item.ItemDetailChartContext(idcq=idcq, db=db)
     if not idcc.has_data():
         return RedirectResponse(
             url=request.url_for("read_users"), status_code=status.HTTP_302_FOUND

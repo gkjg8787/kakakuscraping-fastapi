@@ -22,8 +22,26 @@ def is_True(b) -> bool:
 
 
 def getSearchCache():
-    return getCache("search")
+    return getCache(group="search")
 
 
-def getCache(group=""):
-    return file_cache.FileCache(group)
+def getCache(
+    cachedir: str = "",
+    cache_max_num: int | None = None,
+    cache_time: int | None = None,
+    group: str = "",
+    span_over_days: bool = True,
+):
+    if not cachedir:
+        cachedir = read_config.get_dl_temp_dir()
+    if not cache_max_num:
+        cache_max_num = int(read_config.get_cache_max_num())
+    if not cache_time:
+        cache_time = int(read_config.get_cache_time())
+    return file_cache.FileCache(
+        chachedir=cachedir,
+        cache_max_num=cache_max_num,
+        cache_time=cache_time,
+        group=group,
+        span_over_days=span_over_days,
+    )

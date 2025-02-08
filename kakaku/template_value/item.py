@@ -2,7 +2,7 @@ from typing import List, Dict, Optional, Type
 from datetime import datetime, timezone, timedelta
 import copy
 
-
+import pandas as pd
 from dateutil.relativedelta import relativedelta
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -38,6 +38,10 @@ from proc import get_sys_status, system_status
 from proc import online_store_copy
 from itemcomb.prefecture import PrefectureName
 from url_search.surugaya import surugayaURL
+from proc.predict import MinPricePredict
+from ml.predict_model import MinPriceModel
+from .shared import factory as shared_factory
+from . import shared
 
 
 def can_item_update(db: Session):
@@ -368,26 +372,75 @@ class CompressLogByStorename:
 
 class ItemDetailChartContext(BaseTemplateValue):
     ITEMID_Q_NAME: str = filter_name.ItemDetailQueryName.ITEMID.value
+    PERIOD_NAME: str = filter_name.FilterQueryName.PERIOD.value
     used_list: list
     new_list: list
     used_predict: list
     item_id: int = const_value.NONE_ID
+    fquery: dict
+    date_range_filter: shared.RangeInputForm
+    predict_length: int
+    is_predict: bool = False
 
-    def __init__(self, idq: ppi.ItemDetailQuery, db: Session):
+    def __init__(self, idcq: ppi.ItemDetailChartQuery, db: Session):
+        predict_conf = read_config.get_prediction_setting()
+        if predict_conf.predict:
+            is_predict = True
+            predict_length = None
+            if idcq.period:
+                predict_length = int(idcq.period)
+            if not predict_length:
+                predict_length = predict_conf.forecast_length
+        else:
+            is_predict = False
+            predict_length = 0
+
+        today = datetime.now(timezone.utc)
+        today_jst = cm_util.utcTolocaltime(today)
+        two_year_ago = today_jst - timedelta(days=365 * 2)
+
         super().__init__(
             used_list=[],
             new_list=[],
             used_predict=[],
+            fquery=idcq.get_filter_dict(),
+            date_range_filter=shared_factory.DateRangeFilterFactory.create(
+                title="学習データの期間",
+                lower_value=idcq.min_date,
+                upper_value=idcq.max_date,
+                lower_max=today_jst,
+                upper_max=today_jst,
+                lower_min=two_year_ago,
+                upper_min=two_year_ago,
+            ),
+            predict_length=predict_length,
+            is_predict=is_predict,
         )
-        if not idq.itemid:
+        if not idcq.itemid:
             return
-        self.item_id = int(idq.itemid)
+        self.item_id = int(idcq.itemid)
         self.used_list = self._get_used_point_data(db, self.item_id)
         self.new_list = self._get_new_point_data(db, self.item_id)
 
-        predict_length = 14
+        if not self.is_predict:
+            return
+
+        def str_to_datetime(value):
+            date_fmt = "%Y-%m-%d"
+            return datetime.strptime(value, date_fmt)
+
+        start_date = None
+        if idcq.min_date:
+            start_date = str_to_datetime(idcq.min_date)
+        end_date = None
+        if idcq.max_date:
+            end_date = str_to_datetime(idcq.max_date)
+
         self.used_predict = self._get_used_predict_point_data(
-            item_id=self.item_id, predict_length=predict_length
+            item_id=self.item_id,
+            predict_length=predict_length,
+            start=start_date,
+            end=end_date,
         )
 
     def has_data(self):
@@ -405,8 +458,6 @@ class ItemDetailChartContext(BaseTemplateValue):
         )
         up = self.__get_pricelist_of_uniq_point_data(u)
         results = [{"x": p["created_at"], "y": p["price"]} for p in up]
-        # upj = json.dumps(results)
-        # return upj
         return results
 
     def _get_new_point_data(self, db: Session, item_id: int):
@@ -417,21 +468,15 @@ class ItemDetailChartContext(BaseTemplateValue):
         )
         np = self.__get_pricelist_of_uniq_point_data(n)
         results = [{"x": p["created_at"], "y": p["price"]} for p in np]
-        # npj = json.dumps(results)
-        # return npj
         return results
 
     def _get_used_predict_point_data(
         self,
         item_id: int,
-        predict_length: int,
+        predict_length: int | None = None,
         start: datetime | None = None,
         end: datetime | None = None,
     ):
-        from proc.predict import MinPricePredict
-        from ml.predict_model import MinPriceModel
-        import pandas as pd
-
         mpp = MinPricePredict(MinPriceModel)
         if not start:
             now = datetime.now(timezone.utc)
@@ -461,7 +506,10 @@ class ItemDetailChartContext(BaseTemplateValue):
     def __get_pricelist_of_uniq_point_data(pl: list) -> list:
         initflg = True
         results = []
-        for d in pl:
+        if not pl:
+            return results
+
+        for d in pl[:-1]:
             dic = {}
             for k, v in d._mapping.items():
                 dic[k] = v
@@ -482,6 +530,7 @@ class ItemDetailChartContext(BaseTemplateValue):
             preprice = dic["price"]
             prev = dic
             results.append(dic)
+        results.append({k: v for k, v in pl[-1]._mapping.items()})
         return results
 
 
