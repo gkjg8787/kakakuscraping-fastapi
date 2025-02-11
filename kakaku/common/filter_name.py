@@ -32,6 +32,7 @@ class FilterQueryName(AutoLowerName):
     MIN_DATE = auto()
     MAX_DATE = auto()
     PERIOD = auto()
+    START = auto()
 
 
 @unique

@@ -85,6 +85,7 @@ AUTO_STARTUP_BACKSERVER = {"auto": False}
 ITEMCOMB_PRICE_MARGIN = {"type": "fix", "value": "250", "min-value": "250"}
 SURUGAYA_SEARCH_RESULT_URL_CONVERT = True
 PREDICTION = {
-    "predict": True,
+    "view": True,
+    "everytime": True,
     "forecast_length": 14,
 }

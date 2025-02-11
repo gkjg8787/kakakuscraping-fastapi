@@ -124,7 +124,8 @@ def get_surugaya_search_result_url_convert():
 
 
 class PredictionConfig(BaseModel):
-    predict: bool
+    view: bool
+    everytime: bool
     forecast_length: int
 
 

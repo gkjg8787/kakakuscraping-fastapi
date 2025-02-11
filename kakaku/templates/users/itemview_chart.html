@@ -26,6 +26,7 @@
     <div class="predict_period_box config_box">
       予測する日数 : <input type="number" step="1" name="{{ PERIOD_NAME }}" value="{{ predict_length }}">
     </div>
+    <input type="hidden" name="{{ START_NAME }}" value="1">
     <button type="submit">予測する</button>
     {% for k, v in fquery.items() %}
     {% if k != date_range_filter.range_input.lower.input_name and k != date_range_filter.range_input.upper.input_name
@@ -37,9 +38,33 @@
 </div>
 {% endif %}
 <canvas id="myLineChart"></canvas>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/luxon@3.5.0/build/global/luxon.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1/dist/chartjs-adapter-luxon.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js"></script>
 <script>
-  var ctx = document.getElementById("myLineChart");
+  const zoomOptions = {
+    pan: {
+      enabled: true,
+      mode: 'xy',
+      speed: 0.1,
+      threshold: 10,
+    },
+    zoom: {
+      wheel: {
+        enabled: true,
+      },
+      pinch: {
+        enabled: true
+      },
+      mode: 'xy',
+      onZoomComplete({ chart }) {
+        chart.update('none');
+      }
+    }
+  };
+  var ctx = document.getElementById("myLineChart").getContext('2d');
   var myLineChart = new Chart(ctx, {
     type: 'line',
     data: {
@@ -48,25 +73,23 @@
           label: '中古価格',
           data: [
             {% for row in used_list %}
-                  { x: "{{ row['x'] }}", y: "{{ row['y'] }}" },
-        {% endfor %}  
-                ],
-  borderColor: "rgba(255,0,0,1)",
-    backgroundColor: "rgba(0,0,0,0)",
-      lineTension: 0,
-              },
+  { x: "{{ row['x'] }}", y: "{{ row['y'] }}" },
+        {% endfor %}
+  ],
+  lineTension: 0,
+    fill: false,
+  },
   {% if new_list %}
   {
     label: '新品価格',
       data: [
         {% for row in new_list %}
   { x: "{{ row['x'] }}", y: "{{ row['y'] }}" },
-  {% endfor %}  
-              ],
-  borderColor: "rgba(0,255,0,1)",
-    backgroundColor: "rgba(0,0,0,0)",
-      lineTension: 0,
-          },
+  {% endfor %}
+  ],
+  lineTension: 0,
+    fill: false,
+  },
   {% endif %}
   {% if used_predict %}
   {
@@ -75,34 +98,52 @@
         {% for row in used_predict %}
   { x: "{{ row['x'] }}", y: "{{ row['y'] }}" },
   {% endfor %}
-            ],
-  borderColor: "rgba(0,0,255,1)",
-    backgroundColor: "rgba(0,0,0,0)",
-      lineTension: 0,
-          },
+  ],
+  lineTension: 0,
+    fill: false,
+  },
   {% endif %}
-        ],
-      },
+  ],
+  },
   options: {
-    title: {
-      display: true,
-        },
-    scales: {
-      xAxes: [{
+    responsive: true,
+      scales: {
+      x: {
         type: 'time',
-        time: {
-          unit: 'month'
-        }
-      }
-      ]
-    },
-    animation: false,
-      tooltips: {
-      mode: 'nearest',
-        intersect: false,
+          time: {
+          parser: 'yyyy-MM-dd',
+            unit: 'day'
         },
+        title: {
+          display: true,
+            text: '日付'
+        }
+
+      }
+    },
+    plugins: {
+      tooltip: {
+        mode: 'nearest',
+          intersect: false,
+            callbacks: {
+          title: function(context) {
+            const date = context[0].label.split(" ");
+            return date[0];
+          }
+        }
+      },
+      zoom: zoomOptions,
+    }
   }
-    });
+  });
+</script>
+<button id="resetButton">チャート位置リセット</button>
+<script>
+  const resetButton = document.getElementById('resetButton');
+
+  resetButton.addEventListener('click', () => {
+    myLineChart.resetZoom();
+  });
 </script>
 <p><a href="{{ url_for('read_users_items_view',) }}?{{ ITEMID_Q_NAME }}={{ item_id }}" class="plain-link">アイテム詳細へ戻る</a>
 </p>

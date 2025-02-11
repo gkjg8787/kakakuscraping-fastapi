@@ -373,6 +373,7 @@ class CompressLogByStorename:
 class ItemDetailChartContext(BaseTemplateValue):
     ITEMID_Q_NAME: str = filter_name.ItemDetailQueryName.ITEMID.value
     PERIOD_NAME: str = filter_name.FilterQueryName.PERIOD.value
+    START_NAME: str = filter_name.FilterQueryName.START.value
     used_list: list
     new_list: list
     used_predict: list
@@ -384,7 +385,7 @@ class ItemDetailChartContext(BaseTemplateValue):
 
     def __init__(self, idcq: ppi.ItemDetailChartQuery, db: Session):
         predict_conf = read_config.get_prediction_setting()
-        if predict_conf.predict:
+        if predict_conf.view:
             is_predict = True
             predict_length = None
             if idcq.period:
@@ -423,6 +424,8 @@ class ItemDetailChartContext(BaseTemplateValue):
         self.new_list = self._get_new_point_data(db, self.item_id)
 
         if not self.is_predict:
+            return
+        if not predict_conf.everytime and not idcq.start:
             return
 
         def str_to_datetime(value):
