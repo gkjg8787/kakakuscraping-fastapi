@@ -11,6 +11,7 @@ from sqlalchemy import (
     func,
     between,
     and_,
+    or_,
 )
 
 from sqlalchemy.sql import expression as exp
@@ -1643,3 +1644,55 @@ class AutoUpdateItem:
             )
         )
         return db.scalar(stmt)
+
+
+class PredictionQuery:
+    @classmethod
+    def get_stmt_pricelog_by_url_id_and_date_range(
+        cls,
+        url_id: int,
+        start: datetime,
+        end: datetime | None = None,
+        is_not_zero_price: bool = True,
+    ):
+        stmt = select(PriceLog).where(PriceLog.url_id == url_id)
+        if is_not_zero_price:
+            stmt = stmt.where(PriceLog.usedprice > 0)
+        start_n = start.replace(tzinfo=None).date()
+        if end:
+            end_n = end.replace(tzinfo=None).date()
+            stmt = stmt.where(
+                between(utc_to_jst_date_for_query(PriceLog.created_at), start_n, end_n)
+            )
+        else:
+            stmt = stmt.where(utc_to_jst_date_for_query(PriceLog.created_at) >= start_n)
+        return stmt
+
+    @classmethod
+    def get_stmt_pricelog_by_item_id_and_date_range(
+        cls,
+        item_id: int,
+        start: datetime,
+        end: datetime | None = None,
+        is_active: bool = True,
+        is_not_zero_price: bool = True,
+    ):
+        stmt = (
+            select(PriceLog)
+            .select_from(PriceLog)
+            .join(UrlInItem, UrlInItem.url_id == PriceLog.url_id)
+            .where(UrlInItem.item_id == item_id)
+        )
+        if is_active:
+            stmt = stmt.where(UrlInItem.active == UrlActive.ACTIVE.value)
+        if is_not_zero_price:
+            stmt = stmt.where(or_(PriceLog.usedprice > 0, PriceLog.newprice > 0))
+        start_n = start.replace(tzinfo=None).date()
+        if end:
+            end_n = end.replace(tzinfo=None).date()
+            stmt = stmt.where(
+                between(utc_to_jst_date_for_query(PriceLog.created_at), start_n, end_n)
+            )
+        else:
+            stmt = stmt.where(utc_to_jst_date_for_query(PriceLog.created_at) >= start_n)
+        return stmt

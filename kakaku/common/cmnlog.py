@@ -52,6 +52,12 @@ def initProcessLogger():
     createLogger(LogName.DB_ORGANIZE)
 
 
+def initRooterLogger():
+    createLogger(LogName.SEARCH)
+    createLogger(LogName.ITEMCOMB)
+    createLogger(LogName.MACHINELEARN)
+
+
 class LogName:
     MANAGER = "scrapingmanage"
     CLIENT = "client"
@@ -61,3 +67,4 @@ class LogName:
     DB_ORGANIZE = "db_organize"
     ITEMCOMB = "itemcomb"
     TIMER = "timer"
+    MACHINELEARN = "ml"

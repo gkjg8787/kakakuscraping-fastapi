@@ -27,11 +27,6 @@ def getLogger():
     return cmnlog.getLogger(logname)
 
 
-def deleteLogger():
-    logname = cmnlog.LogName.SEARCH
-    return cmnlog.deleteLogger(logname)
-
-
 def getCacheKey(sword: str, optjson: dict | None):
     key = sword
     if optjson is not None:
@@ -71,8 +66,6 @@ def get_search_for_inner(sword: str, optdict: dict | None = None) -> dict:
     errmsg = ""
     RESULT_KEY = "result"
 
-    deleteLogger()
-    cmnlog.createLogger(cmnlog.LogName.SEARCH)
     logger = getLogger()
     logger.setLevel(cmnlog.LOGGING_LEVEL)
     logger.info(__file__ + " start url_search")

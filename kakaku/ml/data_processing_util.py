@@ -15,7 +15,7 @@ def shift_multiple_columns(
         df: 入力DataFrame
         shift: shift_columnsで指定したカラムを指定したintの数だけindexをずらします。正がindex後ろ、負がindex前にずらします。
         shift_columns: ずらしたいカラム名のリスト。
-        filling_in_missing_value: Trueの場合、shiftでずらした分の欠損値を後の日付の値で埋めます。Falseなら何もしません。
+        filling_in_missing_value: Trueの場合、shiftでずらした分の欠損値をshift>0なら後の日付の値、shift<0なら前の日付の値で埋めます。Falseなら何もしません。
 
     Returns:
         指定したカラムの値がshift分ずらされた新しいDataFrame。
@@ -30,7 +30,10 @@ def shift_multiple_columns(
             raise ValueError(f"not found {col} in {ret.columns}")
 
     if filling_in_missing_value:
-        ret[shift_columns] = ret[shift_columns].shift(shift).bfill()
+        if shift > 0:
+            ret[shift_columns] = ret[shift_columns].shift(shift).bfill()
+        else:
+            ret[shift_columns] = ret[shift_columns].shift(shift).ffill()
     else:
         ret[shift_columns] = ret[shift_columns].shift(shift)
     return ret

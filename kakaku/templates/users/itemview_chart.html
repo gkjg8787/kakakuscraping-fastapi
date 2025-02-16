@@ -36,6 +36,11 @@
     {% endfor %}
   </form>
 </div>
+<div>
+  <button id="resetButton">チャート位置リセット</button>
+</div>
+<p><a href="{{ url_for('read_users_items_view',) }}?{{ ITEMID_Q_NAME }}={{ item_id }}" class="plain-link">アイテム詳細へ戻る</a>
+</p>
 {% endif %}
 <canvas id="myLineChart"></canvas>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
@@ -136,9 +141,6 @@
     }
   }
   });
-</script>
-<button id="resetButton">チャート位置リセット</button>
-<script>
   const resetButton = document.getElementById('resetButton');
 
   resetButton.addEventListener('click', () => {

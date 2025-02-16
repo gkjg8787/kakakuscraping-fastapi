@@ -20,3 +20,8 @@ class MachineLearnModel(ABC):
     @abstractmethod
     def get_predict(self, *args, **kwargs):
         pass
+
+
+class FeatureValueCreator:
+    def create(self, *args, **kwargs) -> pd.DataFrame:
+        return pd.DataFrame()

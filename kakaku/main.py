@@ -14,10 +14,12 @@ from parameter_parser.admin import ProcCtrlForm
 from template_value.admin import BackServerCtrl
 from common.filter_name import SystemCtrlBtnName
 from common.read_config import get_auto_startup_backserver
+from common.cmnlog import initRooterLogger
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    initRooterLogger()
     if is_auto_start_backserver():
         ctrlbackserver(cmd=SystemCtrlBtnName.STARTUP)
     yield

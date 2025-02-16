@@ -166,10 +166,8 @@ def startCalcSumitemComb(db: Session, itemidlist: List[int]):
     res = ItemQuery.get_latest_price_by_item_id_list(db, item_id_list=itemidlist)
     itemlist = [dict(row._mapping.items()) for row in res]
     storeconf = createStoreConf(db, itemidlist=itemidlist)
-    deleteLogger()
-    cmnlog.createLogger(cmnlog.LogName.ITEMCOMB)
+
     logger = getLogger()
-    logger.setLevel(cmnlog.logging.DEBUG)
     logger.info(f"{get_filename()} searchcomb start")
     logger.info(f"{get_filename()} storeconf= {storeconf}")
     logger.info(f"{get_filename()} itemlist= {itemlist}")

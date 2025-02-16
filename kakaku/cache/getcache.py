@@ -39,7 +39,7 @@ def getCache(
     if not cache_time:
         cache_time = int(read_config.get_cache_time())
     return file_cache.FileCache(
-        chachedir=cachedir,
+        cachedir=cachedir,
         cache_max_num=cache_max_num,
         cache_time=cache_time,
         group=group,

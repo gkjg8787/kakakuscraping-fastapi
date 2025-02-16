@@ -7,8 +7,10 @@ JST = ZoneInfo("Asia/Tokyo")
 
 
 def utcTolocaltime(input_date: datetime):
-    """Custom filter"""
-    utc_date = input_date.replace(tzinfo=timezone.utc)
+    if not input_date.tzinfo or input_date.tzinfo != timezone.utc:
+        utc_date = input_date.replace(tzinfo=timezone.utc)
+    else:
+        utc_date = input_date
     return utc_date.astimezone(JST)
 
 

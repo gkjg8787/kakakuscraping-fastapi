@@ -1,24 +1,25 @@
 import datetime
 import dataclasses
 from typing import Type
+from abc import ABC, abstractmethod
+
 import pandas as pd
 
 from sqlalchemy.orm import Session
-from sqlalchemy import (
-    select,
-    between,
-)
-from accessor.read_sqlalchemy import getEngine, get_session
-from accessor.util import utc_to_jst_date_for_query
-from accessor.item import UrlQuery, UrlActive
-from model.item import PriceLog, UrlInItem
 
-from ml import MachineLearnModel
+
+from accessor.item import UrlQuery
+from accessor.item.item import PredictionQuery
+from accessor.util import get_dataframe_from_sql
+
+from ml import MachineLearnModel, FeatureValueCreator
 from ml.predict_model import (
     MinPriceModel,
     MinPriceModelCommand,
     MinPriceFeatureValueCreatorForPredict,
     MinPriceFeatureValueCreatorCommand,
+    TargetColumnFeatureValueCreator,
+    TargetColumnFeatureValueCreatorCommand,
     PredictionResult,
 )
 from ml.add_feature_value import (
@@ -31,58 +32,76 @@ from ml.data_processing_util import shift_multiple_columns
 from ml import DataPreProcessing
 
 
-def get_dataframe_from_sql_by_url_id(
-    url_id: int, start: datetime.datetime, end: datetime.datetime | None = None
-):
-    stmt = (
-        select(PriceLog).where(PriceLog.url_id == url_id).where(PriceLog.usedprice > 0)
-    )
-    start_n = start.replace(tzinfo=None).date()
-    if end:
-        end_n = end.replace(tzinfo=None).date()
-        stmt = stmt.where(
-            between(utc_to_jst_date_for_query(PriceLog.created_at), start_n, end_n)
-        )
-    else:
-        stmt = stmt.where(utc_to_jst_date_for_query(PriceLog.created_at) >= start_n)
-    df = pd.read_sql(stmt, getEngine())
-    return df
+class PriceLogChartPreProcessing(DataPreProcessing):
+    df: pd.DataFrame
 
+    def __init__(self, df: pd.DataFrame):
+        self.df = self.data_preprocessing(df=df)
 
-def get_dataframe_from_sql_by_item_id_concat_url_log(
-    item_id: int, start: datetime.datetime, end: datetime.datetime | None = None
-):
-    stmt = (
-        select(PriceLog)
-        .select_from(PriceLog)
-        .join(UrlInItem, UrlInItem.url_id == PriceLog.url_id)
-        .where(UrlInItem.item_id == item_id)
-        .where(UrlInItem.active == UrlActive.ACTIVE.value)
-        .where(PriceLog.usedprice > 0)
-    )
-    start_n = start.replace(tzinfo=None).date()
-    if end:
-        end_n = end.replace(tzinfo=None).date()
-        stmt = stmt.where(
-            between(utc_to_jst_date_for_query(PriceLog.created_at), start_n, end_n)
+    @classmethod
+    def data_preprocessing(cls, df: pd.DataFrame) -> pd.DataFrame:
+        new = df.copy()
+        new["datetime_column"] = pd.to_datetime(new["created_at"])
+        new["datetime_column"] = (
+            new["datetime_column"].dt.tz_localize("UTC").dt.tz_convert("Asia/Tokyo")
         )
-    else:
-        stmt = stmt.where(utc_to_jst_date_for_query(PriceLog.created_at) >= start_n)
-    df = pd.read_sql(stmt, getEngine())
-    return df
+        new["date"] = new["datetime_column"].dt.date
+        new.drop("datetime_column", axis=1, inplace=True)
+
+        new_date = new.groupby(["date"]).agg(
+            {
+                "usedprice": ["max", "min", "mean", "median"],
+                "newprice": ["max", "min", "mean", "median"],
+            }
+        )
+        new_date.columns = [
+            "used_max",
+            "used_min",
+            "used_mean",
+            "used_median",
+            "new_max",
+            "new_min",
+            "new_mean",
+            "new_median",
+        ]
+
+        new_date = new_date.reset_index().set_index("date")
+        return new_date
+
+    def get_dataframe(self) -> pd.DataFrame:
+        return self.df
 
 
 class PriceLogPreProcessing(DataPreProcessing):
     df: pd.DataFrame
     has_season: bool = False
 
-    def __init__(self, df: pd.DataFrame):
-        self.df, self.has_season = self.data_preprocessing(df=df)
+    def __init__(
+        self,
+        df: pd.DataFrame,
+        start_date: datetime.datetime | None = None,
+        end_date: datetime.datetime | None = None,
+    ):
+        self.df, self.has_season = self.data_preprocessing(
+            df=df, start_date=start_date, end_date=end_date
+        )
 
     @classmethod
-    def data_preprocessing(self, df: pd.DataFrame) -> tuple[pd.DataFrame, bool]:
-        new = df.copy()
+    def data_preprocessing(
+        cls,
+        df: pd.DataFrame,
+        start_date: datetime.datetime | None = None,
+        end_date: datetime.datetime | None = None,
+    ) -> tuple[pd.DataFrame, bool]:
+        new = df.loc[(df["usedprice"] > 0)].copy()
         new["datetime_column"] = pd.to_datetime(new["created_at"])
+        new["datetime_column"] = (
+            new["datetime_column"].dt.tz_localize("UTC").dt.tz_convert("Asia/Tokyo")
+        )
+        if start_date:
+            new = new.loc[(new["datetime_column"] >= start_date)]
+        if end_date:
+            new = new.loc[(new["datetime_column"] <= end_date)]
         new["date"] = new["datetime_column"].dt.date
         new.drop("datetime_column", axis=1, inplace=True)
 
@@ -156,12 +175,100 @@ class PriceLogPreProcessingFactoryEachURL:
         ret = UrlQuery.get_urlinfo_by_item_id(db=self.db, item_id=self.item_id)
         for r in ret:
             ppp_dict[r.url_id] = PriceLogPreProcessing(
-                df=get_dataframe_from_sql_by_url_id(
-                    url_id=r.url_id, start=self.start, end=self.end
+                df=get_dataframe_from_sql(
+                    stmt=PredictionQuery.get_stmt_pricelog_by_url_id_and_date_range(
+                        url_id=r.url_id, start=self.start, end=self.end
+                    )
                 )
             )
 
         return ppp_dict
+
+
+class CommandFactory(ABC):
+    @abstractmethod
+    def create(self, *args, **kwargs):
+        pass
+
+
+class FeatureValueCreatorFactory(ABC):
+    @abstractmethod
+    def create(self, *args, **kwargs):
+        pass
+
+
+class MinPriceFeatureValueCreatorFactory(FeatureValueCreatorFactory):
+    def create(
+        self,
+        ppp: PriceLogPreProcessing,
+        periods: int,
+        future_column_names: list[str],
+        shift_column_names: list[str],
+        predict_column_names: list[str],
+        int_value_column_names: list[str] = [],
+        shift: int = 1,
+        filling_in_missing_value: bool = True,
+        **kwargs,
+    ) -> FeatureValueCreator:
+        mpfvccommand = MinPriceFeatureValueCreatorCommand(
+            periods=periods,
+            future_column_names=future_column_names,
+            shift_column_names=shift_column_names,
+            predict_column_names=predict_column_names,
+            shift=shift,
+            filling_in_missing_value=filling_in_missing_value,
+            int_value_column_names=int_value_column_names,
+        )
+        return MinPriceFeatureValueCreatorForPredict(data=ppp, command=mpfvccommand)
+
+
+class MinPriceModelCommandFactory(CommandFactory):
+
+    def create(
+        self,
+        periods: int,
+        y_column_name: str,
+        exog_column_names: list[str],
+        fvcreator: FeatureValueCreator,
+        **kwargs,
+    ) -> MinPriceModelCommand:
+
+        mpmcommand = MinPriceModelCommand(
+            y_column_name=y_column_name,
+            exog_column_names=exog_column_names,
+            periods=periods,
+            fvcreator=fvcreator,
+        )
+        return mpmcommand
+
+
+class TargetColumnFeatureValueCreatorFactory(FeatureValueCreator):
+
+    def create(
+        self,
+        ppp: PriceLogPreProcessing,
+        y_column_name: str,
+        periods: int,
+        future_column_names: list[str],
+        shift_column_names: list[str],
+        predict_column_names: list[str],
+        int_value_column_names: list[str] = [],
+        lag: int = 1,
+        filling_in_missing_value: bool = True,
+        **kwargs,
+    ):
+        command = TargetColumnFeatureValueCreatorCommand(
+            periods=periods,
+            future_column_names=future_column_names,
+            shift_column_names=shift_column_names,
+            predict_column_names=predict_column_names,
+            lag=lag,
+            filling_in_missing_value=filling_in_missing_value,
+            drop_today_column=False,
+            int_value_column_names=int_value_column_names,
+            drop_columns=[y_column_name],
+        )
+        return TargetColumnFeatureValueCreator(data=ppp, command=command)
 
 
 @dataclasses.dataclass
@@ -187,12 +294,29 @@ class MinPricePredict:
     ]
     y_column_name = "y"
     ml_model_class: Type[MachineLearnModel]
+    fvcreator_factory_class: Type[FeatureValueCreatorFactory]
+    ml_model_command_factory_class: Type[CommandFactory]
 
-    def __init__(self, ml_model_class: Type[MachineLearnModel] | None = None):
+    def __init__(
+        self,
+        ml_model_class: Type[MachineLearnModel] | None = None,
+        fvcreator_factory_class: Type[FeatureValueCreatorFactory] | None = None,
+        ml_model_command_factory_class: Type[FeatureValueCreatorFactory] | None = None,
+    ):
         if ml_model_class:
             self.ml_model_class = ml_model_class
         else:
             self.ml_model_class = MinPriceModel
+
+        if fvcreator_factory_class:
+            self.fvcreator_factory_class = fvcreator_factory_class
+        else:
+            self.fvcreator_factory_class = MinPriceFeatureValueCreatorFactory
+
+        if ml_model_command_factory_class:
+            self.ml_model_command_factory_class = ml_model_command_factory_class
+        else:
+            self.ml_model_command_factory_class = MinPriceModelCommandFactory
 
     def get_predict_by_item_id(
         self,
@@ -222,15 +346,12 @@ class MinPricePredict:
 
     def get_predict_by_item_id_concat_url(
         self,
-        item_id: int,
+        df: pd.DataFrame,
         start: datetime.datetime,
         end: datetime.datetime | None = None,
         predict_length: int = 14,
     ):
-        df = get_dataframe_from_sql_by_item_id_concat_url_log(
-            item_id=item_id, start=start, end=end
-        )
-        ppp = PriceLogPreProcessing(df=df)
+        ppp = PriceLogPreProcessing(df=df, start_date=start, end_date=end)
         return self.get_minprice_predict(
             url_id=None, ppp=ppp, start=start, end=end, predict_length=predict_length
         )
@@ -243,7 +364,11 @@ class MinPricePredict:
         predict_length: int = 14,
     ) -> MinPricePredictResult:
         ppp = PriceLogPreProcessing(
-            df=get_dataframe_from_sql_by_url_id(url_id=url_id, start=start, end=end)
+            df=get_dataframe_from_sql(
+                stmt=PredictionQuery.get_stmt_pricelog_by_url_id_and_date_range(
+                    url_id=url_id, start=start, end=end
+                )
+            )
         )
         return self.get_minprice_predict(
             url_id=url_id, ppp=ppp, start=start, end=end, predict_length=predict_length
@@ -267,23 +392,26 @@ class MinPricePredict:
         mpm.set_data(data=pppforsarimax)
 
         future_column_names = self.get_future_column_names(has_season=ppp.has_season)
-        mpfvccommand = MinPriceFeatureValueCreatorCommand(
-            periods=predict_length,
-            future_column_names=future_column_names,
-            shift_column_names=self.shift_column_names,
-            predict_column_names=self.shift_column_names,
-            shift=1,
-            filling_in_missing_value=True,
-            int_value_column_names=self.int_value_column_names,
-        )
-        mpmcommand = MinPriceModelCommand(
+        fvcreator_param = {
+            "ppp": ppp,
+            "y_column_name": self.y_column_name,
+            "periods": predict_length,
+            "future_column_names": future_column_names,
+            "shift_column_names": self.shift_column_names,
+            "predict_column_names": self.shift_column_names,
+            "int_value_column_names": self.int_value_column_names,
+            "shift": 1,
+            "lag": 1,
+            "filling_in_missing_value": True,
+        }
+        fvcreator = self.fvcreator_factory_class().create(**fvcreator_param)
+        mpmcommand = self.ml_model_command_factory_class().create(
             y_column_name=self.y_column_name,
             exog_column_names=self.get_exog_column_names(
                 df=ppp.get_dataframe(), y_column_name=self.y_column_name
             ),
             periods=predict_length,
-            fvcreator=MinPriceFeatureValueCreatorForPredict(data=ppp),
-            fvcommand=mpfvccommand,
+            fvcreator=fvcreator,
         )
         predict = mpm.get_predict(command=mpmcommand)
         return MinPricePredictResult(

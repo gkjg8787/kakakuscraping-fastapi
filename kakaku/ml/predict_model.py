@@ -5,25 +5,20 @@ import statsmodels.api as sm
 from sklearn.linear_model import LinearRegression
 
 
-from .ml import MachineLearnModel, DataPreProcessing
+from .ml import MachineLearnModel, DataPreProcessing, FeatureValueCreator
 from .add_feature_value import (
     has_multiple_season,
     add_week_and_season,
     get_weekday_column_names,
     get_season_column_names,
 )
-from .data_processing_util import shift_multiple_columns
+from .data_processing_util import shift_multiple_columns, add_multiple_lagged_features
 
 
 @dataclasses.dataclass
 class SARIMAXParam:
     order: tuple = (0, 0, 1)
     seasonal_order: tuple = (0, 0, 0, 7)
-
-
-class FeatureValueCreator:
-    def create(self, *args, **kwargs) -> pd.DataFrame:
-        return pd.DataFrame()
 
 
 @dataclasses.dataclass
@@ -39,16 +34,20 @@ class MinPriceFeatureValueCreatorCommand:
 
 class MinPriceFeatureValueCreatorForPredict(FeatureValueCreator):
     base: pd.DataFrame
+    command: MinPriceFeatureValueCreatorCommand
 
-    def __init__(self, data: DataPreProcessing):
+    def __init__(
+        self, data: DataPreProcessing, command: MinPriceFeatureValueCreatorCommand
+    ):
         self.base = data.get_dataframe()
         if not isinstance(self.base.index, pd.DatetimeIndex):
             raise ValueError("index is not DatetimeIndex")
+        self.command = command
 
     def create(
         self,
-        command: MinPriceFeatureValueCreatorCommand,
     ) -> pd.DataFrame:
+        command = self.command
         future_df = self.replicate_date_range(
             base=self.base,
             periods=command.periods,
@@ -102,7 +101,10 @@ class MinPriceFeatureValueCreatorForPredict(FeatureValueCreator):
 
     @classmethod
     def predict_exog_column(
-        cls, train_x: pd.DataFrame, train_y: pd.DataFrame, test_x: pd.DataFrame
+        cls,
+        train_x: pd.DataFrame,
+        train_y: pd.DataFrame,
+        test_x: pd.DataFrame,
     ):
         lr = LinearRegression()
         lr.fit(train_x, train_y)
@@ -110,9 +112,144 @@ class MinPriceFeatureValueCreatorForPredict(FeatureValueCreator):
 
 
 @dataclasses.dataclass
+class TargetColumnFeatureValueCreatorCommand:
+    periods: int = 1
+    future_column_names: list[str] = dataclasses.field(default_factory=list)
+    shift_column_names: list[str] = dataclasses.field(default_factory=list)
+    predict_column_names: list[str] = dataclasses.field(default_factory=list)
+    lag: int = 1
+    filling_in_missing_value: bool = True
+    drop_today_column: bool = False
+    int_value_column_names: list[str] = dataclasses.field(default_factory=list)
+    drop_columns: list[str] = dataclasses.field(default_factory=list)
+
+
+class TargetColumnFeatureValueCreator(FeatureValueCreator):
+    base: pd.DataFrame
+    command: TargetColumnFeatureValueCreatorCommand
+
+    def __init__(
+        self, data: DataPreProcessing, command: TargetColumnFeatureValueCreatorCommand
+    ):
+        self.base = data.get_dataframe()
+        if not isinstance(self.base.index, pd.DatetimeIndex):
+            raise ValueError("index is not DatetimeIndex")
+        self.command = command
+
+    def create(
+        self,
+    ) -> pd.DataFrame:
+        command = self.command
+        base = self.base.drop(columns=command.drop_columns, axis=1)
+        future_df = self.replicate_date_range(
+            base=base,
+            periods=command.periods,
+            future_column_names=command.future_column_names,
+        ).copy()
+        for cname in command.predict_column_names:
+            ignore_columns = command.shift_column_names[:]
+            ignore_columns.remove(cname)
+            new_df = add_multiple_lagged_features(
+                df=base.drop(columns=ignore_columns, axis=1),
+                lag=command.lag,
+                column_names=[cname],
+                filling_in_missing_value=command.filling_in_missing_value,
+                drop_today_column=command.drop_today_column,
+            )
+            train_y = new_df[[cname]]
+            train_x = new_df.drop(cname, axis=1)
+            test_x = add_multiple_lagged_features(
+                df=future_df.drop(columns=ignore_columns, axis=1),
+                lag=command.lag,
+                column_names=[cname],
+                filling_in_missing_value=command.filling_in_missing_value,
+                drop_today_column=True,
+            )
+
+            predict = self.predict_exog_column(
+                train_x=train_x,
+                train_y=train_y,
+                test_x=test_x,
+            )
+            if cname in command.int_value_column_names:
+                future_df[cname] = predict.astype(int)
+            else:
+                future_df[cname] = predict
+        return future_df
+
+    @classmethod
+    def replicate_date_range(
+        cls,
+        base: pd.DataFrame,
+        periods: int,
+        future_column_names: list[str],
+    ):
+        last_row = base.iloc[[-1]]
+        last_date = base.index[-1]
+        future_dates = pd.date_range(
+            last_date + pd.Timedelta(days=1), periods=periods, freq="D"
+        )
+
+        future_df = pd.concat([last_row] * periods)
+        future_df.index = future_dates
+
+        future_df.drop(columns=future_column_names, axis=1, inplace=True)
+
+        add_season = has_multiple_season(date_seq=base.index)
+        future_df = add_week_and_season(
+            df=future_df, date_seq=future_df.index, add_season=add_season
+        )
+
+        return future_df
+
+    @classmethod
+    def predict_exog_column(
+        cls,
+        train_x: pd.DataFrame,
+        train_y: pd.DataFrame,
+        test_x: pd.DataFrame,
+    ):
+        lr = LinearRegression()
+        lr.fit(train_x, train_y)
+
+        lagged_columns = []
+        for cname in train_x.columns:
+            if "lag" in cname:
+                lagged_columns.append(cname)
+        if not lagged_columns:
+            raise ValueError(f"found not lagged_column in {train_x.columns}")
+        if len(lagged_columns) > 1:
+            raise ValueError(f"not suppoert multi laggde_columns in {train_x.columns}")
+
+        df = test_x.head(1).copy()
+        pre = lr.predict(df)
+
+        def fill_list(base: pd.Series, add_list: list):
+            first_value = base.iloc[0]
+            new_list = [first_value] + add_list.copy()
+            if len(base) > len(new_list):
+                new_list.extend(base.tolist()[len(new_list) :])
+            return new_list
+
+        next_df = test_x.copy()
+        next_df[lagged_columns[0]] = fill_list(
+            base=next_df[lagged_columns[0]], add_list=list(pre)
+        )
+
+        for i in range(2, len(test_x)):
+            pre = lr.predict(next_df[:i])
+            next_df[lagged_columns[0]] = fill_list(
+                base=next_df[lagged_columns[0]], add_list=list(pre)
+            )
+        pre = lr.predict(next_df)
+        return pre
+
+
+@dataclasses.dataclass
 class PredictionResult:
     predict: any
     index: any
+    exog_df: pd.DataFrame | None = None
 
 
 @dataclasses.dataclass
@@ -121,7 +258,6 @@ class MinPriceModelCommand:
     exog_column_names: list[str] = dataclasses.field(default_factory=list)
     periods: int = 1
     fvcreator: FeatureValueCreator | None = None
-    fvcommand: MinPriceFeatureValueCreatorCommand | None = None
 
 
 class MinPriceModel(MachineLearnModel):
@@ -150,33 +286,27 @@ class MinPriceModel(MachineLearnModel):
             )
 
         if not command.fvcreator:
-            return self.model.forecast(steps=command.periods)
+            return PredictionResult(
+                predict=self.model.forecast(steps=command.periods),
+                index=pd.date_range(
+                    self.data.index[-1] + pd.Timedelta(days=1),
+                    periods=command.periods,
+                    freq="D",
+                ),
+            )
 
         future_column_names = get_weekday_column_names().copy()
         if has_multiple_season(date_seq=self.data.index):
             future_column_names += get_season_column_names()
 
-        self.valid_fvcommand(command=command)
-
-        exog_df = command.fvcreator.create(command=command.fvcommand)
+        exog_df = command.fvcreator.create()
         return PredictionResult(
             predict=self.model.forecast(
                 steps=command.periods, exog=exog_df.loc[:, command.exog_column_names]
             ),
             index=exog_df.index,
+            exog_df=exog_df,
         )
-
-    @classmethod
-    def valid_fvcommand(cls, command: MinPriceModelCommand):
-        fvcommand = command.fvcommand
-        if not fvcommand:
-            raise ValueError("fvcommand is None")
-        if not isinstance(fvcommand, MinPriceFeatureValueCreatorCommand):
-            raise ValueError(f"fvcommand is not supported : {type(fvcommand)}")
-        if fvcommand.periods != command.periods:
-            raise ValueError(
-                f"fvcommand.periods({fvcommand.periods}) not equal command.periods({command.periods})"
-            )
 
     def get_training_data(self, y_column_name: str, test_size: float | int = 0):
         if test_size == 0:

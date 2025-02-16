@@ -10,7 +10,6 @@ from ml.add_feature_value import (
     add_week_and_season,
     has_multiple_season,
 )
-from ml import DataPreProcessing
 
 
 class MockDataPreProcessing:
@@ -63,7 +62,6 @@ class TestMinPriceFeatureValueCreatorForPredict:
             index=pd.date_range("20240101", periods=len(df_dict["w"]), freq="D"),
         )
         dpp = MockDataPreProcessing(df)
-        fvc = predict_model.MinPriceFeatureValueCreatorForPredict(data=dpp)
         param = {
             "periods": 3,
             "future_column_names": ["y"],
@@ -74,6 +72,9 @@ class TestMinPriceFeatureValueCreatorForPredict:
             "int_value_column_names": ["z"],
         }
         command = predict_model.MinPriceFeatureValueCreatorCommand(**param)
+        fvc = predict_model.MinPriceFeatureValueCreatorForPredict(
+            data=dpp, command=command
+        )
         correct_predict = pd.Series(
             [40.5, 50.5, 40.6],
             index=pd.date_range("20240105", periods=param["periods"], freq="D"),
@@ -82,7 +83,7 @@ class TestMinPriceFeatureValueCreatorForPredict:
             "ml.predict_model.MinPriceFeatureValueCreatorForPredict.predict_exog_column",
             return_value=correct_predict,
         )
-        ret = fvc.create(command=command)
+        ret = fvc.create()
         corrects = pd.DataFrame(
             {
                 "w": correct_predict.tolist(),
@@ -187,88 +188,6 @@ class TestMinPriceModel:
         )
         tm.assert_frame_equal(train_y, df[[target_column_name]].iloc[:train_length])
 
-    def test_valid_fvcommand_no_error(self):
-        df_dict = {
-            "w": [100, 200, 300, 400, 500],
-            "y": [1, 2, 3, 4, 5],
-            "z": [10, 20, 30, 40, 50],
-        }
-        df = pd.DataFrame(
-            df_dict,
-            index=pd.date_range("20240101", periods=len(df_dict["y"]), freq="D"),
-        )
-        test_length = 3
-        target_column_name = "z"
-        exog_column_names = list(df.columns)
-        exog_column_names.remove(target_column_name)
-
-        fvcparam = {
-            "periods": test_length,
-            "future_column_names": [],
-            "shift_column_names": [],
-            "predict_column_names": [],
-            "shift": 1,
-            "filling_in_missing_value": True,
-            "int_value_column_names": [],
-        }
-        mpmparam = {
-            "y_column_name": target_column_name,
-            "exog_column_names": exog_column_names,
-            "periods": test_length,
-            "fvcreator": None,
-            "fvcommand": predict_model.MinPriceFeatureValueCreatorCommand(**fvcparam),
-        }
-        mpmcommand = predict_model.MinPriceModelCommand(**mpmparam)
-        try:
-            predict_model.MinPriceModel.valid_fvcommand(command=mpmcommand)
-        except ValueError:
-            assert False
-
-    def test_valid_fvcommand_no_fvcommand(self):
-        mpmparam = {
-            "y_column_name": "y",
-            "exog_column_names": [],
-            "periods": 3,
-            "fvcreator": None,
-            "fvcommand": None,
-        }
-        mpmcommand = predict_model.MinPriceModelCommand(**mpmparam)
-        with pytest.raises(ValueError):
-            predict_model.MinPriceModel.valid_fvcommand(mpmcommand)
-
-    def test_valid_fvcommand_type_not_fvcommand(self):
-        mpmparam = {
-            "y_column_name": "y",
-            "exog_column_names": [],
-            "periods": 3,
-            "fvcreator": None,
-            "fvcommand": list(),
-        }
-        mpmcommand = predict_model.MinPriceModelCommand(**mpmparam)
-        with pytest.raises(ValueError):
-            predict_model.MinPriceModel.valid_fvcommand(mpmcommand)
-
-    def test_valid_fvcommand_not_equal_periods(self):
-        fvcparam = {
-            "periods": 1,
-            "future_column_names": [],
-            "shift_column_names": [],
-            "predict_column_names": [],
-            "shift": 1,
-            "filling_in_missing_value": True,
-            "int_value_column_names": [],
-        }
-        mpmparam = {
-            "y_column_name": "y",
-            "exog_column_names": [],
-            "periods": 2,
-            "fvcreator": None,
-            "fvcommand": predict_model.MinPriceFeatureValueCreatorCommand(**fvcparam),
-        }
-        mpmcommand = predict_model.MinPriceModelCommand(**mpmparam)
-        with pytest.raises(ValueError):
-            predict_model.MinPriceModel.valid_fvcommand(mpmcommand)
-
     def test_fit(self):
         df_dict = {
             "w": [100, 200, 300, 400, 500],
@@ -284,23 +203,12 @@ class TestMinPriceModel:
         exog_column_names = list(df.columns)
         exog_column_names.remove(target_column_name)
 
-        fvcparam = {
-            "periods": test_length,
-            "future_column_names": [],
-            "shift_column_names": [],
-            "predict_column_names": [],
-            "shift": 1,
-            "filling_in_missing_value": True,
-            "int_value_column_names": [],
-        }
         mpmparam = {
             "y_column_name": target_column_name,
             "exog_column_names": exog_column_names,
             "periods": test_length,
             "fvcreator": None,
-            "fvcommand": predict_model.MinPriceFeatureValueCreatorCommand(**fvcparam),
         }
-        mpmcommand = predict_model.MinPriceModelCommand(**mpmparam)
         mpm = predict_model.MinPriceModel()
         dpp = MockDataPreProcessing(df=df)
         mpm.set_data(data=dpp)
@@ -340,13 +248,15 @@ class TestMinPriceModel:
             "filling_in_missing_value": True,
             "int_value_column_names": [],
         }
-        fvcreator = predict_model.MinPriceFeatureValueCreatorForPredict(data=dpp)
+        fvcreator = predict_model.MinPriceFeatureValueCreatorForPredict(
+            data=dpp,
+            command=predict_model.MinPriceFeatureValueCreatorCommand(**fvcparam),
+        )
         mpmparam = {
             "y_column_name": target_column_name,
             "exog_column_names": exog_column_names,
             "periods": test_length,
             "fvcreator": fvcreator,
-            "fvcommand": predict_model.MinPriceFeatureValueCreatorCommand(**fvcparam),
         }
         mpmcommand = predict_model.MinPriceModelCommand(**mpmparam)
 

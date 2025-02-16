@@ -7,10 +7,12 @@ from sqlalchemy import (
     DECIMAL,
     REAL,
 )
+import pandas as pd
 from accessor.read_sqlalchemy import (
     is_sqlite,
     is_postgre,
 )
+from accessor.read_sqlalchemy import getEngine
 
 INTERVAL_YESTERDAY = -1
 INTERVAL_ONE_YEARS_AGO = -1
@@ -86,3 +88,8 @@ def text_to_decimal(column_value: schema.Column):
 
 def sqlalchemy_result_all_to_dict_list(result):
     return [dict(row._mapping.items()) for row in result]
+
+
+def get_dataframe_from_sql(stmt):
+    df = pd.read_sql(stmt, getEngine())
+    return df

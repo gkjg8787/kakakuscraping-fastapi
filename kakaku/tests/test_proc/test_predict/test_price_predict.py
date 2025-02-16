@@ -8,67 +8,11 @@ from common.util import dbtimeTodatetime
 from ml import MachineLearnModel, DataPreProcessing
 from ml.predict_model import (
     MinPriceModelCommand,
-    MinPriceFeatureValueCreatorCommand,
     MinPriceFeatureValueCreatorForPredict,
     PredictionResult,
 )
-from ml.add_feature_value import (
-    get_weekday_column_names,
-    get_season_column_names,
-)
 
-from tests.test_db import get_test_enging, test_temp_db
-from .db_test_data import add_item_url_pricelog_1, add_price_range_1
 from .data_util import create_pricelog_dict
-
-
-def test_get_dataframe_from_sql_by_url_id_start_only(mocker, test_temp_db):
-    add_item_url_pricelog_1(test_temp_db)
-
-    mocker.patch("proc.predict.price_predict.getEngine", return_value=get_test_enging())
-    param = {
-        "url_id": 1,
-        "start": dbtimeTodatetime("2024-01-01 12:00:00"),
-        "end": None,
-    }
-    df = price_predict.get_dataframe_from_sql_by_url_id(**param)
-    assert len(df) == 1
-    assert df["usedprice"].iloc[0] == 1500
-
-
-def test_get_dataframe_from_sql_by_url_id_start_end(mocker, test_temp_db):
-    add_price_range_1(test_temp_db)
-    mocker.patch("proc.predict.price_predict.getEngine", return_value=get_test_enging())
-    param = {
-        "url_id": 1,
-        "start": dbtimeTodatetime("2024-01-01 12:00:00"),
-        "end": None,
-    }
-    df = price_predict.get_dataframe_from_sql_by_url_id(**param)
-    assert len(df) == 4
-    assert df["usedprice"].iloc[0] == 1500
-    assert df["usedprice"].iloc[3] == 1600
-
-    param["end"] = dbtimeTodatetime("2024-02-03 00:00:00")
-    df = price_predict.get_dataframe_from_sql_by_url_id(**param)
-    assert len(df) == 3
-    assert df["usedprice"].iloc[2] == 1200
-
-
-def test_get_dataframe_from_sql_by_item_id_concat_url_log_start_only(
-    mocker, test_temp_db
-):
-    add_item_url_pricelog_1(test_temp_db)
-    mocker.patch("proc.predict.price_predict.getEngine", return_value=get_test_enging())
-    param = {
-        "item_id": 1,
-        "start": dbtimeTodatetime("2024-01-01 12:00:00"),
-        "end": None,
-    }
-    df = price_predict.get_dataframe_from_sql_by_item_id_concat_url_log(**param)
-    assert len(df) == 2
-    assert df["usedprice"].iloc[0] == 1500
-    assert df["usedprice"].iloc[1] == 1200
 
 
 class TestPriceLogPreProcessing:
@@ -118,35 +62,6 @@ class TestPriceLogPreProcessing:
             index=pd.date_range("2024-01-01", periods=2, freq="D"),
         )
         tm.assert_frame_equal(df, corrects[df.columns], check_names=False)
-
-
-class TestPriceLogPreProcessingFactoryEachURL:
-    def test_create(self, mocker, test_temp_db):
-        add_item_url_pricelog_1(test_temp_db)
-        mocker.patch(
-            "proc.predict.price_predict.getEngine", return_value=get_test_enging()
-        )
-        param = {
-            "item_id": 1,
-            "db": test_temp_db,
-            "start": dbtimeTodatetime("2024-01-01 12:00:00"),
-            "end": None,
-        }
-        factory = price_predict.PriceLogPreProcessingFactoryEachURL(**param)
-        corrects = {
-            1: {
-                "usedprice": 1500,
-            },
-            2: {
-                "usedprice": 1200,
-            },
-        }
-        ret = factory.create()
-        assert len(ret) == 2
-        for url_id, ppp in ret.items():
-            df = ppp.get_dataframe()
-            assert len(df) == 1
-            assert df["y"].iloc[0] == corrects[url_id]["usedprice"]
 
 
 class MockPriceLogPreProcessing:
@@ -204,7 +119,7 @@ class TestMinPricePredict:
             "end": None,
             "predict_length": 14,
         }
-        mpp = price_predict.MinPricePredict(MockMinPriceModel)
+        mpp = price_predict.MinPricePredict(ml_model_class=MockMinPriceModel)
 
         result = mpp.get_minprice_predict(**param)
 
@@ -225,18 +140,3 @@ class TestMinPricePredict:
 
         assert isinstance(mpm.command.fvcreator, MinPriceFeatureValueCreatorForPredict)
         tm.assert_frame_equal(mpm.command.fvcreator.base, ppp.get_dataframe())
-        assert isinstance(mpm.command.fvcommand, MinPriceFeatureValueCreatorCommand)
-        fvcommand = mpm.command.fvcommand
-        assert fvcommand.periods == param["predict_length"]
-        assert fvcommand.shift == 1
-        assert fvcommand.filling_in_missing_value == True
-        assert fvcommand.future_column_names == get_weekday_column_names()
-        assert set(fvcommand.int_value_column_names) == set(["max_price", "stores_num"])
-        shift_column_names = [
-            "max_price",
-            "price_average",
-            "price_median",
-            "stores_num",
-        ]
-        assert set(fvcommand.shift_column_names) == set(shift_column_names)
-        assert set(fvcommand.predict_column_names) == set(shift_column_names)

@@ -38,8 +38,14 @@ from proc import get_sys_status, system_status
 from proc import online_store_copy
 from itemcomb.prefecture import PrefectureName
 from url_search.surugaya import surugayaURL
-from proc.predict import MinPricePredict
 from ml.predict_model import MinPriceModel
+from proc.predict import MinPricePredict
+from proc.predict.price_predict import (
+    TargetColumnFeatureValueCreatorFactory,
+    PriceLogChartPreProcessing,
+)
+from accessor.item.item import PredictionQuery
+from accessor.util import get_dataframe_from_sql
 from .shared import factory as shared_factory
 from . import shared
 
@@ -420,30 +426,31 @@ class ItemDetailChartContext(BaseTemplateValue):
         if not idcq.itemid:
             return
         self.item_id = int(idcq.itemid)
-        self.used_list = self._get_used_point_data(db, self.item_id)
-        self.new_list = self._get_new_point_data(db, self.item_id)
+
+        start_date, end_date = self.get_default_chart_start_end_datetime()
+        param_start_date, param_end_date = self.get_start_end_datetime(idcq=idcq)
+        if start_date > param_start_date:
+            start_date = param_start_date
+
+        df = get_dataframe_from_sql(
+            stmt=PredictionQuery.get_stmt_pricelog_by_item_id_and_date_range(
+                item_id=self.item_id, start=start_date, end=end_date
+            )
+        )
+        point_data_dict = self._get_pricelist_of_uniq_point_data_for_df(df=df)
+        self.used_list = point_data_dict["used"]
+        self.new_list = point_data_dict["new"]
 
         if not self.is_predict:
             return
         if not predict_conf.everytime and not idcq.start:
             return
 
-        def str_to_datetime(value):
-            date_fmt = "%Y-%m-%d"
-            return datetime.strptime(value, date_fmt)
-
-        start_date = None
-        if idcq.min_date:
-            start_date = str_to_datetime(idcq.min_date)
-        end_date = None
-        if idcq.max_date:
-            end_date = str_to_datetime(idcq.max_date)
-
         self.used_predict = self._get_used_predict_point_data(
-            item_id=self.item_id,
+            df=df,
             predict_length=predict_length,
-            start=start_date,
-            end=end_date,
+            start=param_start_date,
+            end=param_end_date,
         )
 
     def has_data(self):
@@ -453,43 +460,53 @@ class ItemDetailChartContext(BaseTemplateValue):
             return False
         return True
 
-    def _get_used_point_data(self, db: Session, item_id: int):
-        u = ItemQuery.get_daily_min_used_pricelog_by_item_id_and_since_year_ago(
-            db=db,
-            item_id=item_id,
-            year=filter_name.ItemDetailConst.YEARS_LIMIT.value,
+    @classmethod
+    def get_default_chart_start_end_datetime(cls):
+        now = datetime.now(timezone.utc)
+        now = cm_util.utcTolocaltime(now).replace(
+            hour=0, minute=0, second=0, microsecond=0
         )
-        up = self.__get_pricelist_of_uniq_point_data(u)
-        results = [{"x": p["created_at"], "y": p["price"]} for p in up]
-        return results
+        start = now - timedelta(days=365)
+        return start, None
 
-    def _get_new_point_data(self, db: Session, item_id: int):
-        n = ItemQuery.get_daily_min_new_pricelog_by_item_id_and_since_year_ago(
-            db=db,
-            item_id=item_id,
-            year=filter_name.ItemDetailConst.YEARS_LIMIT.value,
-        )
-        np = self.__get_pricelist_of_uniq_point_data(n)
-        results = [{"x": p["created_at"], "y": p["price"]} for p in np]
-        return results
+    @staticmethod
+    def str_to_datetime(value, tzinfo=None):
+        date_fmt = "%Y-%m-%d"
+        ret = datetime.strptime(value, date_fmt)
+        if not tzinfo:
+            return ret
+        return ret.replace(tzinfo=tzinfo)
+
+    @classmethod
+    def get_start_end_datetime(cls, idcq: ppi.ItemDetailChartQuery):
+        start = None
+        if idcq.min_date:
+            start = cls.str_to_datetime(idcq.min_date, tzinfo=cm_util.JST)
+        end = None
+        if idcq.max_date:
+            end = cls.str_to_datetime(idcq.max_date, tzinfo=cm_util.JST)
+        if not start:
+            now = datetime.now(timezone.utc)
+            now = cm_util.utcTolocaltime(now).replace(
+                hour=0, minute=0, second=0, microsecond=0
+            )
+            start = now - timedelta(days=365)
+        return start, end
 
     def _get_used_predict_point_data(
         self,
-        item_id: int,
+        df: pd.DataFrame,
         predict_length: int | None = None,
         start: datetime | None = None,
         end: datetime | None = None,
     ):
-        mpp = MinPricePredict(MinPriceModel)
-        if not start:
-            now = datetime.now(timezone.utc)
-            start = now - timedelta(days=365)
-        if start:
-            start = cm_util.utcTolocaltime(start)
-        if end:
-            end = cm_util.utcTolocaltime(end)
+        mpp = MinPricePredict(
+            ml_model_class=MinPriceModel,
+            fvcreator_factory_class=TargetColumnFeatureValueCreatorFactory,
+        )
+
         result = mpp.get_predict_by_item_id_concat_url(
-            item_id=item_id,
+            df=df,
             start=start,
             end=end,
             predict_length=predict_length,
@@ -506,35 +523,63 @@ class ItemDetailChartContext(BaseTemplateValue):
             return [{"x": x, "y": int(y)} for x, y in zip(x_list, y_list)]
 
     @staticmethod
-    def __get_pricelist_of_uniq_point_data(pl: list) -> list:
-        initflg = True
-        results = []
-        if not pl:
-            return results
+    def _get_pricelist_of_uniq_point_data_for_df(df: pd.DataFrame) -> dict[list[dict]]:
+        ndf = PriceLogChartPreProcessing(df=df).get_dataframe()
 
-        for d in pl[:-1]:
-            dic = {}
-            for k, v in d._mapping.items():
-                dic[k] = v
-            if initflg:
-                initflg = False
-                preprice = dic["price"]
-                prev = d
-                results = [dic]
-                isContinue = False
-                continue
-            if preprice == dic["price"]:
-                prev = dic
-                isContinue = True
-                continue
-            if isContinue and prev["price"] == preprice:
-                results.append(prev)
-            isContinue = False
-            preprice = dic["price"]
-            prev = dic
-            results.append(dic)
-        results.append({k: v for k, v in pl[-1]._mapping.items()})
-        return results
+        if not len(ndf):
+            return {"used": [], "new": []}
+
+        initflag = "initflag"
+        result = "result"
+        created_at = "x"
+        price = "y"
+        preprice = "preprice"
+        prev = "prev"
+        is_continue = "is_continue"
+
+        used = {initflag: True, result: []}
+        new = {initflag: True, result: []}
+
+        def set_result(result_dict: dict, temp_dict: dict):
+            if temp_dict[price] <= 0:
+                return
+            if result_dict[initflag]:
+                result_dict[initflag] = False
+                result_dict[preprice] = temp_dict[price]
+                result_dict[prev] = temp_dict
+                result_dict[result] = [temp_dict]
+                result_dict[is_continue] = False
+                return
+            if result_dict[preprice] == temp_dict[price]:
+                result_dict[prev] = temp_dict
+                result_dict[is_continue] = True
+                return
+            if (
+                result_dict[is_continue]
+                and result_dict[prev][price] == result_dict[preprice]
+            ):
+                result_dict[result].append(result_dict[prev])
+            result_dict[is_continue] = False
+            result_dict[preprice] = temp_dict[price]
+            result_dict[prev] = temp_dict
+            result_dict[result].append(temp_dict)
+            return
+
+        for i in range(0, len(ndf) - 1):
+            if i == len(ndf) - 2:
+                break
+            used_d = {created_at: ndf.index[i], price: ndf["used_min"].iloc[i]}
+            new_d = {created_at: ndf.index[i], price: ndf["new_min"].iloc[i]}
+            set_result(used, used_d)
+            set_result(new, new_d)
+        used[result].append(
+            {created_at: ndf.index[-1], price: ndf["used_min"].iloc[-1]}
+        )
+        if ndf["new_min"].iloc[-1] > 0:
+            new[result].append(
+                {created_at: ndf.index[-1], price: ndf["new_min"].iloc[-1]}
+            )
+        return {"used": used[result], "new": new[result]}
 
 
 class AddItemUrlPostContext(BaseTemplateValue):
