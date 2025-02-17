@@ -32,14 +32,9 @@ from ml.data_processing_util import shift_multiple_columns
 from ml import DataPreProcessing
 
 
-class PriceLogChartPreProcessing(DataPreProcessing):
-    df: pd.DataFrame
-
-    def __init__(self, df: pd.DataFrame):
-        self.df = self.data_preprocessing(df=df)
-
+class PriceLogChartPreProcessing:
     @classmethod
-    def data_preprocessing(cls, df: pd.DataFrame) -> pd.DataFrame:
+    def data_preprocessing(cls, df: pd.DataFrame) -> tuple[pd.DataFrame]:
         new = df.copy()
         new["datetime_column"] = pd.to_datetime(new["created_at"])
         new["datetime_column"] = (
@@ -48,28 +43,36 @@ class PriceLogChartPreProcessing(DataPreProcessing):
         new["date"] = new["datetime_column"].dt.date
         new.drop("datetime_column", axis=1, inplace=True)
 
-        new_date = new.groupby(["date"]).agg(
-            {
-                "usedprice": ["max", "min", "mean", "median"],
-                "newprice": ["max", "min", "mean", "median"],
-            }
+        newp = (
+            new.loc[(new["newprice"] > 0)]
+            .groupby(["date"])
+            .agg({"newprice": ["max", "min", "mean", "median"]})
         )
-        new_date.columns = [
-            "used_max",
-            "used_min",
-            "used_mean",
-            "used_median",
+        newp.columns = [
             "new_max",
             "new_min",
             "new_mean",
             "new_median",
         ]
+        newp = newp.reset_index().set_index("date")
 
-        new_date = new_date.reset_index().set_index("date")
-        return new_date
-
-    def get_dataframe(self) -> pd.DataFrame:
-        return self.df
+        usedp = (
+            new.loc[(new["usedprice"] > 0)]
+            .groupby(["date"])
+            .agg(
+                {
+                    "usedprice": ["max", "min", "mean", "median"],
+                }
+            )
+        )
+        usedp.columns = [
+            "used_max",
+            "used_min",
+            "used_mean",
+            "used_median",
+        ]
+        usedp = usedp.reset_index().set_index("date")
+        return usedp, newp
 
 
 class PriceLogPreProcessing(DataPreProcessing):

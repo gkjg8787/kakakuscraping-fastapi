@@ -1,0 +1,12 @@
+.sbtn {
+    margin-top:10px;
+    margin-bottom:10px;
+}
+.config_box {
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+.chart-container {
+    width: 90%; 
+    height: 500px;
+}

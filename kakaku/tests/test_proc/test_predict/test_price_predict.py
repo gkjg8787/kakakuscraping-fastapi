@@ -15,6 +15,63 @@ from ml.predict_model import (
 from .data_util import create_pricelog_dict
 
 
+class TestPriceLogChartPreProcessing:
+    def test_data_preprocessing(self):
+        data = [
+            create_pricelog_dict(
+                url_id=1,
+                created_at=dbtimeTodatetime("2024-01-01 00:00:00"),
+                usedprice=1000,
+                newprice=-1,
+            ),
+            create_pricelog_dict(
+                url_id=1,
+                created_at=dbtimeTodatetime("2024-01-01 10:00:00"),
+                usedprice=1600,
+                newprice=-1,
+            ),
+            create_pricelog_dict(
+                url_id=1,
+                created_at=dbtimeTodatetime("2024-01-02 10:00:00"),
+                usedprice=1400,
+                newprice=2000,
+            ),
+            create_pricelog_dict(
+                url_id=1,
+                created_at=dbtimeTodatetime("2024-01-02 10:00:00"),
+                usedprice=1100,
+                newprice=3000,
+                storename="AAA",
+            ),
+        ]
+        df = pd.DataFrame(data)
+        useddf, newdf = price_predict.PriceLogChartPreProcessing.data_preprocessing(
+            df=df
+        )
+        used_corrects = pd.DataFrame(
+            {
+                "used_max": [1600, 1400],
+                "used_min": [1000, 1100],
+                "used_mean": [1300.0, 1250.0],
+                "used_median": [1300.0, 1250.0],
+            },
+            index=pd.date_range("2024-01-01", periods=2, freq="D"),
+        )
+        used_corrects.index = used_corrects.index.date
+        new_corrects = pd.DataFrame(
+            {
+                "new_max": [3000],
+                "new_min": [2000],
+                "new_mean": [2500.0],
+                "new_median": [2500.0],
+            },
+            index=pd.date_range("2024-01-02", periods=1, freq="D"),
+        )
+        new_corrects.index = new_corrects.index.date
+        tm.assert_frame_equal(useddf, used_corrects[useddf.columns], check_names=False)
+        tm.assert_frame_equal(newdf, new_corrects[newdf.columns], check_names=False)
+
+
 class TestPriceLogPreProcessing:
 
     def test_data_preprocessing(self):

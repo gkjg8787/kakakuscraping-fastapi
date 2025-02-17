@@ -204,6 +204,7 @@ class ItemDetailChartQuery:
     max_date: str = ""
     period: str = ""
     start: str = ""
+    each: str = ""
 
     def __init__(
         self,
@@ -212,6 +213,7 @@ class ItemDetailChartQuery:
         max_date: str = "",
         period: str = "",
         start: str = "",
+        each: str = "",
     ):
         if is_valid_id(itemid):
             self.itemid = itemid
@@ -223,6 +225,8 @@ class ItemDetailChartQuery:
             self.period = period
         if start:
             self.start = start
+        if each:
+            self.each = each
 
     def is_valid_date(self, value: str):
         fmt = "%Y-%m-%d"
@@ -244,6 +248,8 @@ class ItemDetailChartQuery:
             results[FilterQueryName.PERIOD.value] = self.period
         if self.start:
             results[FilterQueryName.START.value] = self.start
+        if self.each:
+            results[FilterQueryName.EACH.value] = self.each
         return results
 
 
