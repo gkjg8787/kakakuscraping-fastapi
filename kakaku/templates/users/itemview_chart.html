@@ -39,29 +39,30 @@
     {% endif %}
     {% endfor %}
   </form>
-  {% if has_multi_url %}
-  <form method="get" action="">
-    <div class="chart_config_list">
-      <div class="config_box">
-        <input type="checkbox" onchange="submit(this.form)" id="each_url_checkbox" name="{{ EACH_URL_NAME }}" value="1"
-          {{ each_url_checked }}>
-        <label for="each_url_checkbox">チャートをURL毎に分けて表示する</label>
-      </div>
-    </div>
-    {% for k, v in fquery.items() %}
-    {% if k != EACH_URL_NAME and v != "" %}
-    <input type="hidden" name="{{ k }}" value="{{ v }}">
-    {% endif %}
-    {% endfor %}
-  </form>
-  {% endif %}
 </div>
+{% endif %}
+{% if has_multi_url %}
+<form method="get" action="">
+  <div class="chart_config_list">
+    <div class="config_box">
+      <input type="checkbox" onchange="submit(this.form)" id="each_url_checkbox" name="{{ EACH_URL_NAME }}" value="1" {{
+        each_url_checked }}>
+      <label for="each_url_checkbox">チャートをURL毎に分けて表示する</label>
+    </div>
+  </div>
+  {% for k, v in fquery.items() %}
+  {% if k != EACH_URL_NAME and v != "" %}
+  <input type="hidden" name="{{ k }}" value="{{ v }}">
+  {% endif %}
+  {% endfor %}
+</form>
+{% endif %}
 <div class="sbtn">
   <button id="resetButton">チャート位置リセット</button>
 </div>
 <p><a href="{{ url_for('read_users_items_view',) }}?{{ ITEMID_Q_NAME }}={{ item_id }}" class="plain-link">アイテム詳細へ戻る</a>
 </p>
-{% endif %}
+
 <div class="chart-container">
   <canvas id="myLineChart"></canvas>
 </div>
