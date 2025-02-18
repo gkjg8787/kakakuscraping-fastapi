@@ -10,3 +10,11 @@
     width: 90%; 
     height: 500px;
 }
+.predict_result_msg {
+    color:red;
+}
+@media (prefers-color-scheme: dark) {
+    .predict_result_msg {
+        color:orange;
+    }
+}

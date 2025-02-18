@@ -96,7 +96,14 @@ class PriceLogPreProcessing(DataPreProcessing):
         start_date: datetime.datetime | None = None,
         end_date: datetime.datetime | None = None,
     ) -> tuple[pd.DataFrame, bool]:
+        if not len(df):
+            return pd.DataFrame(), False
+
         new = df.loc[(df["usedprice"] > 0)].copy()
+
+        if not len(new):
+            return pd.DataFrame(), False
+
         new["datetime_column"] = pd.to_datetime(new["created_at"])
         new["datetime_column"] = (
             new["datetime_column"].dt.tz_localize("UTC").dt.tz_convert("Asia/Tokyo")
@@ -105,6 +112,10 @@ class PriceLogPreProcessing(DataPreProcessing):
             new = new.loc[(new["datetime_column"] >= start_date)]
         if end_date:
             new = new.loc[(new["datetime_column"] <= end_date)]
+
+        if not len(new):
+            return pd.DataFrame(), False
+
         new["date"] = new["datetime_column"].dt.date
         new.drop("datetime_column", axis=1, inplace=True)
 
@@ -282,6 +293,7 @@ class MinPricePredictResult:
     predict_length: int = 1
     mpm: MinPriceModel | None = None
     predict: PredictionResult | None = None
+    errmsg: str = ""
 
 
 class MinPricePredict:
@@ -321,33 +333,7 @@ class MinPricePredict:
         else:
             self.ml_model_command_factory_class = MinPriceModelCommandFactory
 
-    def get_predict_by_item_id(
-        self,
-        item_id: int,
-        start: datetime.datetime,
-        end: datetime.datetime | None = None,
-        predict_length: int = 14,
-        db: Session | None = None,
-    ) -> dict[int, MinPricePredictResult]:
-
-        if not db:
-            raise ValueError("db is None")
-        pppfactory = PriceLogPreProcessingFactoryEachURL(
-            item_id=item_id, db=db, start=start, end=end
-        )
-        ppp_dict = pppfactory.create()
-        result_dict = {}
-        for url_id, ppp in ppp_dict.items():
-            result_dict[url_id] = self.get_minprice_predict(
-                url_id=url_id,
-                ppp=ppp,
-                start=start,
-                end=end,
-                predict_length=predict_length,
-            )
-        return result_dict
-
-    def get_predict_by_item_id_concat_url(
+    def get_predict(
         self,
         df: pd.DataFrame,
         start: datetime.datetime,
@@ -359,24 +345,6 @@ class MinPricePredict:
             url_id=None, ppp=ppp, start=start, end=end, predict_length=predict_length
         )
 
-    def get_predict_by_url_id(
-        self,
-        url_id: int,
-        start: datetime.datetime,
-        end: datetime.datetime | None = None,
-        predict_length: int = 14,
-    ) -> MinPricePredictResult:
-        ppp = PriceLogPreProcessing(
-            df=get_dataframe_from_sql(
-                stmt=PredictionQuery.get_stmt_pricelog_by_url_id_and_date_range(
-                    url_id=url_id, start=start, end=end
-                )
-            )
-        )
-        return self.get_minprice_predict(
-            url_id=url_id, ppp=ppp, start=start, end=end, predict_length=predict_length
-        )
-
     def get_minprice_predict(
         self,
         url_id: int | None,
@@ -385,8 +353,19 @@ class MinPricePredict:
         end: datetime.datetime | None = None,
         predict_length: int = 14,
     ):
+        ppp_df = ppp.get_dataframe()
+        if len(ppp_df) <= 1:
+            return MinPricePredictResult(
+                mpm=None,
+                predict=None,
+                url_id=url_id,
+                start=start,
+                end=end,
+                predict_length=predict_length,
+                errmsg="対象の学習データが少なすぎます",
+            )
         pppforsarimax = PriceLogPreProcessingForSARIMAX(
-            df=ppp.get_dataframe(),
+            df=ppp_df,
             shift=1,
             shift_column_names=self.shift_column_names,
             filling_in_missing_value=True,
@@ -411,7 +390,7 @@ class MinPricePredict:
         mpmcommand = self.ml_model_command_factory_class().create(
             y_column_name=self.y_column_name,
             exog_column_names=self.get_exog_column_names(
-                df=ppp.get_dataframe(), y_column_name=self.y_column_name
+                df=ppp_df, y_column_name=self.y_column_name
             ),
             periods=predict_length,
             fvcreator=fvcreator,

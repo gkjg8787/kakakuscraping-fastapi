@@ -39,6 +39,11 @@
     {% endif %}
     {% endfor %}
   </form>
+  {% if result_msg %}
+  <p class="predict_result_msg">
+    {{ result_msg }}
+  </p>
+  {% endif %}
 </div>
 {% endif %}
 {% if has_multi_url %}

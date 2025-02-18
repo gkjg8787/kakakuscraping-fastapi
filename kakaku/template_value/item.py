@@ -397,6 +397,7 @@ class ItemDetailChartContext(BaseTemplateValue):
     is_predict: bool = False
     has_multi_url: bool = False
     each_url_checked: str = ""
+    result_msg: str = ""
 
     def __init__(self, idcq: ppi.ItemDetailChartQuery, db: Session):
         predict_conf = read_config.get_prediction_setting()
@@ -458,15 +459,51 @@ class ItemDetailChartContext(BaseTemplateValue):
         else:
             df_list_dict = {const_value.NONE_ID: raw_df}
 
+        self.chart_data, errmsgs = self.create_chart_data(
+            df_list_dict=df_list_dict,
+            is_predict=self.is_predict,
+            everytime_predict=predict_conf.everytime,
+            start_predict=idcq.start,
+            predict_length=predict_length,
+            param_start_date=param_start_date,
+            param_end_date=param_end_date,
+        )
+        if errmsgs:
+            result_msg_list = []
+            for errmsg in errmsgs:
+                msg = errmsg["errmsg"]
+                if errmsg["url_id"] and int(errmsg["url_id"]) > 0:
+                    msg = f'url_id:{errmsg["url_id"]} {msg}'
+                result_msg_list.append(msg)
+            self.result_msg = "\n".join(result_msg_list)
+
+    def has_data(self):
+        if self.item_id == const_value.NONE_ID:
+            return False
+        if len(self.chart_data) == 0:
+            return False
+        return True
+
+    @classmethod
+    def create_chart_data(
+        cls,
+        df_list_dict: dict[list],
+        is_predict: bool,
+        everytime_predict: bool,
+        start_predict: str,
+        predict_length: int,
+        param_start_date: datetime,
+        param_end_date: datetime | None,
+    ):
         def create_itemchartdata(url_id: int, label: str, data: list):
             if url_id != const_value.NONE_ID:
                 label = f"{label}(url_id:{url_id})"
             return ItemChartData(url_id=url_id, label=label, points=data)
 
         results = []
+        errmsgs = []
         for url_id, df in df_list_dict.items():
-
-            point_data_dict = self._get_pricelist_of_uniq_point_data_for_df(df=df)
+            point_data_dict = cls._get_pricelist_of_uniq_point_data_for_df(df=df)
             used_list = point_data_dict["used"]
             results.append(
                 create_itemchartdata(url_id=url_id, label="中古価格", data=used_list)
@@ -476,12 +513,12 @@ class ItemDetailChartContext(BaseTemplateValue):
                 create_itemchartdata(url_id=url_id, label="新品価格", data=new_list)
             )
 
-            if not self.is_predict:
+            if not is_predict:
                 continue
-            if not predict_conf.everytime and not idcq.start:
+            if not everytime_predict and not start_predict:
                 continue
 
-            used_predict = self._get_used_predict_point_data(
+            used_predict, errmsg = cls._get_used_predict_point_data(
                 df=df,
                 predict_length=predict_length,
                 start=param_start_date,
@@ -492,14 +529,9 @@ class ItemDetailChartContext(BaseTemplateValue):
                     url_id=url_id, label="中古予想価格", data=used_predict
                 )
             )
-        self.chart_data = results
-
-    def has_data(self):
-        if self.item_id == const_value.NONE_ID:
-            return False
-        if len(self.chart_data) == 0:
-            return False
-        return True
+            if errmsg:
+                errmsgs.append({"url_id": url_id, "errmsg": errmsg})
+        return results, errmsgs
 
     @classmethod
     def get_default_chart_start_end_datetime(cls):
@@ -534,8 +566,9 @@ class ItemDetailChartContext(BaseTemplateValue):
             start = now - timedelta(days=365)
         return start, end
 
+    @classmethod
     def _get_used_predict_point_data(
-        self,
+        cls,
         df: pd.DataFrame,
         predict_length: int | None = None,
         start: datetime | None = None,
@@ -546,22 +579,22 @@ class ItemDetailChartContext(BaseTemplateValue):
             fvcreator_factory_class=TargetColumnFeatureValueCreatorFactory,
         )
 
-        result = mpp.get_predict_by_item_id_concat_url(
+        result = mpp.get_predict(
             df=df,
             start=start,
             end=end,
             predict_length=predict_length,
         )
         if not result.predict:
-            return []
+            return [], result.errmsg
         if isinstance(result.predict.index, pd.DatetimeIndex):
             x_list = result.predict.index.strftime("%Y-%m-%d").tolist()
             y_list = list(result.predict.predict)
-            return [{"x": x, "y": int(y)} for x, y in zip(x_list, y_list)]
+            return [{"x": x, "y": int(y)} for x, y in zip(x_list, y_list)], ""
         else:
             x_list = result.predict.index
             y_list = result.predict.predict
-            return [{"x": x, "y": int(y)} for x, y in zip(x_list, y_list)]
+            return [{"x": x, "y": int(y)} for x, y in zip(x_list, y_list)], ""
 
     @staticmethod
     def _get_pricelist_of_uniq_point_data_for_df(df: pd.DataFrame) -> dict[list[dict]]:
