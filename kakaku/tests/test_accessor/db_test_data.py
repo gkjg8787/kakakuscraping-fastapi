@@ -942,7 +942,7 @@ def add_price_range_1(db):
             "url_id": 1,
             "created_at": dbtimeTodatetime("2024-01-05 10:00:00"),
             "uniqname": "one_item_1",
-            "usedprice": 1200,
+            "usedprice": 1250,
             "newprice": -1,
             "taxin": True,
             "onsale": False,
@@ -966,7 +966,7 @@ def add_price_range_1(db):
         },
         {
             "url_id": 1,
-            "created_at": dbtimeTodatetime("2024-03-14 10:00:00"),
+            "created_at": dbtimeTodatetime("2024-03-14 10:00:01"),
             "uniqname": "one_item_1",
             "usedprice": 1600,
             "newprice": -1,

@@ -5,13 +5,6 @@ from abc import ABC, abstractmethod
 
 import pandas as pd
 
-from sqlalchemy.orm import Session
-
-
-from accessor.item import UrlQuery
-from accessor.item.item import PredictionQuery
-from accessor.util import get_dataframe_from_sql
-
 from ml import MachineLearnModel, FeatureValueCreator
 from ml.predict_model import (
     MinPriceModel,
@@ -164,39 +157,6 @@ class PriceLogPreProcessingForSARIMAX(DataPreProcessing):
 
     def get_dataframe(self) -> pd.DataFrame:
         return self.df
-
-
-class PriceLogPreProcessingFactoryEachURL:
-    db: any
-    item_id: int
-    start: datetime.datetime
-    end: datetime.datetime | None
-
-    def __init__(
-        self,
-        item_id: int,
-        db: any,
-        start: datetime.datetime,
-        end: datetime.datetime | None = None,
-    ):
-        self.db = db
-        self.item_id = item_id
-        self.start = start
-        self.end = end
-
-    def create(self) -> dict[int, PriceLogPreProcessing]:
-        ppp_dict = {}
-        ret = UrlQuery.get_urlinfo_by_item_id(db=self.db, item_id=self.item_id)
-        for r in ret:
-            ppp_dict[r.url_id] = PriceLogPreProcessing(
-                df=get_dataframe_from_sql(
-                    stmt=PredictionQuery.get_stmt_pricelog_by_url_id_and_date_range(
-                        url_id=r.url_id, start=self.start, end=self.end
-                    )
-                )
-            )
-
-        return ppp_dict
 
 
 class CommandFactory(ABC):
