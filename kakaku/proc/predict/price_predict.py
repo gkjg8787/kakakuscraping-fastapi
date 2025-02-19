@@ -104,7 +104,13 @@ class PriceLogPreProcessing(DataPreProcessing):
         if start_date:
             new = new.loc[(new["datetime_column"] >= start_date)]
         if end_date:
-            new = new.loc[(new["datetime_column"] <= end_date)]
+            new = new.loc[
+                (
+                    new["datetime_column"]
+                    < end_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                    + datetime.timedelta(days=1)
+                )
+            ]
 
         if not len(new):
             return pd.DataFrame(), False
