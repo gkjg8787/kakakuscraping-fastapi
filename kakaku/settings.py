@@ -86,7 +86,7 @@ ITEMCOMB_PRICE_MARGIN = {"type": "fix", "value": "250", "min-value": "250"}
 SURUGAYA_SEARCH_RESULT_URL_CONVERT = True
 PREDICTION = {
     "view": True,
-    "everytime": True,
+    "everytime": False,
     "forecast_length": 14,
-    "show_accuracy": True,
+    "show_accuracy": False,
 }
