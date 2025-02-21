@@ -38,7 +38,7 @@ from proc import get_sys_status, system_status
 from proc import online_store_copy
 from itemcomb.prefecture import PrefectureName
 from url_search.surugaya import surugayaURL
-from ml.predict_model import MinPriceModel
+from ml.predict_model import MinPriceModel, PredictionAccuracy
 from proc.predict import MinPricePredict
 from proc.predict.price_predict import (
     TargetColumnFeatureValueCreatorFactory,
@@ -397,7 +397,7 @@ class ItemDetailChartContext(BaseTemplateValue):
     is_predict: bool = False
     has_multi_url: bool = False
     each_url_checked: str = ""
-    result_msg: str = ""
+    result_msg_list: list[str]
 
     def __init__(self, idcq: ppi.ItemDetailChartQuery, db: Session):
         predict_conf = read_config.get_prediction_setting()
@@ -430,6 +430,7 @@ class ItemDetailChartContext(BaseTemplateValue):
             ),
             predict_length=predict_length,
             is_predict=is_predict,
+            result_msg_list=[],
         )
         if not idcq.itemid:
             return
@@ -459,7 +460,7 @@ class ItemDetailChartContext(BaseTemplateValue):
         else:
             df_list_dict = {const_value.NONE_ID: raw_df}
 
-        self.chart_data, errmsgs = self.create_chart_data(
+        self.chart_data, errmsgs, accmsgs = self.create_chart_data(
             df_list_dict=df_list_dict,
             is_predict=self.is_predict,
             everytime_predict=predict_conf.everytime,
@@ -467,15 +468,21 @@ class ItemDetailChartContext(BaseTemplateValue):
             predict_length=predict_length,
             param_start_date=param_start_date,
             param_end_date=param_end_date,
+            show_accuracy=predict_conf.show_accuracy,
         )
         if errmsgs:
-            result_msg_list = []
             for errmsg in errmsgs:
                 msg = errmsg["errmsg"]
-                if errmsg["url_id"] and int(errmsg["url_id"]) > 0:
+                if errmsg["url_id"] and int(errmsg["url_id"]) > const_value.INIT_PRICE:
                     msg = f'url_id:{errmsg["url_id"]} {msg}'
-                result_msg_list.append(msg)
-            self.result_msg = "\n".join(result_msg_list)
+                self.result_msg_list.append(msg)
+
+        if accmsgs:
+            for accmsg in accmsgs:
+                msg = f'r2={accmsg["acc"].r2}'
+                if accmsg["url_id"] and int(accmsg["url_id"]) > const_value.INIT_PRICE:
+                    msg = f'url_id:{accmsg["url_id"]} {msg}'
+                self.result_msg_list.append(msg)
 
     def has_data(self):
         if self.item_id == const_value.NONE_ID:
@@ -494,6 +501,7 @@ class ItemDetailChartContext(BaseTemplateValue):
         predict_length: int,
         param_start_date: datetime,
         param_end_date: datetime | None,
+        show_accuracy: bool,
     ):
         def create_itemchartdata(url_id: int, label: str, data: list):
             if url_id != const_value.NONE_ID:
@@ -502,6 +510,7 @@ class ItemDetailChartContext(BaseTemplateValue):
 
         results = []
         errmsgs = []
+        accmsgs = []
         for url_id, df in df_list_dict.items():
             point_data_dict = cls._get_pricelist_of_uniq_point_data_for_df(df=df)
             used_list = point_data_dict["used"]
@@ -517,21 +526,31 @@ class ItemDetailChartContext(BaseTemplateValue):
                 continue
             if not everytime_predict and not start_predict:
                 continue
-
-            used_predict, errmsg = cls._get_used_predict_point_data(
+            predict_result = cls.get_predict_result(
                 df=df,
                 predict_length=predict_length,
                 start=param_start_date,
                 end=param_end_date,
+            )
+            if predict_result.errmsg:
+                errmsgs.append({"url_id": url_id, "errmsg": predict_result.errmsg})
+            used_predict = cls.get_used_predict_point_data(
+                predict_result=predict_result
             )
             results.append(
                 create_itemchartdata(
                     url_id=url_id, label="中古予想価格", data=used_predict
                 )
             )
-            if errmsg:
-                errmsgs.append({"url_id": url_id, "errmsg": errmsg})
-        return results, errmsgs
+            if show_accuracy and predict_result.predict:
+                acc = cls.get_accuracy(
+                    used_df=point_data_dict["used_df"],
+                    predict=predict_result.predict.predict,
+                    end=param_end_date,
+                )
+                if acc:
+                    accmsgs.append({"url_id": url_id, "acc": acc})
+        return results, errmsgs, accmsgs
 
     @classmethod
     def get_default_chart_start_end_datetime(cls):
@@ -567,7 +586,7 @@ class ItemDetailChartContext(BaseTemplateValue):
         return start, end
 
     @classmethod
-    def _get_used_predict_point_data(
+    def get_predict_result(
         cls,
         df: pd.DataFrame,
         predict_length: int | None = None,
@@ -585,16 +604,55 @@ class ItemDetailChartContext(BaseTemplateValue):
             end=end,
             predict_length=predict_length,
         )
-        if not result.predict:
-            return [], result.errmsg
-        if isinstance(result.predict.index, pd.DatetimeIndex):
-            x_list = result.predict.index.strftime("%Y-%m-%d").tolist()
-            y_list = list(result.predict.predict)
-            return [{"x": x, "y": int(y)} for x, y in zip(x_list, y_list)], ""
+        return result
+
+    @classmethod
+    def get_used_predict_point_data(cls, predict_result):
+        if predict_result.predict is None:
+            return []
+        if isinstance(predict_result.predict.index, pd.DatetimeIndex):
+            x_list = predict_result.predict.index.strftime("%Y-%m-%d").tolist()
+            y_list = list(predict_result.predict.predict)
+            return [{"x": x, "y": round(y)} for x, y in zip(x_list, y_list)]
         else:
-            x_list = result.predict.index
-            y_list = result.predict.predict
-            return [{"x": x, "y": int(y)} for x, y in zip(x_list, y_list)], ""
+            x_list = predict_result.predict.index
+            y_list = predict_result.predict.predict
+            return [{"x": x, "y": round(y)} for x, y in zip(x_list, y_list)]
+
+    @classmethod
+    def get_accuracy(
+        cls,
+        used_df: pd.DataFrame,
+        predict,
+        end: datetime | None = None,
+    ):
+        if not end or len(used_df) == 0 or predict is None:
+            return None
+        df = used_df.copy()
+        df["datetime"] = pd.to_datetime(df.index)
+        used_min = "used_min"
+
+        d_diff = df["datetime"].iloc[-1] - end.replace(tzinfo=None)
+        if d_diff.days <= 1 or len(predict) == 1:
+            return None
+        if d_diff.days == len(predict):
+            acc = PredictionAccuracy(
+                actual=df[used_min].iloc[-len(predict) :], predict=predict
+            )
+        elif d_diff.days > len(predict):
+            start_len = len(df) - d_diff.days
+            if start_len < 0:
+                return None
+            acc = PredictionAccuracy(
+                actual=df[used_min].iloc[start_len : start_len + len(predict)],
+                predict=predict,
+            )
+        else:
+            acc = PredictionAccuracy(
+                actual=df[used_min].iloc[-d_diff.days :],
+                predict=predict[: d_diff.days],
+            )
+        return acc
 
     @staticmethod
     def _get_pricelist_of_uniq_point_data_for_df(df: pd.DataFrame) -> dict[list[dict]]:
@@ -650,7 +708,7 @@ class ItemDetailChartContext(BaseTemplateValue):
         set_result(df=useddf, target_column="used_min", result_dict=used)
         set_result(df=newdf, target_column="new_min", result_dict=new)
 
-        return {"used": used[result], "new": new[result]}
+        return {"used": used[result], "used_df": useddf, "new": new[result]}
 
 
 class AddItemUrlPostContext(BaseTemplateValue):

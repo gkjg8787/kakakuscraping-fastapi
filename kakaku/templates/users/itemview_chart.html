@@ -39,9 +39,11 @@
     {% endif %}
     {% endfor %}
   </form>
-  {% if result_msg %}
-  <p class="predict_result_msg">
-    {{ result_msg }}
+  {% if result_msg_list %}
+  <p class="predict_result_msg_box">
+    {% for msg in result_msg_list %}
+  <div class="predict_result_msg">{{ msg }}</div>
+  {% endfor %}
   </p>
   {% endif %}
 </div>

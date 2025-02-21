@@ -1,6 +1,9 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
-from common import filter_name, util
+import pandas as pd
+import numpy as np
+
+from common import filter_name, util as cm_util
 from parameter_parser import item as ppi
 from template_value import item
 
@@ -392,3 +395,146 @@ def test_CompressLogByStorename_three_data_no_comporess():
     results = plog.get_log_list()
     assert len(results) == 3
     assert sorted(loglist, key=lambda l: l["created_at"], reverse=True) == results
+
+
+class TestItemDetailChartContext:
+    def test_get_accuracy_three_match(self):
+        used_df = pd.DataFrame(
+            {"used_min": [2000, 1800, 1600, 1200, 1300, 1650, 1900]},
+            index=pd.date_range("20240101", periods=7, freq="D"),
+        )
+        predict = np.array([1200, 1300, 1650])
+        train_end = datetime(2024, 1, 3)
+        acc = item.ItemDetailChartContext.get_accuracy(
+            used_df=used_df,
+            predict=predict,
+            end=train_end,
+        )
+        assert acc is not None
+        assert acc.r2 == 1.0
+
+    def test_get_accuracy_three_not_match(self):
+        used_df = pd.DataFrame(
+            {"used_min": [2000, 1800, 1600, 1200, 1300, 1650, 1900]},
+            index=pd.date_range("20240101", periods=7, freq="D"),
+        )
+        predict = np.array([2000, 1800, 1600])
+        train_end = datetime(2024, 1, 3)
+        acc = item.ItemDetailChartContext.get_accuracy(
+            used_df=used_df,
+            predict=predict,
+            end=train_end,
+        )
+        assert acc is not None
+        assert acc.r2 < 1.0
+
+    def test_get_accuracy_one_predict(self):
+        used_df = pd.DataFrame(
+            {"used_min": [2000, 1800, 1600, 1200, 1300, 1650, 1900]},
+            index=pd.date_range("20240101", periods=7, freq="D"),
+        )
+        predict = np.array([1900])
+        train_end = datetime(2024, 1, 6)
+        acc = item.ItemDetailChartContext.get_accuracy(
+            used_df=used_df,
+            predict=predict,
+            end=train_end,
+        )
+        assert acc is None
+
+    def test_get_accuracy_all_train(self):
+        used_df = pd.DataFrame(
+            {"used_min": [2000, 1800, 1600, 1200, 1300, 1650, 1900]},
+            index=pd.date_range("20240101", periods=7, freq="D"),
+        )
+        predict = np.array([1600, 1700, 800, 500, 700, 1800, 1000])
+        train_end = datetime(2024, 1, 7)
+        acc = item.ItemDetailChartContext.get_accuracy(
+            used_df=used_df,
+            predict=predict,
+            end=train_end,
+        )
+        assert acc is None
+
+    def test_get_accuracy_train_before_range_not_reach(self):
+        used_df = pd.DataFrame(
+            {"used_min": [2000, 1800, 1600, 1200, 1300, 1650, 1900]},
+            index=pd.date_range("20240101", periods=7, freq="D"),
+        )
+        predict = np.array([1600, 1700, 800, 500, 700, 1800, 1000])
+        train_end = datetime(2023, 1, 1)
+        acc = item.ItemDetailChartContext.get_accuracy(
+            used_df=used_df,
+            predict=predict,
+            end=train_end,
+        )
+        assert acc is None
+
+    def test_get_accuracy_train_before_range_reach(self):
+        used_df = pd.DataFrame(
+            {"used_min": [2000, 1800, 1600, 1200, 1300, 1650, 1900]},
+            index=pd.date_range("20240101", periods=7, freq="D"),
+        )
+        predict = np.array([2000, 1800, 1600, 1200, 1300, 1650, 1900])
+        train_end = datetime(2023, 12, 31)
+        acc = item.ItemDetailChartContext.get_accuracy(
+            used_df=used_df,
+            predict=predict,
+            end=train_end,
+        )
+        assert acc is not None
+        assert acc.r2 == 1.0
+
+    def test_get_accuracy_train_over_range(self):
+        used_df = pd.DataFrame(
+            {"used_min": [2000, 1800, 1600, 1200, 1300, 1650, 1900]},
+            index=pd.date_range("20240101", periods=7, freq="D"),
+        )
+        predict = np.array([2000, 1800, 1600, 1200, 1300, 1650, 1900])
+        train_end = datetime(2024, 1, 8)
+        acc = item.ItemDetailChartContext.get_accuracy(
+            used_df=used_df,
+            predict=predict,
+            end=train_end,
+        )
+        assert acc is None
+
+    def test_get_accuracy_predict_over_value_match(self):
+        used_df = pd.DataFrame(
+            {"used_min": [2000, 1800, 1600, 1200, 1300, 1650, 1900]},
+            index=pd.date_range("20240101", periods=7, freq="D"),
+        )
+        predict = np.array([1800, 1600, 1200, 1300, 1650, 1900, 2200, 1950])
+        train_end = datetime(2024, 1, 1)
+        acc = item.ItemDetailChartContext.get_accuracy(
+            used_df=used_df,
+            predict=predict,
+            end=train_end,
+        )
+        assert acc is not None
+        assert acc.r2 == 1.0
+
+    def test_get_accuracy_not_end_datetime(self):
+        used_df = pd.DataFrame(
+            {"used_min": [2000, 1800, 1600, 1200, 1300, 1650, 1900]},
+            index=pd.date_range("20240101", periods=7, freq="D"),
+        )
+        predict = np.array([1000, 1200, 1300, 1400, 1500, 1650, 1900, 2200, 1950])
+        train_end = None
+        acc = item.ItemDetailChartContext.get_accuracy(
+            used_df=used_df,
+            predict=predict,
+            end=train_end,
+        )
+        assert acc is None
+
+    def test_get_accuracy_not_used_df(self):
+        used_df = pd.DataFrame()
+        predict = np.array([1000, 1200, 1300, 1400, 1500, 1650, 1900, 2200, 1950])
+        train_end = datetime(2024, 1, 1)
+        acc = item.ItemDetailChartContext.get_accuracy(
+            used_df=used_df,
+            predict=predict,
+            end=train_end,
+        )
+        assert acc is None

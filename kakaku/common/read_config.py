@@ -127,6 +127,7 @@ class PredictionConfig(BaseModel):
     view: bool
     everytime: bool
     forecast_length: int
+    show_accuracy: bool
 
 
 def get_prediction_setting():

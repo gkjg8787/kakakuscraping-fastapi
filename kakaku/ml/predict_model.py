@@ -1,9 +1,10 @@
 import dataclasses
 
+import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 from sklearn.linear_model import LinearRegression
-
+from sklearn.metrics import r2_score, mean_squared_error
 
 from .ml import MachineLearnModel, DataPreProcessing, FeatureValueCreator
 from .add_feature_value import (
@@ -331,3 +332,14 @@ class MinPriceModel(MachineLearnModel):
     def get_param(self) -> dict:
         p = SARIMAXParam()
         return dataclasses.asdict(p)
+
+
+class PredictionAccuracy:
+    mse: float = 0.0
+    rmse: float = 0.0
+    r2: float = 0.0
+
+    def __init__(self, actual, predict):
+        self.mse = mean_squared_error(actual, predict)
+        self.rmse = np.sqrt(self.mse)
+        self.r2 = r2_score(actual, predict)

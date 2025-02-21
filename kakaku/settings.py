@@ -88,4 +88,5 @@ PREDICTION = {
     "view": True,
     "everytime": True,
     "forecast_length": 14,
+    "show_accuracy": True,
 }
