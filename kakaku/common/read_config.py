@@ -1,3 +1,5 @@
+from typing import Annotated
+from annotated_types import Gt
 from pydantic import BaseModel
 
 import settings
@@ -126,8 +128,9 @@ def get_surugaya_search_result_url_convert():
 class PredictionConfig(BaseModel):
     view: bool
     everytime: bool
-    forecast_length: int
+    forecast_length: Annotated[int, Gt(0)]
     show_accuracy: bool
+    learning_timeout: Annotated[int, Gt(0)]
 
 
 def get_prediction_setting():

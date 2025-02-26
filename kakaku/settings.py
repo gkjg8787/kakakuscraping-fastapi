@@ -89,4 +89,5 @@ PREDICTION = {
     "everytime": False,
     "forecast_length": 14,
     "show_accuracy": False,
+    "learning_timeout": 10,
 }

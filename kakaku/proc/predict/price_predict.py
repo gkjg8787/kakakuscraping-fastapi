@@ -210,6 +210,7 @@ class MinPriceModelCommandFactory(CommandFactory):
         y_column_name: str,
         exog_column_names: list[str],
         fvcreator: FeatureValueCreator,
+        learning_timeout: int,
         **kwargs,
     ) -> MinPriceModelCommand:
 
@@ -218,6 +219,7 @@ class MinPriceModelCommandFactory(CommandFactory):
             exog_column_names=exog_column_names,
             periods=periods,
             fvcreator=fvcreator,
+            learning_timeout=learning_timeout,
         )
         return mpmcommand
 
@@ -305,10 +307,16 @@ class MinPricePredict:
         start: datetime.datetime,
         end: datetime.datetime | None = None,
         predict_length: int = 14,
+        learning_timeout: int = 10,
     ):
         ppp = PriceLogPreProcessing(df=df, start_date=start, end_date=end)
         return self.get_minprice_predict(
-            url_id=None, ppp=ppp, start=start, end=end, predict_length=predict_length
+            url_id=None,
+            ppp=ppp,
+            start=start,
+            end=end,
+            predict_length=predict_length,
+            learning_timeout=learning_timeout,
         )
 
     def get_minprice_predict(
@@ -318,6 +326,7 @@ class MinPricePredict:
         start: datetime.datetime,
         end: datetime.datetime | None = None,
         predict_length: int = 14,
+        learning_timeout: int = 10,
     ):
         ppp_df = ppp.get_dataframe()
         if len(ppp_df) <= 1:
@@ -360,6 +369,7 @@ class MinPricePredict:
             ),
             periods=predict_length,
             fvcreator=fvcreator,
+            learning_timeout=learning_timeout,
         )
         predict = mpm.get_predict(command=mpmcommand)
         return MinPricePredictResult(

@@ -175,6 +175,7 @@ class TestMinPricePredict:
             "start": dbtimeTodatetime("2024-01-01 12:00:00"),
             "end": None,
             "predict_length": 14,
+            "learning_timeout": 10,
         }
         mpp = price_predict.MinPricePredict(ml_model_class=MockMinPriceModel)
 

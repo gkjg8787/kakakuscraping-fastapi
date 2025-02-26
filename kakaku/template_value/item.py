@@ -391,6 +391,7 @@ class ItemDetailChartContext(BaseTemplateValue):
     PERIOD_MAX: int = 365
     chart_data: list
     item_id: int = const_value.NONE_ID
+    item_name: str = ""
     fquery: dict
     date_range_filter: shared.RangeInputForm
     predict_length: int
@@ -435,6 +436,8 @@ class ItemDetailChartContext(BaseTemplateValue):
         if not idcq.itemid:
             return
         self.item_id = int(idcq.itemid)
+        item = ItemQuery.get_item(db=db, item_id=self.item_id)
+        self.item_name = item.name
 
         if idcq.each:
             self.each_url_checked = templates_string.HTMLOption.CHECKED.value
@@ -469,6 +472,7 @@ class ItemDetailChartContext(BaseTemplateValue):
             param_start_date=param_start_date,
             param_end_date=param_end_date,
             show_accuracy=predict_conf.show_accuracy,
+            learning_timeout=predict_conf.learning_timeout,
         )
         if errmsgs:
             for errmsg in errmsgs:
@@ -492,6 +496,69 @@ class ItemDetailChartContext(BaseTemplateValue):
         return True
 
     @classmethod
+    def create_itemchartdata(cls, url_id: int, label: str, data: list):
+        if url_id != const_value.NONE_ID:
+            label = f"{label}(url_id:{url_id})"
+        return ItemChartData(url_id=url_id, label=label, points=data)
+
+    @classmethod
+    def get_point_data_and_msg(
+        cls,
+        url_id: int,
+        df: pd.DataFrame,
+        is_predict: bool,
+        everytime_predict: bool,
+        start_predict: str,
+        predict_length: int,
+        param_start_date: datetime,
+        param_end_date: datetime | None,
+        show_accuracy: bool,
+        learning_timeout: int,
+    ):
+        results = []
+        errmsgs = []
+        accmsgs = []
+
+        point_data_dict = cls._get_pricelist_of_uniq_point_data_for_df(df=df)
+        used_list = point_data_dict["used"]
+        results.append(
+            cls.create_itemchartdata(url_id=url_id, label="中古価格", data=used_list)
+        )
+        new_list = point_data_dict["new"]
+        results.append(
+            cls.create_itemchartdata(url_id=url_id, label="新品価格", data=new_list)
+        )
+
+        if not is_predict:
+            return results, errmsgs, accmsgs
+        if not everytime_predict and not start_predict:
+            return results, errmsgs, accmsgs
+        predict_result = cls.get_predict_result(
+            df=df,
+            predict_length=predict_length,
+            start=param_start_date,
+            end=param_end_date,
+            learning_timeout=learning_timeout,
+        )
+        if predict_result.errmsg:
+            errmsgs.append({"url_id": url_id, "errmsg": predict_result.errmsg})
+        used_predict = cls.get_used_predict_point_data(predict_result=predict_result)
+        results.append(
+            cls.create_itemchartdata(
+                url_id=url_id, label="中古予想価格", data=used_predict
+            )
+        )
+        if show_accuracy and predict_result.predict:
+            acc = cls.get_accuracy(
+                used_df=point_data_dict["used_df"],
+                predict=predict_result.predict.predict,
+                end=param_end_date,
+            )
+            if acc:
+                accmsgs.append({"url_id": url_id, "acc": acc})
+        return results, errmsgs, accmsgs
+
+    @classmethod
     def create_chart_data(
         cls,
         df_list_dict: dict[list],
@@ -502,54 +569,31 @@ class ItemDetailChartContext(BaseTemplateValue):
         param_start_date: datetime,
         param_end_date: datetime | None,
         show_accuracy: bool,
+        learning_timeout: int,
     ):
-        def create_itemchartdata(url_id: int, label: str, data: list):
-            if url_id != const_value.NONE_ID:
-                label = f"{label}(url_id:{url_id})"
-            return ItemChartData(url_id=url_id, label=label, points=data)
 
         results = []
         errmsgs = []
         accmsgs = []
         for url_id, df in df_list_dict.items():
-            point_data_dict = cls._get_pricelist_of_uniq_point_data_for_df(df=df)
-            used_list = point_data_dict["used"]
-            results.append(
-                create_itemchartdata(url_id=url_id, label="中古価格", data=used_list)
-            )
-            new_list = point_data_dict["new"]
-            results.append(
-                create_itemchartdata(url_id=url_id, label="新品価格", data=new_list)
-            )
-
-            if not is_predict:
-                continue
-            if not everytime_predict and not start_predict:
-                continue
-            predict_result = cls.get_predict_result(
+            res, err, acc = cls.get_point_data_and_msg(
+                url_id=url_id,
                 df=df,
+                is_predict=is_predict,
+                everytime_predict=everytime_predict,
+                start_predict=start_predict,
                 predict_length=predict_length,
-                start=param_start_date,
-                end=param_end_date,
+                param_start_date=param_start_date,
+                param_end_date=param_end_date,
+                show_accuracy=show_accuracy,
+                learning_timeout=learning_timeout,
             )
-            if predict_result.errmsg:
-                errmsgs.append({"url_id": url_id, "errmsg": predict_result.errmsg})
-            used_predict = cls.get_used_predict_point_data(
-                predict_result=predict_result
-            )
-            results.append(
-                create_itemchartdata(
-                    url_id=url_id, label="中古予想価格", data=used_predict
-                )
-            )
-            if show_accuracy and predict_result.predict:
-                acc = cls.get_accuracy(
-                    used_df=point_data_dict["used_df"],
-                    predict=predict_result.predict.predict,
-                    end=param_end_date,
-                )
-                if acc:
-                    accmsgs.append({"url_id": url_id, "acc": acc})
+            if res:
+                results.extend(res)
+            if err:
+                errmsgs.extend(err)
+            if acc:
+                accmsgs.extend(acc)
         return results, errmsgs, accmsgs
 
     @classmethod
@@ -589,7 +633,8 @@ class ItemDetailChartContext(BaseTemplateValue):
     def get_predict_result(
         cls,
         df: pd.DataFrame,
-        predict_length: int | None = None,
+        predict_length: int,
+        learning_timeout: int,
         start: datetime | None = None,
         end: datetime | None = None,
     ):

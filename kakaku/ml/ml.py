@@ -10,7 +10,7 @@ class DataPreProcessing(ABC):
 
 class MachineLearnModel(ABC):
     @abstractmethod
-    def set_data(self, data: DataPreProcessing, *args, **kawrgs):
+    def set_data(self, data: DataPreProcessing, *args, **kwargs):
         pass
 
     @abstractmethod

@@ -14,6 +14,7 @@ from .add_feature_value import (
     get_season_column_names,
 )
 from .data_processing_util import shift_multiple_columns, add_multiple_lagged_features
+from . import ml_util
 
 
 @dataclasses.dataclass
@@ -234,13 +235,13 @@ class TargetColumnFeatureValueCreator(FeatureValueCreator):
 
         next_df = test_x.copy()
         next_df[lagged_columns[0]] = fill_list(
-            base=next_df[lagged_columns[0]], add_list=list(pre)
+            base=next_df[lagged_columns[0]], add_list=list(pre.flatten())
         )
 
         for i in range(2, len(test_x)):
             pre = lr.predict(next_df[:i])
             next_df[lagged_columns[0]] = fill_list(
-                base=next_df[lagged_columns[0]], add_list=list(pre)
+                base=next_df[lagged_columns[0]], add_list=list(pre.flatten())
             )
         pre = lr.predict(next_df)
         return pre
@@ -259,6 +260,7 @@ class MinPriceModelCommand:
     exog_column_names: list[str] = dataclasses.field(default_factory=list)
     periods: int = 1
     fvcreator: FeatureValueCreator | None = None
+    learning_timeout: int = 10
 
 
 class MinPriceModel(MachineLearnModel):
@@ -270,23 +272,41 @@ class MinPriceModel(MachineLearnModel):
         self.model = model
 
     def fit(self, y_column_name: str, exog_column_names: list[str] = []):
-        train_y, train_x = self.get_training_data(y_column_name)
-        param = self.get_param()
-        self.model = sm.tsa.SARIMAX(
+        self.model = self.get_model(
+            data=self.data,
+            y_column_name=y_column_name,
+            exog_column_names=exog_column_names,
+        )
+
+    @classmethod
+    def get_model(
+        cls, data: pd.DataFrame, y_column_name: str, exog_column_names: list[str] = []
+    ):
+        train_y, train_x = cls.get_training_data(data=data, y_column_name=y_column_name)
+        param = cls.get_param()
+        model = sm.tsa.SARIMAX(
             train_y.asfreq("D"), exog=train_x.loc[:, exog_column_names], **param
         ).fit()
+        return model
 
     def get_predict(
         self,
         command: MinPriceModelCommand,
     ):
+        multiproc = ml_util.MultiProcessFunc()
         if not self.model:
-            self.fit(
-                y_column_name=command.y_column_name,
-                exog_column_names=command.exog_column_names,
+            multiproc.add(
+                self.get_model,
+                self.data,
+                command.y_column_name,
+                command.exog_column_names,
             )
-
+        if multiproc.has_task():
+            multiproc.start(is_join=False)
         if not command.fvcreator:
+            if multiproc.has_task():
+                multiproc.join(timeout=command.learning_timeout)
+                self.model = multiproc.get_results()[0]
             return PredictionResult(
                 predict=self.model.forecast(steps=command.periods),
                 index=pd.date_range(
@@ -301,6 +321,9 @@ class MinPriceModel(MachineLearnModel):
             future_column_names += get_season_column_names()
 
         exog_df = command.fvcreator.create()
+        if multiproc.has_task():
+            multiproc.join(timeout=command.learning_timeout)
+            self.model = multiproc.get_results()[0]
         return PredictionResult(
             predict=self.model.forecast(
                 steps=command.periods, exog=exog_df.loc[:, command.exog_column_names]
@@ -309,27 +332,31 @@ class MinPriceModel(MachineLearnModel):
             exog_df=exog_df,
         )
 
-    def get_training_data(self, y_column_name: str, test_size: float | int = 0):
+    @classmethod
+    def get_training_data(
+        cls, data: pd.DataFrame, y_column_name: str, test_size: float | int = 0
+    ):
         if test_size == 0:
-            train_y = self.data[[y_column_name]]
-            train_x = self.data.drop(y_column_name, axis=1)
+            train_y = data[[y_column_name]]
+            train_x = data.drop(y_column_name, axis=1)
             return train_y, train_x
 
         if type(test_size) is float:
             if test_size >= 1.0:
                 raise ValueError(f"test_size is too large : {test_size}")
-            training_len = int(len(self.data) * (1 - test_size))
+            training_len = int(len(data) * (1 - test_size))
         else:
-            if test_size > len(self.data):
+            if test_size > len(data):
                 raise ValueError(f"test_size is too large : {test_size}")
-            training_len = len(self.data) - test_size
+            training_len = len(data) - test_size
 
-        train = self.data.iloc[:training_len]
+        train = data.iloc[:training_len]
         train_y = train[[y_column_name]]
         train_x = train.drop(y_column_name, axis=1)
         return train_y, train_x
 
-    def get_param(self) -> dict:
+    @classmethod
+    def get_param(cls) -> dict:
         p = SARIMAXParam()
         return dataclasses.asdict(p)
 

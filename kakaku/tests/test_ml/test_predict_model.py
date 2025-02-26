@@ -132,7 +132,7 @@ class TestMinPriceModel:
         mpm = predict_model.MinPriceModel()
         mpm.set_data(data=dpp)
         train_y, train_x = mpm.get_training_data(
-            y_column_name=target_column_name, test_size=0
+            data=mpm.data, y_column_name=target_column_name, test_size=0
         )
 
         tm.assert_frame_equal(train_x, df.drop(target_column_name, axis=1))
@@ -155,7 +155,7 @@ class TestMinPriceModel:
         mpm = predict_model.MinPriceModel()
         mpm.set_data(data=dpp)
         train_y, train_x = mpm.get_training_data(
-            y_column_name=target_column_name, test_size=test_size
+            data=mpm.data, y_column_name=target_column_name, test_size=test_size
         )
 
         tm.assert_frame_equal(
@@ -180,7 +180,7 @@ class TestMinPriceModel:
         mpm = predict_model.MinPriceModel()
         mpm.set_data(data=dpp)
         train_y, train_x = mpm.get_training_data(
-            y_column_name=target_column_name, test_size=test_size
+            data=mpm.data, y_column_name=target_column_name, test_size=test_size
         )
 
         tm.assert_frame_equal(
