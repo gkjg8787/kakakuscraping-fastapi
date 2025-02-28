@@ -1,114 +1,131 @@
 {% extends "shared/layout.html" %}
 
 {% block head %}
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/itemdetails.css') }}" type="text/css">
-    <script type="text/javascript" src="{{ url_for('static', path='/js/common.js') }}"></script>
-    <title>アイテム詳細</title>
- {% endblock %}
+<link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}" type="text/css">
+<link rel="stylesheet" href="{{ url_for('static', path='/css/itemdetails.css') }}" type="text/css">
+<script type="text/javascript" src="{{ url_for('static', path='/js/common.js') }}"></script>
+<title>アイテム詳細</title>
+{% endblock %}
 
 {% block body %}
-    <script type="text/javascript">
-        function gotoLogListTop() {
-            const elem = document.getElementById("log_list");
-            elem.scrollIntoView(true);
-        }
-    </script>
-    <h1>アイテム詳細</h1>
-    <h2>直近のアイテム価格</h2>
-  
-    <table class='recent_table'>
-    <tr>
-    <th>item_id</th>
-    <th>商品名</th>
-    <th>url_id</th>
-    <th>URL</th>
-    <th>直近価格</th>
-    <th>変動率</th>
-    <th>セール名</th>
-    <th>店名</th>
-    <th>更新時間</th>
-    <th>今までの最安値</th>
-    <th>活性数</th>
-    </tr>
-    <tr>
-    <td>{{ items['item_id'] }}</td>
-    <td>{{ items['name'] }}</td>
-    <td>{{ items['url_id'] }}</td>
-    <td>
-        {%- with url = items['urlpath'] %}
-        {%- include "shared/url_link.html" %}
-        {%- endwith %}
-    </td>
-    <td>
-        {%- with price = items['price'], lowestprice = items['lowestprice'] %}
-        {%- include "shared/price_span.html" %}
-        {%- endwith %}
-    </td>
-    <td>
-        {%- with trendrate = items['trendrate'] %}
-        {%- include "shared/trendrate_span.html" %}
-        {%- endwith %}
-    </td>
-    <td>{{ items['salename'] }}</td>
-    <td>{{ items['storename'] }}</td>
-    {%- with updatetime = items['created_at'] %}
-    {%- include "shared/updatetime_td.html" %}
-    {%- endwith %}
-    <td>{{ items['lowestprice'] }}円</td>
-    <td>{{ items['act'] }}</td>
-    </tr>
-    </table>
+<script type="text/javascript">
+    function gotoLogListTop() {
+        const elem = document.getElementById("log_list");
+        elem.scrollIntoView(true);
+    }
+</script>
+<h1>アイテム詳細</h1>
+<h2>直近のアイテム価格</h2>
 
-    <h2>操作メニュー</h2>
-        <p><form action="{{ url_for('read_users_items_view_chart') }}" method="get">
-            <button type="submit" name="{{ ITEMID_Q_NAME }}" value="{{ items['item_id'] }}">グラフ表示</button>
-        </form></p>
-        <p><form action="{{ url_for('read_search') }}" method="get">
-            <button type="submit" name="{{ SEARCH_WORD_NAME }}" value="{{ items['name'] }}">アイテム名で外部検索</button>
-        </form></p>
-        <p><form action="{{ url_for('read_users_items_add_url') }}" method="post">
-            <button type="submit" name="{{ POST_ITEM_ID }}" value="{{ items['item_id'] }}">URL追加</button>
-        </form></p>
-        <p><form action="{{ url_for('read_users_items_update_item_name') }}" method="post">
-            <button type="submit" name="{{ POST_ITEM_ID }}" value="{{ items['item_id'] }}">商品名変更</button>
-        </form></p>
-        {% if urllist %}
-        <p><form action="{{ url_for('read_users_items_inact_url_all') }}" method="post"> 
-            <button type="submit" name="{{ POST_ITEM_ID }}" value="{{ items['item_id'] }}">URL一括無効化</button>
-        </form></p>
-        {% endif %}
-        <p><form action="{{ url_for('read_users_items_remove') }}" method="post">
-            <input type="hidden" name="{{ POST_ITEM_ID }}" value="{{ items['item_id'] }}">
-            <button type="submit">このアイテムを削除</button>
-        </form></p>
-        <p><a href="{{ url_for('read_users') }}#item{{ items['item_id'] }}" class="plain-link">アイテム一覧へ戻る</a></p>
-        <p><input type="button" onclick="window.close();" value="このタブを閉じる"></p>
-    <h2>登録URL一覧</h2>
-    {%- if urllist %}
-    <p>
-    <form action="{{ url_for('read_users_items_update') }}" method="post">
-        <button type="submit" name="{{ POST_ITEM_ID }}" value="{{ items['item_id'] }}">一括情報取得</button>
-    </form>
-    </p>
-    {% endif %}
-    <table class="url_table">
-        <tr>
-            <th>url_id</th>
-            <th>URL</th>
-            <th>活性状態</th>
-        </tr>
+<table class='recent_table'>
+    <tr>
+        <th>item_id</th>
+        <th>商品名</th>
+        <th>url_id</th>
+        <th>URL</th>
+        <th>直近価格</th>
+        <th>変動率</th>
+        <th>セール名</th>
+        <th>店名</th>
+        <th>更新時間</th>
+        <th>今までの最安値</th>
+        <th>活性数</th>
+    </tr>
+    <tr>
+        <td>{{ items['item_id'] }}</td>
+        <td>{{ items['name'] }}</td>
+        <td>{{ items['url_id'] }}</td>
+        <td>
+            {%- with url = items['urlpath'] %}
+            {%- include "shared/url_link.html" %}
+            {%- endwith %}
+        </td>
+        <td>
+            {%- with price = items['price'], lowestprice = items['lowestprice'] %}
+            {%- include "shared/price_span.html" %}
+            {%- endwith %}
+        </td>
+        <td>
+            {%- with trendrate = items['trendrate'] %}
+            {%- include "shared/trendrate_span.html" %}
+            {%- endwith %}
+        </td>
+        <td>{{ items['salename'] }}</td>
+        <td>{{ items['storename'] }}</td>
+        {%- with updatetime = items['created_at'] %}
+        {%- include "shared/updatetime_td.html" %}
+        {%- endwith %}
+        <td>{{ items['lowestprice'] }}円</td>
+        <td>{{ items['act'] }}</td>
+    </tr>
+</table>
+
+<div>
+    <h3>アイテム作成日</h3>
+    <p class="item_created_at">{{ item_created_at }}</p>
+</div>
+
+<h2>操作メニュー</h2>
+<p>
+<form action="{{ url_for('read_users_items_view_chart') }}" method="get">
+    <button type="submit" name="{{ ITEMID_Q_NAME }}" value="{{ items['item_id'] }}">グラフ表示</button>
+</form>
+</p>
+<p>
+<form action="{{ url_for('read_search') }}" method="get">
+    <button type="submit" name="{{ SEARCH_WORD_NAME }}" value="{{ items['name'] }}">アイテム名で外部検索</button>
+</form>
+</p>
+<p>
+<form action="{{ url_for('read_users_items_add_url') }}" method="post">
+    <button type="submit" name="{{ POST_ITEM_ID }}" value="{{ items['item_id'] }}">URL追加</button>
+</form>
+</p>
+<p>
+<form action="{{ url_for('read_users_items_update_item_name') }}" method="post">
+    <button type="submit" name="{{ POST_ITEM_ID }}" value="{{ items['item_id'] }}">商品名変更</button>
+</form>
+</p>
+{% if urllist %}
+<p>
+<form action="{{ url_for('read_users_items_inact_url_all') }}" method="post">
+    <button type="submit" name="{{ POST_ITEM_ID }}" value="{{ items['item_id'] }}">URL一括無効化</button>
+</form>
+</p>
+{% endif %}
+<p>
+<form action="{{ url_for('read_users_items_remove') }}" method="post">
+    <input type="hidden" name="{{ POST_ITEM_ID }}" value="{{ items['item_id'] }}">
+    <button type="submit">このアイテムを削除</button>
+</form>
+</p>
+<p><a href="{{ url_for('read_users') }}#item{{ items['item_id'] }}" class="plain-link">アイテム一覧へ戻る</a></p>
+<p><input type="button" onclick="window.close();" value="このタブを閉じる"></p>
+<h2>登録URL一覧</h2>
+{%- if urllist %}
+<p>
+<form action="{{ url_for('read_users_items_update') }}" method="post">
+    <button type="submit" name="{{ POST_ITEM_ID }}" value="{{ items['item_id'] }}">一括情報取得</button>
+</form>
+</p>
+{% endif %}
+<table class="url_table">
+    <tr>
+        <th>url_id</th>
+        <th>URL</th>
+        <th>活性状態</th>
+    </tr>
     {% if urllist %}
-        {% for row in urllist %}
-            <tr>
-            <td>{{ row['url_id']}}</td>
-            <td>
-                {%- with url = row['urlpath'] %}
-                {%- include "shared/url_link.html" %}
-                {%- endwith %}
-            </td>
-            <td>{{ row['active'] }}</td>
-            <td class="noborder">
+    {% for row in urllist %}
+    <tr>
+        <td>{{ row['url_id']}}</td>
+        <td>
+            {%- with url = row['urlpath'] %}
+            {%- include "shared/url_link.html" %}
+            {%- endwith %}
+        </td>
+        <td>{{ row['active'] }}</td>
+        <td class="noborder">
             {% if row['active'] == ACTIVE_VALUE %}
             <form action="{{ url_for('read_users_url_update') }}" method="post">
                 <input type="hidden" name="{{ POST_ITEM_ID }}" value="{{ items['item_id'] }}">
@@ -116,9 +133,9 @@
             </form>
             {% else %}
             <button type="submit" disabled>情報取得</button>
-            {% endif %}            
-            </td>
-            <td class="noborder">
+            {% endif %}
+        </td>
+        <td class="noborder">
             {% if row['active'] == ACTIVE_VALUE %}
             <form action="{{ url_for('read_users_items_inact_url') }}" method="post">
                 <input type="hidden" name="{{ POST_ITEM_ID }}" value="{{ items['item_id'] }}">
@@ -130,61 +147,61 @@
                 <button type="submit" name="{{ POST_URL_ID }}" value="{{ row['url_id'] }}">URL有効化</button>
             </form>
             {% endif %}
-            </td>
-            <td class="noborder">
+        </td>
+        <td class="noborder">
             <form action="{{ url_for('read_users_items_url_remove') }}" method="post">
                 <input type="hidden" name="{{ POST_ITEM_ID }}" value="{{ items['item_id'] }}">
                 <button type="submit" name="{{ POST_URL_ID }}" value="{{ row['url_id'] }}">URL除外</button>
             </form>
-            </td>
-            </tr>
-        {% endfor %}
+        </td>
+    </tr>
+    {% endfor %}
     {% endif %}
-    </table>
-    {%- if purchase_urllist %}
-        <h2>買取URL一覧</h2>
-        <table class="url_table">
-            <tr>
-                <th>買取URL</th>
-                <th>url_id</th>
-                <th>URL</th>
-                <th>活性状態</th>
-            </tr>
-            {%- for purl in purchase_urllist %}
-            <tr>
-                {% set itemurls = purl.itemurls %}
-                <td rowspan="{{ purl.itemurls_num }}">
-                    {%- with url = purl.purchase_url %}
-                    {%- include "shared/url_link.html" %}
-                    {%- endwith %}
-                </td>
-                {% set itemurl = itemurls[0] %}
-                <td>{{ itemurl.url_id }}</td>
-                <td>
-                    {%- with url = itemurl.item_url %}
-                    {%- include "shared/url_link.html" %}
-                    {%- endwith %}
-                </td>
-                <td>{{ itemurl.act_status }}</td>
-            </tr>
-            {%- for itemurl in itemurls[1:] %}
-            <tr>
-                <td>{{ itemurl.url_id }}</td>
-                <td>
-                    {%- with url = itemurl.item_url %}
-                    {%- include "shared/url_link.html" %}
-                    {%- endwith %}
-                </td>
-                <td>{{ itemurl.act_status }}</td>
-            </tr>
-            {%- endfor %}
-            {%- endfor %}
-        </table>
-    {%- endif %}
-    <h2 id="log_list">取得データ一覧</h2>
-    <h3>フィルタ</h3>
-    <div class="flex_box">
-        <div class="detail_log_filter">
+</table>
+{%- if purchase_urllist %}
+<h2>買取URL一覧</h2>
+<table class="url_table">
+    <tr>
+        <th>買取URL</th>
+        <th>url_id</th>
+        <th>URL</th>
+        <th>活性状態</th>
+    </tr>
+    {%- for purl in purchase_urllist %}
+    <tr>
+        {% set itemurls = purl.itemurls %}
+        <td rowspan="{{ purl.itemurls_num }}">
+            {%- with url = purl.purchase_url %}
+            {%- include "shared/url_link.html" %}
+            {%- endwith %}
+        </td>
+        {% set itemurl = itemurls[0] %}
+        <td>{{ itemurl.url_id }}</td>
+        <td>
+            {%- with url = itemurl.item_url %}
+            {%- include "shared/url_link.html" %}
+            {%- endwith %}
+        </td>
+        <td>{{ itemurl.act_status }}</td>
+    </tr>
+    {%- for itemurl in itemurls[1:] %}
+    <tr>
+        <td>{{ itemurl.url_id }}</td>
+        <td>
+            {%- with url = itemurl.item_url %}
+            {%- include "shared/url_link.html" %}
+            {%- endwith %}
+        </td>
+        <td>{{ itemurl.act_status }}</td>
+    </tr>
+    {%- endfor %}
+    {%- endfor %}
+</table>
+{%- endif %}
+<h2 id="log_list">取得データ一覧</h2>
+<h3>フィルタ</h3>
+<div class="flex_box">
+    <div class="detail_log_filter">
         <form method="get" action="#log_list">
             表示する期間 : <select name="{{ TIME_PERIOD_Q_NAME }}" onchange="submit(this.form)">
                 {%- for tp in timePeriodList %}
@@ -194,46 +211,43 @@
                 {%- endfor %}
             </select>
             {% for k, v in fquery.items() %}
-                {% if k != TIME_PERIOD_Q_NAME and v != "" %}
-                <input type="hidden" name="{{ k }}" value="{{ v }}">
-                {% endif %}
+            {% if k != TIME_PERIOD_Q_NAME and v != "" %}
+            <input type="hidden" name="{{ k }}" value="{{ v }}">
+            {% endif %}
             {% endfor %}
         </form>
-        </div>
-        <div class="detail_log_filter">
+    </div>
+    <div class="detail_log_filter">
         {%- with EQST_NAME = EQST_NAME, storelist = storelist, fquery = fquery, form_action = "#log_list" %}
         {%- include "users/item_store_filter.html" %}
         {%- endwith %}
-        </div>
-        <div class="detail_log_filter">
-            <form method="get" action="#log_list">
-                表示を圧縮<input type="checkbox"
-                                onchange="submit(this.form)"
-                                name="{{ COMPRESS_NAME }}"
-                                value="{{ COMPRESS_VALUE }}"
-                                {{ COMPRESS_CHECKED }} />
-                {% for k, v in fquery.items() %}
-                    {% if k != COMPRESS_NAME and v != "" %}
-                    <input type="hidden" name="{{ k }}" value="{{ v}}">
-                    {% endif %}
-                {% endfor %}
-            </form>
-        </div>
     </div>
-    <p>
-        <form action="#log_list" method="get">
-            <input type="hidden" name="{{ ITEMID_Q_NAME }}" value="{{ items['item_id'] }}">
-            <button type="submit">検索条件クリア</button>
+    <div class="detail_log_filter">
+        <form method="get" action="#log_list">
+            表示を圧縮<input type="checkbox" onchange="submit(this.form)" name="{{ COMPRESS_NAME }}"
+                value="{{ COMPRESS_VALUE }}" {{ COMPRESS_CHECKED }} />
+            {% for k, v in fquery.items() %}
+            {% if k != COMPRESS_NAME and v != "" %}
+            <input type="hidden" name="{{ k }}" value="{{ v}}">
+            {% endif %}
+            {% endfor %}
         </form>
-    </p>
-    <p>
-        <input type="button" value="一番下" onclick="gotoBottom()">
-    </p>
-    <p>
+    </div>
+</div>
+<p>
+<form action="#log_list" method="get">
+    <input type="hidden" name="{{ ITEMID_Q_NAME }}" value="{{ items['item_id'] }}">
+    <button type="submit">検索条件クリア</button>
+</form>
+</p>
+<p>
+    <input type="button" value="一番下" onclick="gotoBottom()">
+</p>
+<p>
     件数 {{ loglist_length }}件
-    </p>
-    <table class="recent_table">
-        <tr>
+</p>
+<table class="recent_table">
+    <tr>
         <th>item_id</th>
         <th>商品名</th>
         <th>url_id</th>
@@ -246,30 +260,30 @@
         <th>取得成否</th>
         <th>変動率</th>
         <th>活性状態</th>
-        </tr>
-        {% if loglist %}
-            {% for row in loglist %}
-                <tr>
-                <td>{{ row['item_id'] }}</td>
-                <td>{{ row['uniqname'] }}</td>
-                <td>{{ row['url_id'] }}</td>
-                <td>{{ row['urlpath'] }}</td>
-                <td>{{ row['created_at'] }}</td>
-                <td>{{ row['usedprice'] }}</td>
-                <td>{{ row['newprice'] }}</td>
-                <td>{{ row['salename'] }}</td>
-                <td>{{ row['storename'] }}</td>
-                <td>{{ row['issuccess'] }}</td>
-                <td>{{ row['trendrate'] }}</td>
-                <td>{{ row['active'] }}</td>
-                </tr>                    
-            {% endfor %}
-        {% endif %}
-    </table>
-    <p>
-        <input type="button" value="フィルターへ" onclick="gotoLogListTop()">
-    </p>
-    <p>
-        <input type="button" value="一番上" onclick="gotoTop()">
-    </p>
+    </tr>
+    {% if loglist %}
+    {% for row in loglist %}
+    <tr>
+        <td>{{ row['item_id'] }}</td>
+        <td>{{ row['uniqname'] }}</td>
+        <td>{{ row['url_id'] }}</td>
+        <td>{{ row['urlpath'] }}</td>
+        <td>{{ row['created_at'] }}</td>
+        <td>{{ row['usedprice'] }}</td>
+        <td>{{ row['newprice'] }}</td>
+        <td>{{ row['salename'] }}</td>
+        <td>{{ row['storename'] }}</td>
+        <td>{{ row['issuccess'] }}</td>
+        <td>{{ row['trendrate'] }}</td>
+        <td>{{ row['active'] }}</td>
+    </tr>
+    {% endfor %}
+    {% endif %}
+</table>
+<p>
+    <input type="button" value="フィルターへ" onclick="gotoLogListTop()">
+</p>
+<p>
+    <input type="button" value="一番上" onclick="gotoTop()">
+</p>
 {% endblock %}

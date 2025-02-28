@@ -204,6 +204,7 @@ class ItemDetailContext(BaseTemplateValue):
     COMPRESS_NAME: str = filter_name.FilterQueryName.PRESS.value
     COMPRESS_VALUE: int = filter_name.FilterOnOff.ON
     COMPRESS_CHECKED: str = ""
+    item_created_at: datetime | None = None
 
     def __init__(self, db: Session, idq: ppi.ItemDetailQuery):
         fq = idq.get_filter_dict()
@@ -226,6 +227,10 @@ class ItemDetailContext(BaseTemplateValue):
         self.items = NewestQuery.get_newest_data_by_item_id(db, item_id=itemid)
         if not self.items:
             return
+
+        item = ItemQuery.get_item(db=db, item_id=itemid)
+        self.item_created_at = cm_util.utcTolocaltime(item.created_at)
+
         day = self.get_days_of_timeperiod(tpid=periodid)
         self.loglist = ItemQuery.get_item_pricelog_by_item_id_1year(
             db,
