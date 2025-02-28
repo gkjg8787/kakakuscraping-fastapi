@@ -1,5 +1,3 @@
-from typing import List, Dict, Optional
-
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -34,13 +32,13 @@ from template_value.storepostage import (
 
 
 class ItemSelectionContext(BaseTemplateValue):
-    res: List
+    res: list
     res_length: int = 0
-    actstslist: List
-    itemSortList: List
-    groups: List
-    storelist: List
-    fquery: Dict
+    actstslist: list
+    itemSortList: list
+    groups: list
+    storelist: list
+    fquery: dict
     ZAIKO_CHECKED: str = ""
     GROUPID_NAME: str = filter_name.FilterQueryName.GID.value
     ITEMACT_NAME: str = filter_name.FilterQueryName.ACT.value
@@ -52,8 +50,8 @@ class ItemSelectionContext(BaseTemplateValue):
     STOCK_VALUE: int = filter_name.FilterOnOff.ON
     MIN_PRICE_RANGE_NAME: str = filter_name.FilterQueryName.PRMIN.value
     MAX_PRICE_RANGE_NAME: str = filter_name.FilterQueryName.PRMAX.value
-    MIN_PRICE_RANGE: Optional[int] = None
-    MAX_PRICE_RANGE: Optional[int] = None
+    MIN_PRICE_RANGE: int | None = None
+    MAX_PRICE_RANGE: int | None = None
     ITEM_SELECT_COOKIE: str = cookie_name.ItemComb.pre_select_ids.name
 
     def __init__(self, nfq: ppi.NewestFilterQuery, db: Session):
@@ -140,8 +138,8 @@ class ShippingConditionContext(BaseTemplateValue):
                 results[StorePostageResultName.RESULT]
             )
 
-    def convert_to_store_list(self, res_list: List[Dict]) -> List[StoreShippingTerms]:
-        results: Dict[str, StoreShippingTerms] = {}
+    def convert_to_store_list(self, res_list: list[dict]) -> list[StoreShippingTerms]:
+        results: dict[str, StoreShippingTerms] = {}
         for res in res_list:
             t = Terms(
                 terms_index=res["terms_id"],
@@ -180,7 +178,7 @@ class ResultStore(BaseModel):
     sum_pos_out: int
     postage: int
     sum_pos_in: int
-    items: List[ResultStoreItem] = []
+    items: list[ResultStoreItem] = []
 
 
 class ItemCombCalcResultContext(BaseTemplateValue):
@@ -188,8 +186,8 @@ class ItemCombCalcResultContext(BaseTemplateValue):
     itemnames: str = ""
     sum_pos_in: str = ""
     sum_postage: str = ""
-    item_list: List[ResultItem] = []
-    store_list: List = []
+    item_list: list[ResultItem] = []
+    store_list: list = []
     proc_time: str = "0"
 
     def __init__(self, icrf: ppc.ItemCombinationResultForm, db: Session):
@@ -222,7 +220,7 @@ class ItemCombCalcResultContext(BaseTemplateValue):
         self._set_item_names_count(storeres)
 
     def _create_store_list(self, storeres):
-        results: List[ResultStore] = []
+        results: list[ResultStore] = []
         for storename, val in storeres.items():
             rs = ResultStore(
                 name=str(storename),
@@ -242,7 +240,7 @@ class ItemCombCalcResultContext(BaseTemplateValue):
 
     def _create_item_list(self, storeres):
         item_num = 0
-        results: List[ResultItem] = []
+        results: list[ResultItem] = []
         for storename in storeres:
             for item in storeres[storename]["items"]:
                 results.append(
@@ -266,8 +264,8 @@ class ItemCombCalcResultContext(BaseTemplateValue):
 
     @staticmethod
     def update_shippingterms_data(db: Session, icrf: ppc.ItemCombinationResultForm):
-        store_id_list: List[int] = []
-        storepostage_list: List[mstore.StorePostage] = []
+        store_id_list: list[int] = []
+        storepostage_list: list[mstore.StorePostage] = []
         for store in icrf.store_list:
             store_id_list.append(store.store_id)
             sps = store.toStorePostages()
@@ -295,8 +293,8 @@ class SearchShippingContext(BaseTemplateValue):
     PREF_NAME: str = filter_name.FilterQueryName.PREF.value
     SEARCH_WORD_NAME: str = filter_name.FilterQueryName.WORD.value
     sword: str = ""
-    pref_list: List[str] = []
-    search_result: List = []
+    pref_list: list[str] = []
+    search_result: list = []
     errmsg: str = ""
 
     def __init__(self, ssq: ppc.SearchShippingQuery, db: Session):
@@ -320,7 +318,7 @@ class SearchShippingContext(BaseTemplateValue):
             return
 
     def create_pref_list(self, raw_pref_list, query_pref: str):
-        results: List[DestinationPrefecture] = []
+        results: list[DestinationPrefecture] = []
         for pref in raw_pref_list:
             dp = DestinationPrefecture(name=pref)
             if pref == query_pref:

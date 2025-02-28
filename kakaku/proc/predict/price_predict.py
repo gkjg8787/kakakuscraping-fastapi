@@ -1,6 +1,5 @@
 import datetime
 import dataclasses
-from typing import Type
 from abc import ABC, abstractmethod
 
 import pandas as pd
@@ -276,15 +275,15 @@ class MinPricePredict:
         "stores_num",
     ]
     y_column_name = "y"
-    ml_model_class: Type[MachineLearnModel]
-    fvcreator_factory_class: Type[FeatureValueCreatorFactory]
-    ml_model_command_factory_class: Type[CommandFactory]
+    ml_model_class: type[MachineLearnModel]
+    fvcreator_factory_class: type[FeatureValueCreatorFactory]
+    ml_model_command_factory_class: type[CommandFactory]
 
     def __init__(
         self,
-        ml_model_class: Type[MachineLearnModel] | None = None,
-        fvcreator_factory_class: Type[FeatureValueCreatorFactory] | None = None,
-        ml_model_command_factory_class: Type[FeatureValueCreatorFactory] | None = None,
+        ml_model_class: type[MachineLearnModel] | None = None,
+        fvcreator_factory_class: type[FeatureValueCreatorFactory] | None = None,
+        ml_model_command_factory_class: type[FeatureValueCreatorFactory] | None = None,
     ):
         if ml_model_class:
             self.ml_model_class = ml_model_class

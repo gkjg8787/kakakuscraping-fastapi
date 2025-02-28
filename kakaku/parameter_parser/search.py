@@ -1,5 +1,3 @@
-from typing import List, Optional
-
 from fastapi import Query, Form
 
 from common.filter_name import (
@@ -14,7 +12,7 @@ from parameter_parser.util import is_valid_id, is_suppoer_url
 class SearchFilterQuery:
     word: str = ""
     page: int = FilterDefault.PAGE
-    stores: List[int] = FilterDefault.STORES_SEARCH
+    stores: list[int] = FilterDefault.STORES_SEARCH
     category: int = FilterDefault.CATEGORY
     safes: int = FilterDefault.SAFE_SEARCH
     zaiko: int = FilterDefault.ZAIKO
@@ -24,13 +22,13 @@ class SearchFilterQuery:
 
     def __init__(
         self,
-        word: Optional[str] = None,
-        page: Optional[str] = None,
-        store: List[str] = Query(None),
-        category: Optional[str] = None,
-        safes: Optional[str] = None,
-        zaiko: Optional[str] = None,
-        listview: Optional[str] = None,
+        word: str | None = None,
+        page: str | None = None,
+        store: list[str] = Query(None),
+        category: str | None = None,
+        safes: str | None = None,
+        zaiko: str | None = None,
+        listview: str | None = None,
     ):
         self.setting_list = []
         if word and len(word) > 0:
@@ -40,7 +38,7 @@ class SearchFilterQuery:
             self.page = page
             self.setting_list.append(FilterQueryName.PAGE)
         if store:
-            results: List[int] = []
+            results: list[int] = []
             for s in store:
                 if is_valid_positive_int(s):
                     results.append(int(s))
@@ -104,10 +102,10 @@ class SearchToAddForm:
 
     def __init__(
         self,
-        item_id: Optional[str] = Form(None),
-        item_name: Optional[str] = Form(None),
-        url_path: Optional[str] = Form(None),
-        search_query: Optional[str] = Form(None),
+        item_id: str | None = Form(None),
+        item_name: str | None = Form(None),
+        url_path: str | None = Form(None),
+        search_query: str | None = Form(None),
     ):
         if is_valid_id(item_id):
             self.item_id = int(item_id)

@@ -1,5 +1,4 @@
 import re
-from typing import List, Dict
 
 from pydantic import BaseModel
 
@@ -65,10 +64,10 @@ class ItemCombTerms(BaseModel):
 class ItemCombStore(BaseModel):
     store_id: int
     storename: str
-    terms_list: List[ItemCombTerms]
+    terms_list: list[ItemCombTerms]
 
-    def toStorePostages(self) -> List[mstore.StorePostage]:
-        results: List[mstore.StorePostage] = []
+    def toStorePostages(self) -> list[mstore.StorePostage]:
+        results: list[mstore.StorePostage] = []
         for t in self.terms_list:
             if not t.is_valid_terms():
                 continue
@@ -85,7 +84,7 @@ class ItemCombStore(BaseModel):
 class FormDataConvert:
     @classmethod
     def parse_stores(cls, stores: list[str]):
-        results: Dict[int, ItemCombStore] = {}
+        results: dict[int, ItemCombStore] = {}
         brakets_ptn = r"\[(.*?)\]"
         bcomp = re.compile(brakets_ptn)
         for store in stores:

@@ -1,4 +1,4 @@
-from typing import List, Dict, Union
+from typing import Union
 import json
 from enum import Enum, auto
 from pathlib import Path
@@ -143,8 +143,8 @@ class SearchOptionSettings:
 
 class SearchExternalSiteContext(BaseTemplateValue):
     sword: str = ""
-    stores: List = []
-    categorylist: List = []
+    stores: list = []
+    categorylist: list = []
     search_results: Union[SearchResult, None] = None
     safes_off_checked: str = ""
     safes_display: bool = True
@@ -251,7 +251,7 @@ class SearchExternalSiteContext(BaseTemplateValue):
                 self.listview_checked = templates_string.HTMLOption.CHECKED.value
 
     def get_category_list(
-        self, optjson: Dict, fq: Dict, soss: SearchOptionSettings, isdef: bool
+        self, optjson: dict, fq: dict, soss: SearchOptionSettings, isdef: bool
     ):
         category = optjson["category"]["default"]
         selected_id: int | None = None
@@ -270,7 +270,7 @@ class SearchExternalSiteContext(BaseTemplateValue):
         return results
 
     def get_category_selected_of_setting(
-        self, category: Dict, soss: SearchOptionSettings
+        self, category: dict, soss: SearchOptionSettings
     ):
         opt: SearchOptionSetting | None = soss.get_option(
             filter_name.FilterQueryName.CATEGORY
@@ -283,7 +283,7 @@ class SearchExternalSiteContext(BaseTemplateValue):
         return None
 
     def get_store_list(
-        self, optjson: Dict, fq: Dict, soss: SearchOptionSettings, isdef: bool
+        self, optjson: dict, fq: dict, soss: SearchOptionSettings, isdef: bool
     ):
         stores = optjson["store"]
         selected_id_list: list[int] | None = None
@@ -352,7 +352,7 @@ class SearchToAddContext(BaseTemplateValue):
     add_url_path: str = ""
     add_item_id: int = const_value.NONE_ID
     errmsg: str = ""
-    itemlist: List = []
+    itemlist: list = []
     search_query: str = ""
     POST_ITEM_ID: str = filter_name.TemplatePostName.ITEM_ID.value
     POST_ITEM_NAME: str = filter_name.TemplatePostName.ITEM_NAME.value
@@ -383,7 +383,7 @@ class SearchToAddContext(BaseTemplateValue):
 
     def get_item_list(self, db: Session, add_item_id: int):
         newest_list = NewestQuery.get_newest_data(db, filter=dict())
-        results: List[AddSelectItem] = []
+        results: list[AddSelectItem] = []
         if len(newest_list) == 0:
             return results
         for item in newest_list:

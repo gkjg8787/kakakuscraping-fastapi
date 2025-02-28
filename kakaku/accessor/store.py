@@ -1,4 +1,3 @@
-from typing import List
 from sqlalchemy.orm import Session
 
 from model.item import (
@@ -46,8 +45,8 @@ class StoreQuery:
         return store.store_id
 
     @classmethod
-    def add_storename_list(cls, db: Session, storename_list: List[str]):
-        add_list: List[Store] = []
+    def add_storename_list(cls, db: Session, storename_list: list[str]):
+        add_list: list[Store] = []
         for storename in storename_list:
             add_list.append(Store(storename=storename))
         db.add_all(add_list)
@@ -74,7 +73,7 @@ class StoreQuery:
 
     @classmethod
     def get_storename_for_calcitemcomb_by_item_id_list(
-        cls, db: Session, item_id_list: List[int]
+        cls, db: Session, item_id_list: list[int]
     ):
         stmt = (
             select(PriceLog.storename)
@@ -92,7 +91,7 @@ class StoreQuery:
         return db.execute(stmt).all()
 
     @classmethod
-    def insert_storepostage_list(cls, db: Session, storepostage_list: List):
+    def insert_storepostage_list(cls, db: Session, storepostage_list: list):
         db.add_all(storepostage_list)
         db.commit()
         for storepos in storepostage_list:
@@ -100,7 +99,7 @@ class StoreQuery:
 
     @classmethod
     def delete_storepostage_by_store_id_list(
-        cls, db: Session, store_id_list: List[int]
+        cls, db: Session, store_id_list: list[int]
     ) -> None:
         stmt = delete(StorePostage).where(StorePostage.store_id.in_(store_id_list))
         db.execute(stmt)
@@ -144,7 +143,7 @@ class StoreQuery:
         return False
 
     @classmethod
-    def get_unregistered_stores(cls, db: Session, stores: List[Store]) -> List[Store]:
+    def get_unregistered_stores(cls, db: Session, stores: list[Store]) -> list[Store]:
         names = [s.storename for s in stores]
         stmt = select(Store).where(Store.storename.in_(names))
         exist_stores = db.scalars(stmt).all()
@@ -154,7 +153,7 @@ class StoreQuery:
         return not_exist_stores
 
     @classmethod
-    def regist_stores(cls, db: Session, storename_list: List[str]):
+    def regist_stores(cls, db: Session, storename_list: list[str]):
         stores = []
         for sname in storename_list:
             stores.append(Store(storename=sname))

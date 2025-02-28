@@ -1,4 +1,3 @@
-from typing import List, Dict
 import argparse
 import json
 import datetime
@@ -35,16 +34,16 @@ class StorePostageResultName:
 
 
 def jsonToStoreModel(jsondict):
-    res: List[Dict[str, Store]] = []
+    res: list[dict[str, Store]] = []
     for store in jsondict[StoreDictKey.STORES]:
-        storeres: Dict[str, Store] = {}
+        storeres: dict[str, Store] = {}
         st = Store(
             storename=store[StoreDictKey.STORENAME],
             store_id=store[StoreDictKey.STORE_ID],
         )
         storeres[StoreDictKey.STORE] = st
 
-        res_pos: List[StorePostage] = []
+        res_pos: list[StorePostage] = []
         for pos in store[StoreDictKey.STOREPOSTAGE]:
             sp = StorePostage(
                 store_id=pos[StoreDictKey.STORE_ID],
@@ -59,7 +58,7 @@ def jsonToStoreModel(jsondict):
     return res
 
 
-def updateShippingTerms(db: Session, shippingterms: Dict):
+def updateShippingTerms(db: Session, shippingterms: dict):
     storeinfo = jsonToStoreModel(shippingterms)
     storeidlist = [sp[StoreDictKey.STORE].store_id for sp in storeinfo]
     StoreQuery.delete_storepostage_by_store_id_list(db, store_id_list=storeidlist)
@@ -68,7 +67,7 @@ def updateShippingTerms(db: Session, shippingterms: Dict):
 
 
 def update_shippingterms(
-    db: Session, store_id_list: List[int], storepostage_list: List
+    db: Session, store_id_list: list[int], storepostage_list: list
 ):
     StoreQuery.delete_storepostage_by_store_id_list(db, store_id_list=store_id_list)
     StoreQuery.insert_storepostage_list(db, storepostage_list=storepostage_list)

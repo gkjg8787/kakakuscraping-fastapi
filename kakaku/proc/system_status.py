@@ -1,5 +1,3 @@
-from typing import List
-
 from sqlalchemy.orm import Session
 from proc.proc_status import ProcStatusAccess
 
@@ -92,7 +90,7 @@ class SystemStatusAccess:
         return cur_sts
 
     @staticmethod
-    def isProcDefunct(pids: List, psret: List):
+    def isProcDefunct(pids: list, psret: list):
         for proc in psret:
             if int(proc["PID"]) in pids:
                 for stat in proc["STAT"]:

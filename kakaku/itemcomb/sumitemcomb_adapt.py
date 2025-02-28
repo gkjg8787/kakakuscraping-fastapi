@@ -1,6 +1,5 @@
 import os
 import json
-from typing import List
 from pathlib import Path
 import subprocess
 import time
@@ -39,11 +38,11 @@ def getPostageInDict(d):
     return d[POSTAGE]
 
 
-def createStoreConf(db: Session, itemidlist: List[int]):
+def createStoreConf(db: Session, itemidlist: list[int]):
     res = ItemQuery.get_current_storename_list_by_item_id(db, item_id_list=itemidlist)
     if res is None or len(res) == 0:
         return {}
-    storenames: List[str] = [t for r in res for t in r]
+    storenames: list[str] = [t for r in res for t in r]
     sp = StoreQuery.get_storepostage_by_storename(db, storenames=storenames)
     dicl = [dict(row._mapping.items()) for row in sp]
     storeconf = {}
@@ -162,7 +161,7 @@ def start_searchcomb(storeconf: dict, itemlist: list[dict], exec_type: str):
         return start_searchcomb_subprocess(storeconf, itemlist)
 
 
-def startCalcSumitemComb(db: Session, itemidlist: List[int]):
+def startCalcSumitemComb(db: Session, itemidlist: list[int]):
     res = ItemQuery.get_latest_price_by_item_id_list(db, item_id_list=itemidlist)
     itemlist = [dict(row._mapping.items()) for row in res]
     storeconf = createStoreConf(db, itemidlist=itemidlist)

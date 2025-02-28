@@ -1,4 +1,3 @@
-from typing import List
 import re
 
 from common import (
@@ -37,7 +36,7 @@ class Terms:
     terms_index: int
     boundary1: str = ""
     boundary2: str = ""
-    ope: List[SelecteTermsOperator]
+    ope: list[SelecteTermsOperator]
     postage: str = ""
     created_at: str = ""
 
@@ -96,7 +95,7 @@ class Terms:
 class StoreShippingTerms:
     store_id: int | str
     storename: str
-    terms_list: List[Terms]
+    terms_list: list[Terms]
 
     def __init__(self, store_id, storename):
         self.store_id = self.__get_int_or_blank(store_id)

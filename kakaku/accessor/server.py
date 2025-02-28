@@ -1,4 +1,3 @@
-from typing import List, Optional
 from datetime import datetime, timezone
 
 from model.server import (
@@ -23,24 +22,24 @@ from accessor.util import (
 
 class ProcStatusQuery:
     @staticmethod
-    def getProcStatuses(db: Session, names: List) -> List:
+    def getProcStatuses(db: Session, names: list) -> list:
         stmt = select(ProcStatus).where(ProcStatus.name.in_(names))
         return db.execute(stmt).all()
 
     @staticmethod
-    def getAllProcStatuses(db: Session) -> List:
+    def getAllProcStatuses(db: Session) -> list:
         stmt = select(ProcStatus)
         return db.scalars(stmt).all()
 
     @staticmethod
-    def addProcStatus(db: Session, procstses: List[ProcStatus]) -> None:
+    def addProcStatus(db: Session, procstses: list[ProcStatus]) -> None:
         db.add_all(procstses)
         db.commit()
         for proc in procstses:
             db.refresh(proc)
 
     @staticmethod
-    def deleteProcStatuses(db: Session, names: List) -> None:
+    def deleteProcStatuses(db: Session, names: list) -> None:
         stmt = delete(ProcStatus).where(ProcStatus.name.in_(names))
         db.execute(stmt)
         db.commit()
@@ -162,7 +161,7 @@ class SystemStatusLogQuery:
         return db.scalar(stmt)
 
     @classmethod
-    def get_all(cls, db: Session) -> Optional[SystemStatusLog]:
+    def get_all(cls, db: Session) -> SystemStatusLog | None:
         stmt = select(SystemStatusLog).order_by(
             SystemStatusLog.created_at.desc(), SystemStatusLog.log_id.desc()
         )

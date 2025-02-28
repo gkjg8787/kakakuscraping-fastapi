@@ -1,7 +1,6 @@
 import os
 import datetime
 from enum import Enum, auto
-from typing import Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
@@ -71,7 +70,7 @@ def get_oldprice(
     return const_value.INIT_PRICE
 
 
-def convert_newestitem(pddict) -> Dict:
+def convert_newestitem(pddict) -> dict:
     ret = {
         "url_id": pddict["url_id"],
         "created_at": pddict["created_at"],
@@ -85,7 +84,7 @@ def convert_newestitem(pddict) -> Dict:
     return ret
 
 
-def convert_pricelog(pddict) -> Dict:
+def convert_pricelog(pddict) -> dict:
     ret = pddict.copy()
     del ret["oldprice"]
     return ret
@@ -102,7 +101,7 @@ def update_itemsname(db: Session, url_id: int, uniqname: str):
     ItemQuery.update_items_name_by_url_id(db, url_id=url_id, uniqname=uniqname)
 
 
-def update_stores(db: Session, storename_list: List[str]):
+def update_stores(db: Session, storename_list: list[str]):
     add_storename_list = get_add_storename(db, storename_list=storename_list)
     store.StoreQuery.add_storename_list(db, storename_list=add_storename_list)
 
@@ -111,7 +110,7 @@ def combine_duplicates_item(parseitems: htmlparse.ParseItems):
     items = parseitems.getItems()
     if len(items) == 1:
         return items
-    dup_dict: Dict[str, htmlparse.ParseItemInfo] = {}
+    dup_dict: dict[str, htmlparse.ParseItemInfo] = {}
     for item in items:
         if item.storename not in dup_dict:
             dup_dict[item.storename] = item
@@ -174,7 +173,7 @@ def update_itemsprices(
     update_stores(db, storename_list=storename_list)
 
 
-def min_pricedatadict(p1: Optional[Dict], p2: Dict):
+def min_pricedatadict(p1: dict | None, p2: dict):
     if p1 is None:
         return p2
     else:
@@ -188,7 +187,7 @@ def min_pricedatadict(p1: Optional[Dict], p2: Dict):
     return p1
 
 
-def get_add_storename(db: Session, storename_list: List[str]):
+def get_add_storename(db: Session, storename_list: list[str]):
     add_list = []
     db_storename_list = [s.storename for s in store.StoreQuery.get_all(db)]
     for storename in storename_list:
@@ -198,7 +197,7 @@ def get_add_storename(db: Session, storename_list: List[str]):
 
 
 # @stop_watch
-def upsert_pricelog(db: Session, pldict: Dict, newest_pricelog):
+def upsert_pricelog(db: Session, pldict: dict, newest_pricelog):
     if newest_pricelog and isLocalToday(utcTolocaltime(newest_pricelog.created_at)):
         if __is_update_price(
             insert_new=pldict["newprice"],
@@ -246,7 +245,7 @@ def __is_update_price(insert_new: int, insert_used: int, db_new: int, db_used: i
     return False
 
 
-def get_newest_pricelog(pricelog_list: List, url_id: int, storename: str):
+def get_newest_pricelog(pricelog_list: list, url_id: int, storename: str):
     newest = None
     for pricelog in pricelog_list:
         if pricelog.url_id != url_id or pricelog.storename != storename:
@@ -261,7 +260,7 @@ def get_newest_pricelog(pricelog_list: List, url_id: int, storename: str):
 
 
 # @stop_watch
-def update_itemsprice(db: Session, pricedatadict: Dict, pricelog_list: List):
+def update_itemsprice(db: Session, pricedatadict: dict, pricelog_list: list):
     newest_pricelog = get_newest_pricelog(
         pricelog_list, pricedatadict["url_id"], pricedatadict["storename"]
     )

@@ -1,6 +1,6 @@
 import os
 import subprocess
-from typing import List, Union
+from typing import Union
 
 from sqlalchemy.orm import Session
 
@@ -61,7 +61,7 @@ class ProcStatusAccess:
                 self.pid = os.getpid()
 
     @staticmethod
-    def get_all(db: Session) -> List:
+    def get_all(db: Session) -> list:
         return psq.getAllProcStatuses(db)
 
     @staticmethod
@@ -69,7 +69,7 @@ class ProcStatusAccess:
         psq.deleteAllProcStatuses(db)
 
     @staticmethod
-    def getPsCommand() -> List:
+    def getPsCommand() -> list:
         head = subprocess.getoutput(ProcStatusAccess.PS_CMD_HEAD).split()
         retlines = subprocess.getoutput(ProcStatusAccess.PS_CMD_BODY).splitlines()
         ret = []

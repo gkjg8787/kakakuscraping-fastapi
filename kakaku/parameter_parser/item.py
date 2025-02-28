@@ -1,6 +1,4 @@
-from typing import Dict, List, Optional
 from urllib.parse import urlencode, parse_qs
-import dataclasses
 from datetime import datetime
 
 from fastapi import Form, Cookie
@@ -54,7 +52,7 @@ class NewestFilterQuery:
         zaiko: str = "",
         prmin: str = "",
         prmax: str = "",
-        cfilter_str: Optional[str] = Cookie(None),
+        cfilter_str: str | None = Cookie(None),
     ):
         if (
             not gid
@@ -126,7 +124,7 @@ class NewestFilterQuery:
                 return True
         return False
 
-    def get_filter_dict(self) -> Dict:
+    def get_filter_dict(self) -> dict:
         if self.cfilter_str:
             return self.queryToDict(self.cfilter_str)
         return self.get_qfilter_dict()
@@ -135,7 +133,7 @@ class NewestFilterQuery:
         return urlencode(self.get_filter_dict())
 
     @staticmethod
-    def queryToDict(filter: str) -> Dict:
+    def queryToDict(filter: str) -> dict:
         pqs = parse_qs(filter)
         results = {}
         for k, v in pqs.items():
@@ -145,7 +143,7 @@ class NewestFilterQuery:
                 results[k] = v
         return results
 
-    def get_qfilter_dict(self) -> Dict:
+    def get_qfilter_dict(self) -> dict:
         results = {}
         if self.gid:
             results[FilterQueryName.GID.value] = self.gid
@@ -269,7 +267,7 @@ class TemplatesItemSort(BaseModel):
     selected: str = ""
 
 
-def get_item_sort_list(f: Dict) -> List:
+def get_item_sort_list(f: dict) -> list:
     results = [
         TemplatesItemSort(name=i.qname, id=i.id, text=i.jname) for i in ItemSortName
     ]
@@ -304,7 +302,7 @@ class TemplatesActStatus(BaseModel):
     selected: str = ""
 
 
-def get_actstslist(f: Dict) -> List:
+def get_actstslist(f: dict) -> list:
     results = [TemplatesActStatus(id=a.id, text=a.text) for a in ActFilterName]
     if FilterQueryName.ACT.value not in f:
         return results
@@ -321,7 +319,7 @@ class TemplatesGroup(BaseModel):
     selected: str = ""
 
 
-def get_groups(db: Session, f: Dict) -> List:
+def get_groups(db: Session, f: dict) -> list:
     results = [
         TemplatesGroup(group_id=g.group_id, groupname=g.groupname)
         for g in GroupQuery.get_all(db)
@@ -343,9 +341,9 @@ class AddItemUrlForm:
 
     def __init__(
         self,
-        item_name: Optional[str] = Form(None),
-        url_path: Optional[str] = Form(None),
-        search_query: Optional[str] = Form(None),
+        item_name: str | None = Form(None),
+        url_path: str | None = Form(None),
+        search_query: str | None = Form(None),
     ):
         if item_name:
             self.item_name = item_name
@@ -377,9 +375,9 @@ class AddUrlForm:
 
     def __init__(
         self,
-        item_id: Optional[str] = Form(None),
-        url_path: Optional[str] = Form(None),
-        search_query: Optional[str] = Form(None),
+        item_id: str | None = Form(None),
+        url_path: str | None = Form(None),
+        search_query: str | None = Form(None),
     ):
         if url_path:
             self.url_path = url_path.strip()
@@ -413,7 +411,7 @@ class UpdateItemNameForm:
     errmsg: str = ""
 
     def __init__(
-        self, item_id: Optional[str] = Form(None), item_name: Optional[str] = Form(None)
+        self, item_id: str | None = Form(None), item_name: str | None = Form(None)
     ):
         if is_valid_id(item_id):
             self.item_id = int(item_id)
@@ -443,7 +441,7 @@ class ItemIdForm:
 
     def __init__(
         self,
-        item_id: Optional[str] = Form(None),
+        item_id: str | None = Form(None),
     ):
         if is_valid_id(item_id):
             self.item_id = int(item_id)
@@ -461,7 +459,7 @@ class ItemIdUrlIdForm:
     errmsg: str = ""
 
     def __init__(
-        self, item_id: Optional[str] = Form(None), url_id: Optional[str] = Form(None)
+        self, item_id: str | None = Form(None), url_id: str | None = Form(None)
     ):
         if is_valid_id(item_id):
             self.item_id = int(item_id)
@@ -497,8 +495,8 @@ class UpdateItemUrlForm:
 
     def __init__(
         self,
-        item_id: Optional[str] = Form(None),
-        url_path: Optional[str] = Form(None),
+        item_id: str | None = Form(None),
+        url_path: str | None = Form(None),
     ):
         if is_valid_id(item_id):
             self.item_id = int(item_id)
@@ -525,8 +523,8 @@ class UpdateItemAllUrlForm:
 
     def __init__(
         self,
-        item_id: Optional[str] = Form(None),
-        return_user: Optional[str] = Form(None),
+        item_id: str | None = Form(None),
+        return_user: str | None = Form(None),
     ):
         if is_valid_id(item_id):
             self.item_id = item_id
@@ -550,7 +548,7 @@ class AddGroupForm:
 
     def __init__(
         self,
-        group_name: Optional[str] = Form(None),
+        group_name: str | None = Form(None),
     ):
         if group_name:
             self.group_name = group_name
@@ -566,20 +564,20 @@ class NewestFilterQueryForGroup(NewestFilterQuery):
 
 
 class GroupItemUpdateForm:
-    group_item_list: List[int] = []
+    group_item_list: list[int] = []
     group_id: int = const_value.NONE_ID
 
     def __init__(
         self,
-        group_id: Optional[str] = Form(None),
+        group_id: str | None = Form(None),
     ):
         if is_valid_id(group_id):
             self.group_id = int(group_id)
 
-    def set_group_item_list(self, form_dict: Dict[str, List]):
+    def set_group_item_list(self, form_dict: dict[str, list]):
         if TemplatePostName.GROUP_ITEM_LIST.value not in form_dict:
             return
-        results: List[int] = []
+        results: list[int] = []
         for item_id in form_dict[TemplatePostName.GROUP_ITEM_LIST.value]:
             if is_valid_id(item_id):
                 results.append(int(item_id))
@@ -596,7 +594,7 @@ class GroupIdForm:
 
     def __init__(
         self,
-        group_id: Optional[str] = Form(None),
+        group_id: str | None = Form(None),
     ):
         if is_valid_id(group_id):
             self.group_id = int(group_id)
@@ -621,8 +619,8 @@ class RenameGroupNameForm:
 
     def __init__(
         self,
-        group_id: Optional[str] = Form(None),
-        group_name: Optional[str] = Form(None),
+        group_id: str | None = Form(None),
+        group_name: str | None = Form(None),
     ):
         if is_valid_id(group_id):
             self.group_id = int(group_id)
@@ -687,7 +685,7 @@ class ItemPurchaseFilterQuery:
         return results
 
 
-def get_item_purchase_sort_list(f: Dict) -> List:
+def get_item_purchase_sort_list(f: dict) -> list:
     results = [
         TemplatesItemSort(name=i.qname, id=i.id, text=i.jname)
         for i in ItemPurchaseSortName
@@ -849,7 +847,7 @@ class StoreListFilterQuery:
         return results
 
 
-def get_store_sort_list(f: Dict) -> List:
+def get_store_sort_list(f: dict) -> list:
     results = [
         TemplatesItemSort(name=i.qname, id=i.id, text=i.jname)
         for i in StoreListSortName
@@ -862,7 +860,7 @@ def get_store_sort_list(f: Dict) -> List:
     return results
 
 
-def get_store_terms_configured_list(f: Dict) -> List:
+def get_store_terms_configured_list(f: dict) -> list:
     results = [
         TemplatesItemSort(name=i.qname, id=i.id, text=i.jname)
         for i in StoreTermsConfiguredFilterName
@@ -877,7 +875,7 @@ def get_store_terms_configured_list(f: Dict) -> List:
 
 class EditShippingConditionForm:
     errmsg: str = ""
-    store_list: List[ItemCombStore] = []
+    store_list: list[ItemCombStore] = []
 
     def __init__(
         self,
@@ -895,7 +893,7 @@ class DeleteStoreForm:
 
     def __init__(
         self,
-        store_id: Optional[str] = Form(None),
+        store_id: str | None = Form(None),
     ):
         if is_valid_id(store_id):
             self.store_id = store_id

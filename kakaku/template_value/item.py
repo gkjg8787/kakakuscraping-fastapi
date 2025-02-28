@@ -1,4 +1,3 @@
-from typing import List, Dict, Optional, Type
 from datetime import datetime, timezone, timedelta
 import copy
 
@@ -70,13 +69,13 @@ def get_gid_in_groups(gid: int, groups: list):
 
 class NewestItemList(BaseTemplateValue):
     topscrollid: str
-    res: List
+    res: list
     res_length: int = 0
-    actstslist: List
-    itemSortList: List
-    groups: List
-    storelist: List
-    fquery: Dict
+    actstslist: list
+    itemSortList: list
+    groups: list
+    storelist: list
+    fquery: dict
     ZAIKO_CHECKED: str = ""
     GROUPID_NAME: str = filter_name.FilterQueryName.GID.value
     ITEMACT_NAME: str = filter_name.FilterQueryName.ACT.value
@@ -93,8 +92,8 @@ class NewestItemList(BaseTemplateValue):
     STOCK_VALUE: int = filter_name.FilterOnOff.ON
     MIN_PRICE_RANGE_NAME: str = filter_name.FilterQueryName.PRMIN.value
     MAX_PRICE_RANGE_NAME: str = filter_name.FilterQueryName.PRMAX.value
-    MIN_PRICE_RANGE: Optional[int] = None
-    MAX_PRICE_RANGE: Optional[int] = None
+    MIN_PRICE_RANGE: int | None = None
+    MAX_PRICE_RANGE: int | None = None
 
     def __init__(self, nfq: ppi.NewestFilterQuery, db: Session):
         fd = nfq.get_filter_dict()
@@ -156,7 +155,7 @@ class ItemUrl(BaseModel):
     item_url: str
     act_status: str
 
-    def update(self, itemurl: Type["ItemUrl"]):
+    def update(self, itemurl: type["ItemUrl"]):
         self.item_url = itemurl.item_url
         self.act_status = itemurl.act_status
 
@@ -761,7 +760,7 @@ class AddItemUrlPostContext(BaseTemplateValue):
     urlPath: str = ""
     addSuccess: bool = False
     errmsg: str = ""
-    search_query: Optional[str] = None
+    search_query: str | None = None
     POST_ITEM_NAME: str = filter_name.TemplatePostName.ITEM_NAME.value
     POST_URL_PATH: str = filter_name.TemplatePostName.URL_PATH.value
 
@@ -801,7 +800,7 @@ class AddUrlPostContext(BaseTemplateValue):
     item_id: int = const_value.NONE_ID
     urlPath: str = ""
     addSuccess: bool = False
-    search_query: Optional[str] = None
+    search_query: str | None = None
     errmsg: str = ""
     POST_ITEM_ID: str = filter_name.TemplatePostName.ITEM_ID.value
     POST_URL_PATH: str = filter_name.TemplatePostName.URL_PATH.value
@@ -1514,13 +1513,13 @@ class UrlListContext(BaseTemplateValue):
 
 
 class ExtractStoreItemListContext(BaseTemplateValue):
-    res: List
+    res: list
     res_length: int = 0
-    actstslist: List
-    esSortList: List
-    groups: List
-    storelist: List
-    fquery: Dict
+    actstslist: list
+    esSortList: list
+    groups: list
+    storelist: list
+    fquery: dict
     ZAIKO_CHECKED: str = ""
     GROUPID_NAME: str = filter_name.FilterQueryName.GID.value
     ITEMACT_NAME: str = filter_name.FilterQueryName.ACT.value
@@ -1537,8 +1536,8 @@ class ExtractStoreItemListContext(BaseTemplateValue):
     STOCK_VALUE: int = filter_name.FilterOnOff.ON
     MIN_PRICE_RANGE_NAME: str = filter_name.FilterQueryName.PRMIN.value
     MAX_PRICE_RANGE_NAME: str = filter_name.FilterQueryName.PRMAX.value
-    MIN_PRICE_RANGE: Optional[int] = None
-    MAX_PRICE_RANGE: Optional[int] = None
+    MIN_PRICE_RANGE: int | None = None
+    MAX_PRICE_RANGE: int | None = None
 
     def __init__(self, esfq: ppi.ExtractStoreFilterQuery, db: Session):
         fd = esfq.get_filter_dict()
@@ -1600,7 +1599,7 @@ class TermsForListContext(BaseModel):
     terms_id: int = const_value.NONE_ID
     temrs_text: str
     postage: int = 0
-    created_at: Optional[datetime]
+    created_at: datetime | None
 
 
 class StoreForListContext(BaseModel):
@@ -1976,7 +1975,7 @@ class OnlineTermsForListContext(BaseModel):
     pref: str = ""
     temrs_text: str
     postage: int = 0
-    created_at: Optional[datetime]
+    created_at: datetime | None
     campaign_msg: str = ""
 
 
@@ -2087,7 +2086,7 @@ class OnlineStoreListContext(BaseTemplateValue):
         pref_name_q = None
         if filter_name.FilterQueryName.PREF.value in fq:
             pref_name_q = fq[filter_name.FilterQueryName.PREF.value]
-        results: List[IdTextSelected] = []
+        results: list[IdTextSelected] = []
         for pref_id, prefname in pref_dict.items():
             its = IdTextSelected(id=pref_id, text=prefname)
             if pref_name_q and prefname == pref_name_q:

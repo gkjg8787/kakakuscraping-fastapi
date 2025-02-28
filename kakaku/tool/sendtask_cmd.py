@@ -1,7 +1,6 @@
 import sys
 import re
 import argparse
-from typing import List, Dict, Set
 
 from os.path import dirname
 
@@ -21,11 +20,11 @@ def urlCheck(url):
         return False
 
 
-def send_item_list(item_id_list: List[int]):
+def send_item_list(item_id_list: list[int]):
     item_id_url_list = [
         dict(ret._mapping.items()) for ret in UrlQuery.get_act_items_url()
     ]
-    item_id_to_url_list: Dict[int, Set[str]] = {}
+    item_id_to_url_list: dict[int, set[str]] = {}
     for item_dic in item_id_url_list:
         if item_dic["item_id"] in item_id_to_url_list:
             item_id_to_url_list[item_dic["item_id"]].add(item_dic["urlpath"])
@@ -44,7 +43,7 @@ def send_item_list(item_id_list: List[int]):
                 continue
 
 
-def send_url_list(url_list: List[str]):
+def send_url_list(url_list: list[str]):
     for url in url_list:
         if urlCheck(url):
             print(f"sendtask url={url}")

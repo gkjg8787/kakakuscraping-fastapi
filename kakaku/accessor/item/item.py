@@ -1,4 +1,3 @@
-from typing import List, Dict, Optional
 from enum import Enum
 from datetime import date, datetime, timezone
 
@@ -62,7 +61,7 @@ class UrlActive(Enum):
     INACTIVE = "False"
 
 
-def get_act_filter(filter: dict) -> Optional[UrlActive]:
+def get_act_filter(filter: dict) -> UrlActive | None:
     if (
         fqn.ACT.value not in filter.keys()
         or int(filter[fqn.ACT.value]) == ActFilterName.ALL.id
@@ -113,13 +112,13 @@ class NewestQuery:
         return cls.base_select
 
     @classmethod
-    def get_newest_data(cls, db: Session, filter: Dict):
+    def get_newest_data(cls, db: Session, filter: dict):
         stmt = cls.get_newest_filter_statement(filter)
         return db.execute(stmt).all()
 
     @classmethod
     def get_newest_data_for_edit_group(
-        cls, db: Session, filter: Dict, ignore_group_id: int
+        cls, db: Session, filter: dict, ignore_group_id: int
     ):
         stmt = cls.get_base_select()
         stmt = cls.__set_not_include_group_filter(
@@ -145,7 +144,7 @@ class NewestQuery:
         return db.execute(stmt).one_or_none()
 
     @classmethod
-    def get_newest_filter_statement(cls, filter: Dict):
+    def get_newest_filter_statement(cls, filter: dict):
         stmt = cls.get_base_select()
         stmt = cls.__set_group_filter(filter, stmt)
         stmt = cls.__set_act_filter(filter, stmt)
@@ -156,7 +155,7 @@ class NewestQuery:
         return stmt
 
     @classmethod
-    def __set_act_filter(cls, filter: Dict, stmt):
+    def __set_act_filter(cls, filter: dict, stmt):
         if (
             fqn.ACT.value not in filter.keys()
             or int(filter[fqn.ACT.value]) == ActFilterName.ALL.id
@@ -169,7 +168,7 @@ class NewestQuery:
         return stmt
 
     @classmethod
-    def __set_in_stock_filter(cls, filter: Dict, stmt):
+    def __set_in_stock_filter(cls, filter: dict, stmt):
         if (
             fqn.ZAIKO.value not in filter.keys()
             or int(filter[fqn.ZAIKO.value]) != FilterOnOff.ON
@@ -178,7 +177,7 @@ class NewestQuery:
         return stmt.where(NewestItem.newestprice > const_value.INIT_PRICE)
 
     @classmethod
-    def __set_group_filter(cls, filter: Dict, stmt):
+    def __set_group_filter(cls, filter: dict, stmt):
         if fqn.GID.value not in filter.keys() or int(filter[fqn.GID.value]) < 0:
             return stmt
         stmt = stmt.join(GroupItem, GroupItem.item_id == Item.item_id).where(
@@ -187,7 +186,7 @@ class NewestQuery:
         return stmt
 
     @classmethod
-    def __set_not_include_group_filter(cls, filter: Dict, stmt):
+    def __set_not_include_group_filter(cls, filter: dict, stmt):
         if fqn.GID.value not in filter.keys() or int(filter[fqn.GID.value]) < 0:
             return stmt
         stmt = stmt.where(
@@ -200,7 +199,7 @@ class NewestQuery:
         return stmt
 
     @classmethod
-    def __set_itemsort_filter(cls, filter: Dict, stmt):
+    def __set_itemsort_filter(cls, filter: dict, stmt):
         if fqn.ISORT.value not in filter.keys() or int(filter[fqn.ISORT.value]) < 0:
             stmt = stmt.order_by(Item.item_id.asc())
             return stmt
@@ -268,7 +267,7 @@ class NewestQuery:
         return stmt
 
     @classmethod
-    def __set_eq_storename(cls, filter: Dict, stmt):
+    def __set_eq_storename(cls, filter: dict, stmt):
         if fqn.STORE.value not in filter.keys() or int(filter[fqn.STORE.value]) < 0:
             return stmt
         stmt = stmt.join(Store, Store.storename == NewestItem.storename).where(
@@ -327,7 +326,7 @@ class NewestQuery:
         db.refresh(ni)
 
     @classmethod
-    def update_items_by_dict(cls, db: Session, nidict: Dict) -> None:
+    def update_items_by_dict(cls, db: Session, nidict: dict) -> None:
         if "url_id" not in nidict:
             return
         itemids = cls.__get_item_id_from_urlinitem_by_url_id(
@@ -369,7 +368,7 @@ class NewestQuery:
         return price
 
     @staticmethod
-    def __is_update_item(ni: NewestItem, nidict: Dict) -> bool:
+    def __is_update_item(ni: NewestItem, nidict: dict) -> bool:
         if (
             not util.isLocalToday(util.utcTolocaltime(ni.created_at))
             or (
@@ -403,7 +402,7 @@ class NewestQuery:
         return db.scalar(stmt)
 
     @classmethod
-    def get_storenames(cls, db: Session) -> List:
+    def get_storenames(cls, db: Session) -> list:
         stmt = select(NewestItem.storename).group_by(NewestItem.storename)
         return db.execute(stmt).all()
 
@@ -522,7 +521,7 @@ class NewestQuery:
         return stmt
 
     @classmethod
-    def __set_extract_sort_filter(cls, filter: Dict, stmt, unionprice):
+    def __set_extract_sort_filter(cls, filter: dict, stmt, unionprice):
         if fqn.ESSORT.value not in filter.keys() or int(filter[fqn.ESSORT.value]) < 0:
             return stmt
         fnum = int(filter[fqn.ESSORT.value])
@@ -596,7 +595,7 @@ class NewestQuery:
         return stmt
 
     @classmethod
-    def __set_in_stock_filter_for_storename_newest(cls, filter: Dict, stmt, unionprice):
+    def __set_in_stock_filter_for_storename_newest(cls, filter: dict, stmt, unionprice):
         if (
             fqn.ZAIKO.value not in filter.keys()
             or int(filter[fqn.ZAIKO.value]) != FilterOnOff.ON
@@ -686,34 +685,34 @@ class GroupQuery:
         db.commit()
 
     @classmethod
-    def update_group_item(cls, db: Session, group_id: int, item_list: List[int]):
+    def update_group_item(cls, db: Session, group_id: int, item_list: list[int]):
         current_gilist = cls.get_group_item_by_group_id(db, group_id=group_id)
         current_item_id_list = [gi.item_id for gi in current_gilist]
 
         def __get_del_item_id_list():
-            results: List[int] = []
+            results: list[int] = []
             for item_id in current_item_id_list:
                 if item_id not in item_list:
                     results.append(item_id)
             return results
 
         if len(current_item_id_list) != 0:
-            del_item_id_list: List[int] = __get_del_item_id_list()
+            del_item_id_list: list[int] = __get_del_item_id_list()
             cls.__del_group_items(db, group_id=group_id, item_id_list=del_item_id_list)
 
         def __get_add_item_id_list():
-            results: List[int] = []
+            results: list[int] = []
             for item_id in item_list:
                 if item_id not in current_item_id_list:
                     results.append(item_id)
             return results
 
-        add_item_id_list: List[int] = __get_add_item_id_list()
+        add_item_id_list: list[int] = __get_add_item_id_list()
         if len(add_item_id_list) > 0:
             cls.__add_group_items(db, group_id=group_id, item_id_list=add_item_id_list)
 
     @classmethod
-    def __del_group_items(cls, db: Session, group_id: int, item_id_list: List[int]):
+    def __del_group_items(cls, db: Session, group_id: int, item_id_list: list[int]):
         stmt = (
             delete(GroupItem)
             .where(GroupItem.group_id == group_id)
@@ -723,7 +722,7 @@ class GroupQuery:
         db.commit()
 
     @classmethod
-    def __add_group_items(cls, db: Session, group_id: int, item_id_list: List[int]):
+    def __add_group_items(cls, db: Session, group_id: int, item_id_list: list[int]):
         gi_list = [
             GroupItem(group_id=group_id, item_id=item_id) for item_id in item_id_list
         ]
@@ -748,7 +747,7 @@ class GroupQuery:
 
 class ItemQuery:
     @classmethod
-    def add(cls, db: Session, name: str = "", item_id: Optional[int] = None) -> int:
+    def add(cls, db: Session, name: str = "", item_id: int | None = None) -> int:
         if item_id:
             if cls.get_item(db, item_id=item_id):
                 return item_id
@@ -827,7 +826,7 @@ class ItemQuery:
         return res
 
     @classmethod
-    def upsert_pricelog(cls, db: Session, pldict: Dict) -> bool:
+    def upsert_pricelog(cls, db: Session, pldict: dict) -> bool:
         if "url_id" not in pldict:
             return False
         if cls.is_today_pricelog_2days_available(
@@ -882,7 +881,7 @@ class ItemQuery:
 
     @classmethod
     def update_pricelog_2days_by_dict_and_log_id(
-        cls, db: Session, pldict: Dict, log_id: int
+        cls, db: Session, pldict: dict, log_id: int
     ):
         stmt = (
             update(PriceLog_2days).where(PriceLog_2days.log_id == log_id).values(pldict)
@@ -891,7 +890,7 @@ class ItemQuery:
         db.commit()
 
     @classmethod
-    def __update_pricelog_2days_by_dict(cls, db: Session, pldict: Dict) -> None:
+    def __update_pricelog_2days_by_dict(cls, db: Session, pldict: dict) -> None:
         url_id = pldict["url_id"]
         storename = pldict["storename"]
         target = (
@@ -922,13 +921,13 @@ class ItemQuery:
         db.commit()
 
     @classmethod
-    def add_pricelog_2days_by_dict(cls, db: Session, pldict: Dict):
+    def add_pricelog_2days_by_dict(cls, db: Session, pldict: dict):
         insert_pricelog_2days = insert(PriceLog_2days).values(pldict)
         db.execute(insert_pricelog_2days)
         db.commit()
 
     @classmethod
-    def __add_pricelog_by_dict(cls, db: Session, pldict: Dict) -> None:
+    def __add_pricelog_by_dict(cls, db: Session, pldict: dict) -> None:
         insert_pricelog = insert(PriceLog).values(pldict)
         insert_pricelog_2days = insert(PriceLog_2days).values(pldict)
         db.execute(insert_pricelog)
@@ -1084,7 +1083,7 @@ class ItemQuery:
         return db.execute(stmt).all()
 
     @classmethod
-    def get_latest_price_by_item_id_list(cls, db: Session, item_id_list: List[int]):
+    def get_latest_price_by_item_id_list(cls, db: Session, item_id_list: list[int]):
         new_price = (
             select(
                 Item.name.label("itemname"),
@@ -1307,33 +1306,33 @@ class OrganizerQuery:
         db.commit()
 
     @classmethod
-    def delete_pricelog_2days_by_log_id_list(cls, db: Session, log_id_list: List[int]):
+    def delete_pricelog_2days_by_log_id_list(cls, db: Session, log_id_list: list[int]):
         stmt = delete(PriceLog_2days).where(PriceLog_2days.log_id.in_(log_id_list))
         db.execute(stmt)
         db.commit()
 
     @classmethod
-    def delete_pricelog_by_log_id_list(cls, db: Session, log_id_list: List[int]):
+    def delete_pricelog_by_log_id_list(cls, db: Session, log_id_list: list[int]):
         stmt = delete(PriceLog).where(PriceLog.log_id.in_(log_id_list))
         db.execute(stmt)
         db.commit()
 
     @classmethod
-    def add_price_log_by_dict_list(cls, db: Session, pricelog_dict_list: List[Dict]):
+    def add_price_log_by_dict_list(cls, db: Session, pricelog_dict_list: list[dict]):
         stmt = insert(PriceLog).values(pricelog_dict_list)
         db.execute(stmt)
         db.commit()
 
     @classmethod
     def add_price_log_2days_by_dict_list(
-        cls, db: Session, pricelog_dict_list: List[Dict]
+        cls, db: Session, pricelog_dict_list: list[dict]
     ):
         stmt = insert(PriceLog_2days).values(pricelog_dict_list)
         db.execute(stmt)
         db.commit()
 
     @classmethod
-    def update_pricelog_by_dict_list(cls, db: Session, pricelog_dict_list: List[Dict]):
+    def update_pricelog_by_dict_list(cls, db: Session, pricelog_dict_list: list[dict]):
         for pricelog_dict in pricelog_dict_list:
             log_id = pricelog_dict.pop("log_id", None)
             if log_id is None:
@@ -1348,7 +1347,7 @@ class OrganizerQuery:
 class OldItemQuery:
     @classmethod
     def add_pricelog_of_old_by_dict_list(
-        cls, db: Session, pricelog_dict_list: List[Dict]
+        cls, db: Session, pricelog_dict_list: list[dict]
     ):
         stmt = insert(PriceLog).values(pricelog_dict_list)
         db.execute(stmt)
@@ -1370,7 +1369,7 @@ class UrlQuery:
 
     @classmethod
     def add_url_and_urlinitem(
-        cls, db: Session, urlpath: str, item_id: Optional[int] = None
+        cls, db: Session, urlpath: str, item_id: int | None = None
     ) -> int:
         if not urlpath:
             raise RuntimeError

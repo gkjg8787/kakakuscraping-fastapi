@@ -1,7 +1,6 @@
 import os
 from enum import Enum, auto
 import argparse
-from typing import List, Dict
 from functools import wraps
 from datetime import datetime, timedelta, timezone
 
@@ -71,7 +70,7 @@ def sync_2days_to_pricelog_today(db: Session):
 
     today_pricelog_list = OrganizerQuery.get_pricelog_today(db)
     if len(today_pricelog_list) == 0:
-        add_dict_list: List[Dict] = []
+        add_dict_list: list[dict] = []
         for p in today_2days_update_list:
             dic = p.toDict()
             dic.pop("log_id")
@@ -114,10 +113,10 @@ def sync_2days_to_pricelog_today(db: Session):
 
 
 def __get_update_for_pricelog_by_2days(
-    two_days_list: List[PriceLog_2days], pricelog_list: List[PriceLog]
+    two_days_list: list[PriceLog_2days], pricelog_list: list[PriceLog]
 ):
-    update_dict_list: List = []
-    add_dict_list: List = []
+    update_dict_list: list = []
+    add_dict_list: list = []
 
     def is_update(two: PriceLog_2days, pricelog: PriceLog):
         if two.created_at < pricelog.created_at:
@@ -169,7 +168,7 @@ def pricelog_cleaner(db: Session):
     old_list = OrganizerQuery.get_old_pricelog_before_days(
         db, days=DAYS_TO_MOVE_OLD_DATA
     )
-    move_list: List[Dict] = []
+    move_list: list[dict] = []
     for old in old_list:
         move_list.append(old.toDict())
     if len(move_list) > 0:
@@ -205,9 +204,9 @@ def pricelog_2days_cleaner(db: Session):
         log.info(f"{get_filename()} pricelog_2days_cleaner delete end")
 
 
-def __get_delete_pricelog_2days_list(pricelog_result: List[PriceLog_2days]):
-    pricelog_dict: Dict[str, List[PriceLog_2days]] = {}
-    delete_pricelog_list: List[PriceLog_2days] = []
+def __get_delete_pricelog_2days_list(pricelog_result: list[PriceLog_2days]):
+    pricelog_dict: dict[str, list[PriceLog_2days]] = {}
+    delete_pricelog_list: list[PriceLog_2days] = []
 
     for r in pricelog_result:
         key = str(r.url_id) + ":" + r.storename
@@ -218,7 +217,7 @@ def __get_delete_pricelog_2days_list(pricelog_result: List[PriceLog_2days]):
 
     for k in pricelog_dict.keys():
         if len(pricelog_dict[k]) > MAX_LOG_2DAYS_DATA_CNT:
-            delete_target: List[PriceLog_2days] = []
+            delete_target: list[PriceLog_2days] = []
             yesterday = datetime.now(timezone.utc) - timedelta(1)
             for pricelog in pricelog_dict[k]:
                 if pricelog.created_at.date() >= yesterday.date():
@@ -241,7 +240,7 @@ def __get_delete_pricelog_2days_list(pricelog_result: List[PriceLog_2days]):
     return delete_pricelog_list
 
 
-def __get_old_pricelog_2days(pricelog_list: List[PriceLog_2days]):
+def __get_old_pricelog_2days(pricelog_list: list[PriceLog_2days]):
     old = None
     for pricelog in pricelog_list:
         if not old:
