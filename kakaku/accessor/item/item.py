@@ -1,5 +1,5 @@
 from enum import Enum
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timezone, timedelta
 
 from sqlalchemy import (
     select,
@@ -59,6 +59,18 @@ from html_parser.htmlparse import ParseItemInfo
 class UrlActive(Enum):
     ACTIVE = "True"
     INACTIVE = "False"
+
+
+def where_date_from_days(stmt, target_column, days: int):
+    now = datetime.now(timezone.utc)
+    now = util.utcTolocaltime(now).replace(hour=0, minute=0, second=0, microsecond=0)
+    if days <= 0:
+        start = now + timedelta(days=days)
+    else:
+        start = now - timedelta(days=days)
+    start = start.astimezone(timezone.utc).replace(tzinfo=None)
+    stmt = stmt.where(target_column >= start)
+    return stmt
 
 
 def get_act_filter(filter: dict) -> UrlActive | None:
@@ -997,9 +1009,8 @@ class ItemQuery:
             .order_by(PriceLog.created_at.desc())
         )
         if days and days <= 0:
-            stmt = stmt.where(
-                utc_to_jst_datetime_for_query(PriceLog.created_at)
-                >= get_jst_datetime_for_query(interval_days=days)
+            stmt = where_date_from_days(
+                stmt=stmt, target_column=PriceLog.created_at, days=days
             )
         if storename:
             stmt = stmt.where(PriceLog.storename == storename)
@@ -1026,61 +1037,10 @@ class ItemQuery:
             .group_by(PriceLog.storename)
         )
         if days and days <= 0:
-            stmt = stmt.where(
-                utc_to_jst_datetime_for_query(PriceLog.created_at)
-                >= get_jst_datetime_for_query(interval_days=days)
+            stmt = where_date_from_days(
+                stmt=stmt, target_column=PriceLog.created_at, days=days
             )
         return db.scalars(stmt).all()
-
-    @classmethod
-    def get_daily_min_used_pricelog_by_item_id_and_since_year_ago(
-        cls, db: Session, item_id: int, year: int
-    ):
-        subq = (
-            select(
-                utc_to_jst_date_for_query(PriceLog.created_at).label("created_at"),
-                PriceLog.usedprice,
-            )
-            .select_from(PriceLog)
-            .join(UrlInItem, UrlInItem.url_id == PriceLog.url_id)
-            .where(UrlInItem.item_id == item_id)
-            .where(
-                utc_to_jst_datetime_for_query(PriceLog.created_at)
-                >= get_jst_datetime_for_query(
-                    interval_years=year * INTERVAL_ONE_YEARS_AGO
-                )
-            )
-            .where(PriceLog.usedprice > 0)
-        ).subquery("subq")
-        stmt = select(
-            subq.c.created_at, func.min(subq.c.usedprice).label("price")
-        ).group_by(subq.c.created_at)
-        return db.execute(stmt).all()
-
-    @classmethod
-    def get_daily_min_new_pricelog_by_item_id_and_since_year_ago(
-        cls, db: Session, item_id: int, year: int
-    ):
-        subq = (
-            select(
-                utc_to_jst_date_for_query(PriceLog.created_at).label("created_at"),
-                PriceLog.newprice,
-            )
-            .select_from(PriceLog)
-            .join(UrlInItem, UrlInItem.url_id == PriceLog.url_id)
-            .where(UrlInItem.item_id == item_id)
-            .where(
-                utc_to_jst_datetime_for_query(PriceLog.created_at)
-                >= get_jst_datetime_for_query(
-                    interval_years=year * INTERVAL_ONE_YEARS_AGO
-                )
-            )
-            .where(PriceLog.newprice > 0)
-        ).subquery("subq")
-        stmt = select(
-            subq.c.created_at, func.min(subq.c.newprice).label("price")
-        ).group_by(subq.c.created_at)
-        return db.execute(stmt).all()
 
     @classmethod
     def get_latest_price_by_item_id_list(cls, db: Session, item_id_list: list[int]):
@@ -1604,15 +1564,27 @@ class AnalysisQuery:
         stmt = select(
             func.min(PriceLog.created_at).label("start"),
             func.max(PriceLog.created_at).label("end"),
-        ).where(
-            utc_to_jst_date_for_query(PriceLog.created_at)
-            >= get_jst_date_for_query(interval_days=days)
+        )
+        stmt = where_date_from_days(
+            stmt=stmt, target_column=PriceLog.created_at, days=days
         )
         return db.execute(stmt).all()
 
     @classmethod
-    def get_itemlog_by_period_date(cls, db: Session, start_jst: date, end_jst: date):
-        date_list = [start_jst, end_jst]
+    def get_itemlog_by_period_date(
+        cls,
+        db: Session,
+        start: datetime,
+        end: datetime,
+    ):
+        if start.tzinfo:
+            start = start.astimezone(timezone.utc)
+        start = start.replace(tzinfo=None).date()
+        if end.tzinfo:
+            end = end.astimezone(timezone.utc)
+        end = end.replace(tzinfo=None).date()
+
+        date_list = [start, end]
         stmt = (
             select(
                 UrlInItem.item_id,
@@ -1625,7 +1597,7 @@ class AnalysisQuery:
             )
             .select_from(PriceLog)
             .join(UrlInItem, UrlInItem.url_id == PriceLog.url_id)
-            .where(utc_to_jst_date_for_query(PriceLog.created_at).in_(date_list))
+            .where(func.date(PriceLog.created_at).in_(date_list))
         )
         return db.execute(stmt).all()
 

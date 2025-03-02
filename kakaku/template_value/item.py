@@ -1478,7 +1478,7 @@ class UrlListContext(BaseTemplateValue):
             if not d["item_id"]:
                 continue
             results[url_id].add_item(self.create_itemforurllist(d))
-        return [v for v in results.values()]
+        return list(results.values())
 
     def create_urlinfoforurllist(self, d: dict) -> UrlInfoForUrlList:
         return UrlInfoForUrlList(

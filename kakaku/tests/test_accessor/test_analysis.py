@@ -48,7 +48,7 @@ def test_get_itemlog_by_period_date(test_db):
     one_week_ago_jst = utcTolocaltime(datetime.now(timezone.utc) + timedelta(days=days))
     now_jst = utcTolocaltime(datetime.now(timezone.utc))
     result = AnalysisQuery.get_itemlog_by_period_date(
-        test_db, start_jst=one_week_ago_jst.date(), end_jst=now_jst.date()
+        test_db, start=one_week_ago_jst, end=now_jst
     )
     res_dic = {}
     for r in result:

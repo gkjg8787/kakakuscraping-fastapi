@@ -78,7 +78,7 @@ def get_log_analysis(db: Session, atid: int):
         return LogAnalysisResult(error_dict)
 
     result = AnalysisQuery.get_itemlog_by_period_date(
-        db, start_jst=period_start_jst.date(), end_jst=period_end_jst.date()
+        db, start=period_start_jst, end=period_end_jst
     )
     logana = LogAnalysis(result)
     return logana.get_analysis_data()
