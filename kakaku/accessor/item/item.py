@@ -1578,13 +1578,18 @@ class AnalysisQuery:
         end: datetime,
     ):
         if start.tzinfo:
-            start = start.astimezone(timezone.utc)
-        start = start.replace(tzinfo=None).date()
+            start = start.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(
+                timezone.utc
+            )
+        start = start.replace(tzinfo=None)
+        next_from_start = start + timedelta(days=1)
         if end.tzinfo:
-            end = end.astimezone(timezone.utc)
-        end = end.replace(tzinfo=None).date()
+            end = end.replace(hour=0, minute=0, second=0, microsecond=0).astimezone(
+                timezone.utc
+            )
+        end = end.replace(tzinfo=None)
+        next_from_end = end + timedelta(days=1)
 
-        date_list = [start, end]
         stmt = (
             select(
                 UrlInItem.item_id,
@@ -1597,7 +1602,17 @@ class AnalysisQuery:
             )
             .select_from(PriceLog)
             .join(UrlInItem, UrlInItem.url_id == PriceLog.url_id)
-            .where(func.date(PriceLog.created_at).in_(date_list))
+            .where(
+                or_(
+                    and_(
+                        PriceLog.created_at >= start,
+                        PriceLog.created_at < next_from_start,
+                    ),
+                    and_(
+                        PriceLog.created_at >= end, PriceLog.created_at < next_from_end
+                    ),
+                )
+            )
         )
         return db.execute(stmt).all()
 
