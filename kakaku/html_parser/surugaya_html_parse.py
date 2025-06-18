@@ -90,12 +90,13 @@ class SurugayaProduct_Other(AB_SurugayaParse):
                 binfo["url"],
             )
             price = cls.getPrice(storeitem)
-            isNew = cls.isNewItem(storeitem)
+            item.condition = cls.getCondition(storeitem)
             storename = cls.getStoreName(storeitem)
-            if isNew:
+            if cls.isNewItem(item.condition):
                 item.newPrice = price
             else:
                 item.usedPrice = price
+
             if storename:
                 item.storename = storename
             item.onSale = False
@@ -119,16 +120,20 @@ class SurugayaProduct_Other(AB_SurugayaParse):
         return price
 
     @classmethod
-    def isNewItem(cls, storeitem: Tag):
+    def isNewItem(cls, condition: str):
+        if "新品" in condition:
+            return True
+        return False
+
+    @classmethod
+    def getCondition(cls, storeitem: Tag):
         pattern = r'<h2 class="title_product">(.+?)</h2>'
         # print(text)
         m = re.findall(pattern, str(storeitem))
         # print("------------isTblNewUsed-----------")
         # print(m)
-        statusstr = cls.trimStr(str(m[0]))
-        if "新品" in statusstr:
-            return True
-        return False
+        condition = cls.trimStr(str(m[0]))
+        return condition
 
     @classmethod
     def getStoreName(cls, storeitem: Tag):
@@ -153,22 +158,19 @@ class SurugayaProduct_Other(AB_SurugayaParse):
 
 class SurugayaProduct(AB_SurugayaParse):
     soup: BeautifulSoup
-    iteminfo: htmlparse.ParseItemInfo
+    iteminfos: tuple[htmlparse.ParseItemInfo]
 
     def __init__(self, soup: BeautifulSoup, id: int, date: datetime, url: str):
         self.soup = soup
-        self.iteminfo = htmlparse.ParseItemInfo()
-        self.iteminfo.id = id
-        self.iteminfo.timeStamp = date
-        self.iteminfo.url = url
-        self.iteminfo.name = self.parseTitle(self.soup)
-        self.set_parsePrice(self.soup, self.iteminfo)
-        self.set_isSale(self.soup, self.iteminfo)
-        self.iteminfo.isSuccess = self.checkSuccess(self.iteminfo)
-        self.iteminfo.storename = self.getStoreName(self.soup)
+        base = self.get_base_item(soup=soup, id=id, date=date, url=url)
+        other_items = self.get_other_items(soup=soup, id=id, date=date, url=url)
+        if other_items:
+            self.iteminfos = (base, *other_items)
+        else:
+            self.iteminfos = (base,)
 
     def getItems(self):
-        return (self.iteminfo,)
+        return self.iteminfos
 
     @classmethod
     def parseTitle(cls, soup: BeautifulSoup):
@@ -178,37 +180,110 @@ class SurugayaProduct(AB_SurugayaParse):
         # print("title:"+namestr)
         return namestr
 
-    def parseTaxin(self, text: str, iteminfo: htmlparse.ParseItemInfo):
-        if iteminfo.taxin:
-            return
-        if "税込み" in str(text) or "税込" in str(text):
-            iteminfo.taxin = True
+    def get_base_item(
+        self, soup: BeautifulSoup, id: int, date: datetime, url: str
+    ) -> htmlparse.ParseItemInfo:
+        iteminfo = htmlparse.ParseItemInfo(id=id, timeStamp=date, url=url)
+        iteminfo.name = self.parseTitle(soup)
+        self.set_price(soup, iteminfo)
+        self.set_issale(soup, iteminfo)
+        iteminfo.isSuccess = self.checkSuccess(iteminfo)
+        iteminfo.storename = self.getStoreName(soup)
+        iteminfo.inventoryCount = self.get_inventory_count(soup)
+        return iteminfo
 
-    def set_parsePrice(self, soup: BeautifulSoup, iteminfo: htmlparse.ParseItemInfo):
-        basebody = r"label.mgnB0.d-block"
-        datal = soup.select(basebody)
-        isNew = False
-        pattern = '<span.+?buy">(.+?)</span>'
-        for val in datal:
-            # print(val.text)
-            if "新品" in val.text:
-                isNew = True
-            elif "中古" in val.text:
-                isNew = False
+    def get_other_items(
+        self, soup: BeautifulSoup, id: int, date: datetime, url: str
+    ) -> list[htmlparse.ParseItemInfo]:
+        title = self.parseTitle(soup)  # same as base title
+        storename = self.getStoreName(soup)
 
-            ret = re.findall(pattern, str(val))
-            retlen = len(ret)
-            if retlen == 0:
-                continue
-            self.parseTaxin(val.text, iteminfo)
-            if isNew:
-                # print("newPrice:"+str(val.text))
-                iteminfo.newPrice = int(re.sub("\\D", "", str(ret[0])))
+        results: list[htmlparse.ParseItemInfo] = []
+        for item in soup.select(r".other-branch a.branch-info"):
+            condition = item.contents[0]
+            if isinstance(condition, str):
+                condition = self.strip_condition_text(condition)
             else:
-                # print("usedPrice:"+str(val.text))
-                iteminfo.usedPrice = int(re.sub("\\D", "", str(ret[0])))
+                continue
 
-    def set_isSale(self, soup: BeautifulSoup, iteminfo: htmlparse.ParseItemInfo):
+            iteminfo = htmlparse.ParseItemInfo(
+                id=id,
+                timeStamp=date,
+                url=url,
+                name=title,
+                condition=condition,
+                storename=storename,
+            )
+            price = item.select_one(r".price-sale")
+            if not price:
+                continue
+            iteminfo.taxin = self.is_taxin(price)
+            price = int(re.sub(r"\D", "", str(price)))
+            if "新品" in condition:
+                iteminfo.newPrice = price
+            else:
+                iteminfo.usedPrice = price
+            default_price = item.select_one(r".price-default")
+            if default_price:
+                iteminfo.onSale = True
+                iteminfo.saleName = "タイムセール"
+            iteminfo.isSuccess = self.checkSuccess(iteminfo)
+            results.append(iteminfo)
+        return results
+
+    @classmethod
+    def strip_condition_text(cls, text: str):
+        return cls.trimStr(text).replace("※タイムセール", "").strip()
+
+    def get_inventory_count(self, soup: BeautifulSoup) -> int:
+        max_value = 0
+        for option in soup.select(r"#quantity_selection option"):
+            opt_v = option.get("value")
+            try:
+                opt_v = int(opt_v)
+                if opt_v == 9999:
+                    return max_value
+                if opt_v > max_value:
+                    max_value = opt_v
+            except ValueError:
+                continue
+        return max_value
+
+    def is_taxin(self, text: str):
+        if "税込み" in str(text) or "税込" in str(text):
+            return True
+        return False
+
+    def set_price(self, soup: BeautifulSoup, iteminfo: htmlparse.ParseItemInfo):
+        basebody = r"label.mgnB0.d-block"
+        val = soup.select_one(basebody)
+        if not val:
+            return
+        isNew = False
+        pattern = r"span.text-price-detail.price-buy"
+
+        if "新品" in val.text:
+            isNew = True
+        else:
+            isNew = False
+        condition = val.get("data-label")
+        if isinstance(condition, str):
+            iteminfo.condition = self.strip_condition_text(condition)
+
+        ret = val.select(pattern)
+        retlen = len(ret)
+        if retlen == 0:
+            return
+
+        iteminfo.taxin = self.is_taxin(val.text)
+        if isNew:
+            # print("newPrice:"+str(val.text))
+            iteminfo.newPrice = int(re.sub(r"\D", "", str(ret[0])))
+        else:
+            # print("usedPrice:"+str(val.text))
+            iteminfo.usedPrice = int(re.sub(r"\D", "", str(ret[0])))
+
+    def set_issale(self, soup: BeautifulSoup, iteminfo: htmlparse.ParseItemInfo):
         timesalebase = soup.select_one(
             "div.container_suru.padB40 > .row > .col-8.padL32 .flash_sale_title"
         )
@@ -220,13 +295,13 @@ class SurugayaProduct(AB_SurugayaParse):
             iteminfo.onSale = False
 
     def getOrderedDict(self):
-        return self.iteminfo.getOrderedDict()
+        return self.iteminfos[0].getOrderedDict()
 
     def getTrendRate(self):
-        return self.iteminfo.getTrendRate()
+        return self.iteminfos[0].getTrendRate()
 
     def getName(self):
-        return self.iteminfo.name
+        return self.iteminfos[0].name
 
     @classmethod
     def getStoreName(cls, soup: BeautifulSoup) -> str:
