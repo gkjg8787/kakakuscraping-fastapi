@@ -1,6 +1,5 @@
-import time
+import os
 import datetime
-import sys
 import hashlib
 
 from common import read_config
@@ -20,9 +19,8 @@ def downLoadHtml(url):
     dt_now = datetime.datetime.now()
     title = url + ":" + "{0:%Y%m%d_%H%M%S_%f}".format(dt_now)
     filename = hashlib.md5(title.encode("utf-8")).hexdigest()
-    of = open(dirpath + filename, "x", encoding="UTF-8")
-    of.write(text)
-    of.close()
+    with open(os.path.join(dirpath, filename), "x", encoding="UTF-8") as f:
+        f.write(text)
     return dirpath + filename
 
 
@@ -35,6 +33,18 @@ def getUrlHtml(url, opt=None):
 
 def __getUrlHtml(url, opt=RequestOpt()):
     isverify = justbeforeconfig.isVerifyURL(url)
+    if opt.needs_visit_cookies() and opt.cookiejar is None:
+        try:
+            res = requests.get(
+                url=url,
+                headers=opt.getHeader(),
+                verify=isverify,
+                timeout=REQUESTS_TIMEOUT,
+            )
+        except Timeout:
+            return False, "Visit Timeout Error"
+        opt.set_cookie(cookies=res.cookies, save=True)
+
     try:
         res = requests.get(
             url=url,
@@ -49,20 +59,11 @@ def __getUrlHtml(url, opt=RequestOpt()):
         return False, "requests Error {}".format(e)
     if res.status_code != requests.codes.ok:
         return False, "Error Status Code " + str(res.status_code)
-
+    if opt.needs_visit_cookies():
+        opt.set_cookie(cookies=res.cookies, save=True)
     # res.encoding = res.apparent_encoding
     if res.encoding.upper() == "windows-31j".upper():
         res.encoding = "SHIFT_JIS"
     elif res.encoding.upper() == "ISO-8859-1".upper():
         res.encoding = res.apparent_encoding
     return True, res.text
-
-
-if __name__ == "__main__":
-    arglen = len(sys.argv)
-    if arglen < 2:
-        print("ERROR PARAMETER")
-        sys.exit()
-    time.sleep(1)
-    filepath = downLoadHtml(sys.argv[1])
-    print(filepath)

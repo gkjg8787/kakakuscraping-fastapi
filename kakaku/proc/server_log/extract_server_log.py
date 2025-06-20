@@ -172,6 +172,8 @@ class CreateExtractServerLogCommand:
 
         if not start:
             return None
+        if not datelist:
+            return None
         if max(datelist).date() < start.date():
             return None
         near: datetime | None = None

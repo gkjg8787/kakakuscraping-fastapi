@@ -9,7 +9,7 @@ class BookoffSearchOpt(siteSearchOpt.SiteSearchOpt):
         self.name = "bookoff"
         self.confopt = confopt
         self.site = bookoffURL.BookoffURL(confopt)
-        self.requestOpt = requestoption.RequestOpt()
+        self.requestOpt = requestoption.RequestOpt(name=self.name)
         self.parser = bookoff_search.SearchBookoff()
 
     def setSearchWord(self, word):

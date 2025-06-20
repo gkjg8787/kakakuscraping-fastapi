@@ -3,8 +3,8 @@ from urllib.parse import urlencode
 
 class NetoffURL:
     def __init__(self, rsopts):
-        self.base = "https://www.netoff.co.jp/cmdtyallsearch"
-        self.query = {"word": "", "dnum": 50}
+        self.base = "https://www.netoff.co.jp/cmdtyallsearch/"
+        self.query = {"word": "", "cname": ""}
         self.rsopts = rsopts
         self.isExistCate = True
 
@@ -36,6 +36,8 @@ class NetoffURL:
 
     def setPage(self, num):
         self.query["page"] = num
+        if num > 1:
+            self.query["cl"] = (num - 1) * 100
 
     def inCategoryTable(self, table, val):
         if val not in table:

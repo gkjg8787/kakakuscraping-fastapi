@@ -10,15 +10,15 @@ class SearchNetoff(SearchParser):
         self.allitem[self.PAGE] = self.getPageElem()
 
     def parseItems(self):
-        q = r"#resultList .resultRow"
+        q = r"li.l-search__products"
         ret = self.soup.select(q)
         sresult = []
         for v in ret:
             itemd = {}
             itemd[self.STORENAME] = "ネットオフ"
-            itemd[
-                self.IMAGE_ON_ERR
-            ] = "https://st.netoff.co.jp/ebimage/noimage_comic_01.gif"
+            itemd[self.IMAGE_ON_ERR] = (
+                "https://st.netoff.co.jp/ebimage/noimage_comic_01.gif"
+            )
             self.setTitle(v, itemd)
             self.setImage(v, itemd)
             self.setCategory(v, itemd)
@@ -33,33 +33,18 @@ class SearchNetoff(SearchParser):
         print(self.allitem)
 
     def setCategory(self, elem, itemd):
-        cateo = elem.select(".catList")
-        itemd[self.CATEGORY] = cateo[0].text
+        cateo = elem.select_one(".c-cassette__label")
+        itemd[self.CATEGORY] = cateo.text
 
     def setImage(self, elem, itemd):
-        imageo = elem.select(".showimage img")
-        if len(imageo) == 0:
-            self.createImageURL(elem, itemd)
-            return
-
-        itemd[self.IMAGE_URL] = imageo[0]["src"]
-
-    def createImageURL(self, elem, itemd):
-        imageo = elem.select(".rowList span")
-        ptn = r'span class="([0-9]+)"'
-        for e in imageo:
-            m = re.findall(ptn, str(e))
-            if m is None or len(m) == 0:
-                continue
-            itemd[self.IMAGE_URL] = (
-                "https://www.netoff.co.jp/ebimage/cmdty/" + str(m[0]) + ".jpg"
-            )
-            return
+        imageo = elem.select_one(r"a.c-cassette__img img")
+        fname = re.sub(r"\D", "", str(imageo["src"])) + ".jpg"
+        itemd[self.IMAGE_URL] = "https://www.netoff.co.jp/ebimage/cmdty/" + fname
 
     def setTitle(self, elem, itemd):
-        titleo = elem.select(".titleBox a")
-        itemd[self.TITLE] = titleo[0].text
-        itemd[self.TITLE_URL] = self.getPerfectURL(titleo[0]["href"])
+        titleo = elem.select_one(r"a.c-cassette__title")
+        itemd[self.TITLE] = titleo.text
+        itemd[self.TITLE_URL] = self.getPerfectURL(titleo["href"])
 
     def getPerfectURL(self, url):
         ptn = r"^/"
@@ -70,25 +55,25 @@ class SearchNetoff(SearchParser):
 
     def setPrice(self, elem, itemd):
         self.setStockPrice(elem, itemd)
-        if self.PRICE not in itemd:
-            self.setSinagire(elem, itemd)
+        if self.is_sinagire(elem):
+            itemd[self.SINAGIRE] = "品切れ"
         else:
-            self.setZaiko(elem, itemd)
+            zaikoo = elem.select_one(r".c-cassette__stock--message")
+            if zaikoo:
+                itemd[self.ZAIKO] = zaikoo.text
 
     def setStockPrice(self, elem, itemd):
-        stocko = elem.select(".priceTrue")
+        stocko = elem.select(".c-cassette__price")
         if len(stocko) == 0:
             return
         text = self.matchPrice(stocko[0].text)
         itemd[self.PRICE] = text
 
-    def setSinagire(self, elem, itemd):
-        stocko = elem.select(".priceFalse")
-        if len(stocko) == 0:
-            return
-        text = self.matchPrice(stocko[0].text)
-        itemd[self.PRICE] = text
-        itemd[self.SINAGIRE] = "品切れ"
+    def is_sinagire(self, elem):
+        ret = elem.select_one(r".c-button--mail--outline")
+        if ret:
+            return True
+        return False
 
     def matchPrice(self, basetext):
         ptn = r"[1-9][0-9,]+円"
@@ -96,20 +81,19 @@ class SearchNetoff(SearchParser):
         text = re.findall(ptn, text)
         return text[0]
 
-    def setZaiko(self, elem, itemd):
-        zaikoo = elem.select(".stock_lastone")
-        if len(zaikoo) == 0:
-            return
-        itemd[self.ZAIKO] = zaikoo[0].text
-
     def setMailBin(self, elem, itemd):
-        mailo = elem.select(".j3")
+        mailo = elem.select(".c-cassette__label")
         if len(mailo) == 0:
             return
-        itemd[self.MAILBIN] = mailo[0].text
+        for m in mailo:
+            if "メール便" in m.text:
+                itemd[self.MAILBIN] = m.text
+                return
+            else:
+                continue
 
     def setSubInfo(self, elem, itemd):
-        subinfoo = elem.select(".subinfo")
+        subinfoo = elem.select(".c-cassette__author")
         if len(subinfoo) == 0:
             return
         itemd[self.SUBINFO] = subinfoo[0].text
@@ -130,7 +114,7 @@ class SearchNetoff(SearchParser):
                 elems[self.MAX] = num
 
     def getPageElem(self):
-        q = r".pager ol li"
+        q = r".c-pagination li"
         pages = self.soup.select(q)
         if pages is None:
             return "None"
@@ -148,7 +132,7 @@ class SearchNetoff(SearchParser):
         return pageret
 
     def addMorePage(self, info):
-        q = r".pager .rightBtn"
+        q = r".c-pagination .c-pagination_next"
         moreo = self.soup.select(q)
         if len(moreo) != 0:
             info[self.MOREPAGE] = self.TRUE

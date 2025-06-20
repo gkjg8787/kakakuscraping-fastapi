@@ -18,20 +18,8 @@ class NetoffParse(htmlparse.ParseItems):
         self.iteminfo.timeStamp = date
         self.iteminfo.url = url
         self.iteminfo.storename = DEFAULT_STORENAME
-        self.isdeleted = self.confirm_item_deletion(soup)
-        if self.isdeleted:
-            return
+        self.isdeleted = False
         self.parseItem(soup, self.iteminfo)
-
-    def confirm_item_deletion(self, soup: BeautifulSoup):
-        ret = soup.select(r"div.fs16")
-        if not ret:
-            return False
-        for div in ret:
-            m = re.search(r"対象商品の情報は削除しました", div.text)
-            if m:
-                return True
-        return False
 
     def parseItem(self, soup: BeautifulSoup, iteminfo: htmlparse.ParseItemInfo):
         iteminfo.isSuccess = self.parseSuccess(soup)
@@ -45,65 +33,45 @@ class NetoffParse(htmlparse.ParseItems):
         self.parseOnSale(soup, iteminfo)
 
     def parseSuccess(self, soup: BeautifulSoup):
-        q = r".titleArea"
+        q = r".l-notfound__container"
         elem = soup.select(q)
         if len(elem) == 0:
             return True
-        ptn = r"【現在ご利用いただけません】"
+        ptn = r"ご利用いただくことが出来ません"
         if ptn in str(elem[0]):
             return False
         return True
 
     def existZaiko(self, soup: BeautifulSoup):
-        q = r".iStock"
+        q = r".l-product__cart-btn"
         elem = soup.select(q)
         if len(elem) == 0:
             return False
         return True
 
     def parseTitle(self, soup: BeautifulSoup):
-        q = r".descriptionIn h2"
-        elem = soup.select(q)
-        ptn = r'<h2>(<span class="free_shipping_red">送料無料</span>)?([\s\S]+)(<span)'
-        m = re.findall(ptn, self.trimStr(str(elem[0])))
-        return m[0][1]
+        q = r".l-product__main-title"
+        elem = soup.select_one(q)
+        return self.trimStr(elem.text)
 
     def parsePrice(self, soup: BeautifulSoup, iteminfo: htmlparse.ParseItemInfo):
-        q = r".descriptionIn"
-        elem = soup.select(q)
-        # if not self.isUsed(elem): return
-        iteminfo.usedPrice = int(self.getPrice(elem))
-        iteminfo.taxin = self.getTaxin(elem)
-
-    def isUsed(self, elem):
-        # 一律中古扱い
-        return True
+        iteminfo.usedPrice = self.getPrice(soup)
+        iteminfo.taxin = self.getTaxin(soup)
 
     def getPrice(self, elem):
-        yen = r".price_text2"
-        pricetag = elem[0].select(yen)
-        ptext = pricetag[0].text.replace(",", "")
-        ptn = r"[1-9][0-9]*"
-        m = re.findall(ptn, ptext)
-        return int(m[0])
+        q = r".product-price__normal-num"
+        price = elem.select_one(q)
+        return int(str(price.text).replace(",", ""))
 
     def getTaxin(self, elem):
-        q = r".price_text2 .price_text_small"
-        tax = elem[0].select(q)
-        for s in tax:
-            if "(税込)" in s:
-                return True
-
+        q = r".product-price__normal-tax"
+        tax = elem.select_one(q)
+        if "(税込)" in tax:
+            return True
         return False
 
     def parseOnSale(self, soup: BeautifulSoup, iteminfo: htmlparse.ParseItemInfo):
-        q = r".itemInfo .sale_balloon"
-        elem = soup.select(q)
-        if len(elem) == 0:
-            return
-        iteminfo.onSale = True
-        name = elem[0].select("p")
-        iteminfo.saleName = name[0].text
+        return
 
     def getItems(self):
         return (self.iteminfo,)
@@ -136,16 +104,14 @@ class NetoffDeliveryParse:
         self, soup: BeautifulSoup
     ) -> list[htmlparse.ParseStorePostage]:
         results: list[htmlparse.ParseStorePostage] = []
-        li = (
-            soup.select_one("#\\31 0")
-            .find_next_sibling(r"div")
-            .select(r".h-text__ul-sub li")
-        )
+        li = soup.select('[id="04"] li')
         for ll in li:
             text_list = ll.text.split("\n")
             pref_list: list[str] = []
             for text in text_list:
                 target_text = re.sub(r"\s", "", text)
+                if not target_text:
+                    continue
                 if "北海道・沖縄を除く" in target_text:
                     pref_list = []
                     for prefname in prefecture.PrefectureName.get_all_prefecturename():
@@ -172,7 +138,7 @@ class NetoffDeliveryParse:
     def parse_basic_shipping_terms(
         self, soup: BeautifulSoup
     ) -> htmlparse.ParseStorePostage:
-        target = soup.select_one("#\\30 3").find_next_sibling(r"div").select_one(r"p")
+        target = soup.select_one('[id="03"] .l-help-about__section-inner')
         target_text = target.text.strip().replace(",", "")
         m = re.findall(r"送料は([1-9][0-9]+)円", target_text)
         if not m:

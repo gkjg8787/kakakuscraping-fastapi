@@ -407,10 +407,17 @@ def get_and_update_specific_url(
     if not ok:
         logger.warning(f"{get_filename} fail download {url} ,{res}")
         return
-    p = parser(res)
+    try:
+        p = parser(res)
+    except Exception as e:
+        logger.error(
+            f"{get_filename()} specific url parse error."
+            f"url={url}, "
+            f"error={str(e)}"
+        )
     if not hasattr(p, "get_ParseStorePostage"):
         raise AttributeError("fail calling parser of get_ParseStorePostage")
-    sp_list: list[htmlparse.ParseStorePostage] = parser(res).get_ParseStorePostage()
+    sp_list: list[htmlparse.ParseStorePostage] = p.get_ParseStorePostage()
     if not sp_list:
         logger.warning(f"{get_filename} not get postage of {url}")
         return
