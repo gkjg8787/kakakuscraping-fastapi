@@ -17,7 +17,7 @@ class SearchNetoff(SearchParser):
             itemd = {}
             itemd[self.STORENAME] = "ネットオフ"
             itemd[self.IMAGE_ON_ERR] = (
-                "https://st.netoff.co.jp/ebimage/noimage_comic_01.gif"
+                "https://www.netoff.co.jp/ebimage/noimage_comic_01.gif"
             )
             self.setTitle(v, itemd)
             self.setImage(v, itemd)
@@ -38,12 +38,12 @@ class SearchNetoff(SearchParser):
 
     def setImage(self, elem, itemd):
         imageo = elem.select_one(r"a.c-cassette__img img")
-        fname = re.sub(r"\D", "", str(imageo["src"])) + ".jpg"
-        itemd[self.IMAGE_URL] = "https://www.netoff.co.jp/ebimage/cmdty/" + fname
+        fname = str(imageo["src"]).split("/")[-1]
+        itemd[self.IMAGE_URL] = "https://www.netoff.co.jp/ebimage/" + fname
 
     def setTitle(self, elem, itemd):
         titleo = elem.select_one(r"a.c-cassette__title")
-        itemd[self.TITLE] = titleo.text
+        itemd[self.TITLE] = self.trimStr(titleo.text)
         itemd[self.TITLE_URL] = self.getPerfectURL(titleo["href"])
 
     def getPerfectURL(self, url):
@@ -87,7 +87,7 @@ class SearchNetoff(SearchParser):
             return
         for m in mailo:
             if "メール便" in m.text:
-                itemd[self.MAILBIN] = m.text
+                itemd[self.MAILBIN] = self.trimStr(str(m.text))
                 return
             else:
                 continue
@@ -96,7 +96,7 @@ class SearchNetoff(SearchParser):
         subinfoo = elem.select(".c-cassette__author")
         if len(subinfoo) == 0:
             return
-        itemd[self.SUBINFO] = subinfoo[0].text
+        itemd[self.SUBINFO] = self.trimStr(str(subinfoo[0].text))
 
     def addPageNum(self, elems, val):
         if str.isdigit(val):
@@ -121,7 +121,7 @@ class SearchNetoff(SearchParser):
         pageret = {self.ENABLE: self.FALSE}
         for p in pages:
             # print(p.text)
-            self.addPageNum(pageret, p.text)
+            self.addPageNum(pageret, str(p.text).strip())
             if (
                 self.MIN in pageret
                 and self.MAX in pageret

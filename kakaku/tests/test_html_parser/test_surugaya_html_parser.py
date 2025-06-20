@@ -1,7 +1,6 @@
 import os
-
+from datetime import datetime, timezone
 from html_parser import surugaya_html_parse
-from html_parser import htmlparse
 
 other_fpath = os.path.dirname(__file__) + "/data/surugaya_other.html"
 shiharai_fpath = os.path.dirname(__file__) + "/data/shiharai.html"
@@ -120,7 +119,7 @@ def test_surugaya_detail_redirect():
         "trendrate": 0,
         "url": "https://www.suruga-ya.jp/product/detail/106000370?tenpo_cd=400438",
         "storename": "バリQ古河ホビー館 Supported by 駿河屋",
-        "created_at": "2024-10-28 10:30:00",
+        "created_at": datetime(2024, 10, 28, 10, 30, tzinfo=timezone.utc),
     }
     with open(redirect_detail_fpath, encoding="utf-8") as fp:
         sp = surugaya_html_parse.SurugayaParse(
@@ -166,7 +165,7 @@ def test_surugaya_detail_timesale():
         "trendrate": 0,
         "url": "https://www.suruga-ya.jp/product/detail/128049960",
         "storename": "駿河屋",
-        "created_at": "2024-12-06 20:03:00",
+        "created_at": datetime(2024, 12, 6, 20, 3, tzinfo=timezone.utc),
     }
     with open(detail_timesale_fpath, encoding="utf-8") as fp:
         sp = surugaya_html_parse.SurugayaParse(
@@ -197,7 +196,7 @@ def test_surugaya_other_timesale():
             "trendrate": 0,
             "url": "https://www.suruga-ya.jp/product/other/128049960",
             "storename": "駿河屋",
-            "created_at": "2024-12-06 20:03:00",
+            "created_at": datetime(2024, 12, 6, 20, 3, tzinfo=timezone.utc),
             "campaign_msg": "12/6 ～ 12/7【999円以上】代引き+送料無料 2024/12/06 00:00 ～ 2024/12/07 23:59 999円未満 440円 999円以上 送料無料",
             "target_prefectures_length": 0,
             "terms_length": 2,
@@ -215,7 +214,7 @@ def test_surugaya_other_timesale():
             "trendrate": 0,
             "url": "https://www.suruga-ya.jp/product/other/128049960",
             "storename": "駿河屋 佐大通り店",
-            "created_at": "2024-12-06 20:03:00",
+            "created_at": datetime(2024, 12, 6, 20, 3, tzinfo=timezone.utc),
             "campaign_msg": "",
             "target_prefectures_length": 0,
             "terms_length": 0,

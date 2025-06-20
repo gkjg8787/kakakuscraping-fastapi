@@ -66,7 +66,7 @@ class NetoffParse(htmlparse.ParseItems):
     def getTaxin(self, elem):
         q = r".product-price__normal-tax"
         tax = elem.select_one(q)
-        if "(税込)" in tax:
+        if "税込" in tax.text:
             return True
         return False
 
