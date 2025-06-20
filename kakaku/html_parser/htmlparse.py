@@ -22,7 +22,7 @@ class ParseItemInfo(BaseModel):
     url: str = ""  # | None = None
     oldPrice: int = const_value.INIT_PRICE
     storename: str = ""
-    inventoryCount: int = 0
+    stockQuantity: int = 0
 
     def getOrderedDict(self):
         return OrderedDict(

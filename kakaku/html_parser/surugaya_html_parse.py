@@ -189,7 +189,7 @@ class SurugayaProduct(AB_SurugayaParse):
         self.set_issale(soup, iteminfo)
         iteminfo.isSuccess = self.checkSuccess(iteminfo)
         iteminfo.storename = self.getStoreName(soup)
-        iteminfo.inventoryCount = self.get_inventory_count(soup)
+        iteminfo.stockQuantity = self.get_inventory_count(soup)
         return iteminfo
 
     def get_other_items(
