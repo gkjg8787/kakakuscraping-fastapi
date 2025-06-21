@@ -28,7 +28,16 @@ def test_netoff_search():
             "category": "古本・中古本",
             "price": "1,150円",
             "imageURL": "https://www.netoff.co.jp/ebimage/noimage_book_01.gif",
-        }
+        },
+        {
+            "storename": "ネットオフ",
+            "title": "ワンピース・マガジン＜019＞",
+            "titleURL": "https://www.netoff.co.jp/detail/0014021548/",
+            "imageOnError": "https://www.netoff.co.jp/ebimage/noimage_comic_01.gif",
+            "category": "古本・中古本",
+            "price": "990円",
+            "imageURL": "https://www.netoff.co.jp/ebimage/cmdty/0014021548.jpg",
+        },
     ]
     with open(search_fpath, encoding="utf-8") as fp:
         sp = fp.read()
@@ -48,6 +57,7 @@ def test_netoff_search():
         print(item_dict)
 
     assert_item(item=ss.getItems()[0], correct=corrects[0])
+    assert_item(item=ss.getItems()[6], correct=corrects[1])
 
     pages_required_key_list = ["enable", "min", "max"]
     page = ss.getPage()

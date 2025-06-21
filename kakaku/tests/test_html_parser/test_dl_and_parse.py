@@ -1,10 +1,10 @@
 from downloader import download_html as dl
-
 from html_parser import (
     bookoff_html_parse,
     surugaya_html_parse,
     netoff_html_parse,
 )
+from common import read_config
 
 
 def test_netoff_dl_and_parse():
@@ -39,8 +39,13 @@ def test_surugaya_html_dl_and_parse_product_other():
     retb, text = dl.getUrlHtml(url=url)
     assert retb == True
     assert len(text) > 0
+    ipopts_dict = {
+        "surugaya": {"get_other_items_in_detail_page": False},
+        "excluded_condition_keywords": [],
+    }
+    ipopts = read_config.ItemParseOptions(**ipopts_dict)
     bk = surugaya_html_parse.SurugayaParse(
-        text, id=1, date="2023-01-01 00:00:00", url=url
+        text, id=1, date="2023-01-01 00:00:00", url=url, itemparseoptions=ipopts
     )
     ret = bk.getItems()
     for r in ret:
@@ -53,8 +58,13 @@ def test_surugaya_dl_and_parse_product_detail():
     retb, text = dl.getUrlHtml(url=url)
     assert retb == True
     assert len(text) > 0
+    ipopts_dict = {
+        "surugaya": {"get_other_items_in_detail_page": False},
+        "excluded_condition_keywords": [],
+    }
+    ipopts = read_config.ItemParseOptions(**ipopts_dict)
     bk = surugaya_html_parse.SurugayaParse(
-        text, id=1, date="2023-01-01 00:00:00", url=url
+        text, id=1, date="2023-01-01 00:00:00", url=url, itemparseoptions=ipopts
     )
     ret = bk.getItems()
     for r in ret:

@@ -5,6 +5,7 @@ from abc import ABCMeta
 from datetime import datetime
 
 from itemcomb import postage_data
+from common import read_config as rconf
 
 DEFAULT_STORENAME = "駿河屋"
 
@@ -24,7 +25,14 @@ class SurugayaProduct_Other(AB_SurugayaParse):
     soup: BeautifulSoup
     iteminfos: tuple[htmlparse.ParseItemInfo]
 
-    def __init__(self, soup: BeautifulSoup, id: int, date: datetime, url: str):
+    def __init__(
+        self,
+        soup: BeautifulSoup,
+        id: int,
+        date: datetime,
+        url: str,
+        ipopts: rconf.ItemParseOptions,
+    ):
         self.soup = soup
         self.iteminfos = []
         title = self.getTitle(self.soup)
@@ -35,7 +43,10 @@ class SurugayaProduct_Other(AB_SurugayaParse):
             "date": date,
             "url": url,
         }
-        self.iteminfos = tuple(self.parseStoreItem(self.soup, baseinfo))
+        iteminfos = self.parseStoreItem(self.soup, baseinfo)
+        self.iteminfos = tuple(
+            htmlparse.get_items_without_excluded_condition(iteminfos, ipopts=ipopts)
+        )
 
     def getItems(self):
         return self.iteminfos
@@ -160,14 +171,33 @@ class SurugayaProduct(AB_SurugayaParse):
     soup: BeautifulSoup
     iteminfos: tuple[htmlparse.ParseItemInfo]
 
-    def __init__(self, soup: BeautifulSoup, id: int, date: datetime, url: str):
+    def __init__(
+        self,
+        soup: BeautifulSoup,
+        id: int,
+        date: datetime,
+        url: str,
+        ipopts: rconf.ItemParseOptions,
+    ):
         self.soup = soup
         base = self.get_base_item(soup=soup, id=id, date=date, url=url)
+        if not ipopts.surugaya.get_other_items_in_detail_page:
+            items = htmlparse.get_items_without_excluded_condition(
+                [base], ipopts=ipopts
+            )
+            self.iteminfos = tuple(items)
+            return
         other_items = self.get_other_items(soup=soup, id=id, date=date, url=url)
         if other_items:
-            self.iteminfos = (base, *other_items)
+            items = htmlparse.get_items_without_excluded_condition(
+                [base, *other_items], ipopts=ipopts
+            )
+            self.iteminfos = tuple(items)
         else:
-            self.iteminfos = (base,)
+            items = htmlparse.get_items_without_excluded_condition(
+                [base], ipopts=ipopts
+            )
+            self.iteminfos = tuple(items)
 
     def getItems(self):
         return self.iteminfos
@@ -590,16 +620,30 @@ class SurugayaParse(htmlparse.ParseItems):
     parse: AB_SurugayaParse
     postage: SurugayaMakepurePostage
 
-    def __init__(self, fp, id: int, date: datetime, url: str):
+    def __init__(
+        self,
+        fp,
+        id: int,
+        date: datetime,
+        url: str,
+        itemparseoptions: rconf.ItemParseOptions,
+    ):
         self.soup = BeautifulSoup(fp, "html.parser")
-        self.parse = self.createObj(self.soup, id, date, url)
+        self.parse = self.createObj(self.soup, id, date, url, itemparseoptions)
         self.postage = SurugayaMakepurePostage(soup=self.soup)
 
-    def createObj(self, soup: BeautifulSoup, id: int, date: datetime, url: str):
+    def createObj(
+        self,
+        soup: BeautifulSoup,
+        id: int,
+        date: datetime,
+        url: str,
+        ipopts: rconf.ItemParseOptions,
+    ):
         if is_makepure(soup):
-            return SurugayaProduct_Other(soup, id, date, url)
+            return SurugayaProduct_Other(soup, id, date, url, ipopts)
         else:
-            return SurugayaProduct(soup, id, date, url)
+            return SurugayaProduct(soup, id, date, url, ipopts)
 
     def getItems(self):
         return self.parse.getItems()

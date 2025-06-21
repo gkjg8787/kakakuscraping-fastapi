@@ -196,7 +196,7 @@ class ServerLogDisplay(BaseTemplateValue):
         if lfq.level_list:
             selected_id_list = [int(level) for level in lfq.level_list]
         if not lfq.level_list and not lfq.min_date and not lfq.max_date:
-            lfq.min_date = (today - timedelta(days=3)).astimezone(JST).strftime(datefmt)
+            lfq.min_date = (today).astimezone(JST).strftime(datefmt)
         super().__init__(
             logfilelist=[],
             fquery={},

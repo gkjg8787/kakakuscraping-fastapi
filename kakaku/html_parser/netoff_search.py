@@ -1,4 +1,5 @@
 import re
+
 from bs4 import BeautifulSoup
 from html_parser.search_parser import SearchParser
 
@@ -38,8 +39,8 @@ class SearchNetoff(SearchParser):
 
     def setImage(self, elem, itemd):
         imageo = elem.select_one(r"a.c-cassette__img img")
-        fname = str(imageo["src"]).split("/")[-1]
-        itemd[self.IMAGE_URL] = "https://www.netoff.co.jp/ebimage/" + fname
+        fname = str(imageo["src"])
+        itemd[self.IMAGE_URL] = "https://www.netoff.co.jp" + fname
 
     def setTitle(self, elem, itemd):
         titleo = elem.select_one(r"a.c-cassette__title")

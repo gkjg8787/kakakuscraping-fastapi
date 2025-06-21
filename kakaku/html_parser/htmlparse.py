@@ -5,7 +5,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from common import const_value
+from common import const_value, read_config as rconf
 
 
 class ParseItemInfo(BaseModel):
@@ -105,7 +105,7 @@ class ParseShopIDInfo:
 
 class ParseItems(metaclass=ABCMeta):
     @abstractmethod
-    def getItems(self):
+    def getItems(self) -> tuple[ParseItemInfo]:
         return ()
 
     @classmethod
@@ -135,3 +135,25 @@ class ParseItems(metaclass=ABCMeta):
 
     def isDeleted(self) -> bool:
         return False
+
+
+def get_items_without_excluded_condition(
+    iteminfos: list[ParseItemInfo], ipopts: rconf.ItemParseOptions
+):
+    if not ipopts.excluded_condition_keywords:
+        return iteminfos
+
+    def is_excluded_condition(item: ParseItemInfo):
+        if not item.condition:
+            return False
+        for word in ipopts.excluded_condition_keywords:
+            if word in item.condition:
+                return True
+        return False
+
+    results: list[ParseItemInfo] = []
+    for item in iteminfos:
+        if is_excluded_condition(item):
+            continue
+        results.append(item)
+    return results

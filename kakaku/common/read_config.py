@@ -1,6 +1,6 @@
 from typing import Annotated
 from annotated_types import Gt
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 import settings
 
@@ -135,3 +135,16 @@ class PredictionConfig(BaseModel):
 
 def get_prediction_setting():
     return PredictionConfig(**settings.PREDICTION)
+
+
+class SurugayaParseOptions(BaseModel):
+    get_other_items_in_detail_page: bool
+
+
+class ItemParseOptions(BaseModel):
+    surugaya: SurugayaParseOptions
+    excluded_condition_keywords: list[str]
+
+
+def get_item_parse_options():
+    return ItemParseOptions(**settings.ITEM_PARSE_OPTIONS)

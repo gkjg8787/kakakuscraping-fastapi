@@ -91,3 +91,9 @@ PREDICTION = {
     "show_accuracy": False,
     "learning_timeout": 10,
 }
+ITEM_PARSE_OPTIONS = {
+    "surugaya": {
+        "get_other_items_in_detail_page": False,
+    },
+    "excluded_condition_keywords": [],  # ["難", "欠", "ランクB", "不備", "ディスクのみ"]
+}

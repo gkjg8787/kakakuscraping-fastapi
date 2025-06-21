@@ -111,6 +111,7 @@ def combine_duplicates_item(parseitems: htmlparse.ParseItems):
     if len(items) == 1:
         return items
     dup_dict: dict[str, htmlparse.ParseItemInfo] = {}
+
     for item in items:
         if item.storename not in dup_dict:
             dup_dict[item.storename] = item
@@ -505,7 +506,8 @@ def get_now_db_datetime():
 
 def get_parse_data(fname: str, url_id: int, url: str):
     date = get_now_db_datetime()
-    return gethtmlparse.getParser(fname, url_id, date, url)
+    itemparseoptions = read_config.get_item_parse_options()
+    return gethtmlparse.getParser(fname, url_id, date, url, itemparseoptions)
 
 
 def startParse(db: Session, url: str, item_id: int, fname: str, logger=None) -> None:
