@@ -1,8 +1,9 @@
 import os
 from datetime import datetime, timezone
 from html_parser import netoff_html_parse
+from .read_data import read_tgz
 
-detail_fpath = os.path.dirname(__file__) + "/data/netoff_detail.html"
+detail_fpath = "netoff_detail.html"
 
 
 def test_netoff_parse():
@@ -21,10 +22,10 @@ def test_netoff_parse():
         "storename": "ネットオフ",
         "created_at": datetime(2025, 6, 20, 13, 30, tzinfo=timezone.utc),
     }
-    with open(detail_fpath, "r") as fp:
-        np = netoff_html_parse.NetoffParse(
-            fp, id=correct["url_id"], date=correct["created_at"], url=correct["url"]
-        )
-        for item in np.getItems():
-            for key, val in item.getOrderedDict().items():
-                assert val == correct[key]
+    fp = read_tgz(detail_fpath)
+    np = netoff_html_parse.NetoffParse(
+        fp, id=correct["url_id"], date=correct["created_at"], url=correct["url"]
+    )
+    for item in np.getItems():
+        for key, val in item.getOrderedDict().items():
+            assert val == correct[key]

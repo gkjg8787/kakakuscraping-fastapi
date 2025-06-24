@@ -1,21 +1,16 @@
-import os
 from datetime import datetime, timezone
 from html_parser import surugaya_html_parse
 from common import read_config
 
-other_fpath = os.path.dirname(__file__) + "/data/surugaya_other.html"
-shiharai_fpath = os.path.dirname(__file__) + "/data/shiharai.html"
+from .read_data import read_tgz
+
+other_fpath = "surugaya_other.html"
+shiharai_fpath = "shiharai.html"
 other_url = "https://www.suruga-ya.jp/product/other/128002938"
-redirect_detail_fpath = (
-    os.path.dirname(__file__) + "/data/surugaya_detail_redirect.html"
-)
-detail_timesale_fpath = (
-    os.path.dirname(__file__) + "/data/surugaya_detail_timesale.html"
-)
-other_timesale_fpath = os.path.dirname(__file__) + "/data/surugaya_other_timesale.html"
-detail_other_b_rank_fpath = (
-    os.path.dirname(__file__) + "/data/surugaya_detail_other_b_rank.html"
-)
+redirect_detail_fpath = "surugaya_detail_redirect.html"
+detail_timesale_fpath = "surugaya_detail_timesale.html"
+other_timesale_fpath = "surugaya_other_timesale.html"
+detail_other_b_rank_fpath = "surugaya_detail_other_b_rank.html"
 
 
 def test_surugaya_makepure_postage_storepostage():
@@ -24,53 +19,53 @@ def test_surugaya_makepure_postage_storepostage():
         "excluded_condition_keywords": [],
     }
     ipopts = read_config.ItemParseOptions(**ipopts_dict)
-    with open(other_fpath, encoding="utf-8") as fp:
-        sp = surugaya_html_parse.SurugayaParse(
-            fp, 1, "2025-06-21 00:00:01", other_url, ipopts
-        )
-        assert sp.hasPostage()
-        sppl = sp.getPostageList()
-        for spp in sppl:
-            if spp.storename == "駿河屋日本橋本館":
-                assert len(spp.target_prefectures) == 0
-                assert (
-                    spp.campaign_msg
-                    == "2,000円以上のお買い上げにて送料無料キャンペーン 2025/06/20 00:00 ～ 2025/06/22 23:59 2,000円未満 300～1,500円 2,000円以上 送料無料"
-                )
-                assert len(spp.terms) == 1
-                assert spp.terms[0].boundary == "2000<="
-                assert spp.terms[0].postage == 0
+    fp = read_tgz(other_fpath)
+    sp = surugaya_html_parse.SurugayaParse(
+        fp, 1, "2025-06-21 00:00:01", other_url, ipopts
+    )
+    assert sp.hasPostage()
+    sppl = sp.getPostageList()
+    for spp in sppl:
+        if spp.storename == "駿河屋日本橋本館":
+            assert len(spp.target_prefectures) == 0
+            assert (
+                spp.campaign_msg
+                == "2,000円以上のお買い上げにて送料無料キャンペーン 2025/06/20 00:00 ～ 2025/06/22 23:59 2,000円未満 300～1,500円 2,000円以上 送料無料"
+            )
+            assert len(spp.terms) == 1
+            assert spp.terms[0].boundary == "2000<="
+            assert spp.terms[0].postage == 0
 
-            if spp.storename == "駿河屋松本店":
-                assert len(spp.target_prefectures) == 0
-                assert len(spp.campaign_msg) == 0
-                assert len(spp.terms) == 0
+        if spp.storename == "駿河屋松本店":
+            assert len(spp.target_prefectures) == 0
+            assert len(spp.campaign_msg) == 0
+            assert len(spp.terms) == 0
 
-            if spp.storename == "りあらいず":
-                assert len(spp.target_prefectures) == 0
-                assert (
-                    spp.campaign_msg
-                    == "送料キャンペーン 2025/06/01 00:00 ～ 2025/06/30 23:59 100円未満 700円 10,000円未満 400円 10,000円以上 送料無料"
-                )
-                assert len(spp.terms) == 3
-                assert spp.terms[0].boundary == "100>"
-                assert spp.terms[0].postage == 700
-                assert spp.terms[1].boundary == "100<=:10000>"
-                assert spp.terms[1].postage == 400
-                assert spp.terms[2].boundary == "10000<="
-                assert spp.terms[2].postage == 0
+        if spp.storename == "りあらいず":
+            assert len(spp.target_prefectures) == 0
+            assert (
+                spp.campaign_msg
+                == "送料キャンペーン 2025/06/01 00:00 ～ 2025/06/30 23:59 100円未満 700円 10,000円未満 400円 10,000円以上 送料無料"
+            )
+            assert len(spp.terms) == 3
+            assert spp.terms[0].boundary == "100>"
+            assert spp.terms[0].postage == 700
+            assert spp.terms[1].boundary == "100<=:10000>"
+            assert spp.terms[1].postage == 400
+            assert spp.terms[2].boundary == "10000<="
+            assert spp.terms[2].postage == 0
 
-            if spp.storename == "駿河屋":
-                assert len(spp.target_prefectures) == 0
-                assert (
-                    spp.campaign_msg
-                    == "6/21 ～ 6/22【999円以上】代引き100円+送料無料 2025/06/21 00:00 ～ 2025/06/22 23:59 999円未満 440円 999円以上 送料無料"
-                )
-                assert len(spp.terms) == 2
-                assert spp.terms[0].boundary == "999>"
-                assert spp.terms[0].postage == 440
-                assert spp.terms[1].boundary == "999<="
-                assert spp.terms[1].postage == 0
+        if spp.storename == "駿河屋":
+            assert len(spp.target_prefectures) == 0
+            assert (
+                spp.campaign_msg
+                == "6/21 ～ 6/22【999円以上】代引き100円+送料無料 2025/06/21 00:00 ～ 2025/06/22 23:59 999円未満 440円 999円以上 送料無料"
+            )
+            assert len(spp.terms) == 2
+            assert spp.terms[0].boundary == "999>"
+            assert spp.terms[0].postage == 440
+            assert spp.terms[1].boundary == "999<="
+            assert spp.terms[1].postage == 0
 
 
 def test_surugaya_makepure_postage_shopidinfo():
@@ -79,55 +74,55 @@ def test_surugaya_makepure_postage_shopidinfo():
         "excluded_condition_keywords": [],
     }
     ipopts = read_config.ItemParseOptions(**ipopts_dict)
-    with open(other_fpath, encoding="utf-8") as fp:
-        sp = surugaya_html_parse.SurugayaParse(
-            fp, 1, "2025-06-21 00:00:01", other_url, ipopts
-        )
-        assert sp.hasShopIDInfo()
-        sidinf = sp.getShopIDInfo()
-        base_url = "https://www.suruga-ya.jp/shop/"
-        for key, val in sidinf.items():
-            if key == "駿河屋日本橋本館":
-                assert val.storename == key
-                assert val.shop_id == 200823
-                assert val.url == base_url + "200823"
-            if key == "駿河屋 ひたちなかファッションクルーズ店":
-                assert val.storename == key
-                assert val.shop_id == 400515
-                assert val.url == base_url + "400515"
-            if key == "ブックマーケット利府店 Supported by 駿河屋":
-                assert val.storename == key
-                assert val.shop_id == 201267
-                assert val.url == base_url + "201267"
-            if key == "りあらいず":
-                assert val.storename == key
-                assert val.shop_id == 400389
-                assert val.url == base_url + "400389"
+    fp = read_tgz(other_fpath)
+    sp = surugaya_html_parse.SurugayaParse(
+        fp, 1, "2025-06-21 00:00:01", other_url, ipopts
+    )
+    assert sp.hasShopIDInfo()
+    sidinf = sp.getShopIDInfo()
+    base_url = "https://www.suruga-ya.jp/shop/"
+    for key, val in sidinf.items():
+        if key == "駿河屋日本橋本館":
+            assert val.storename == key
+            assert val.shop_id == 200823
+            assert val.url == base_url + "200823"
+        if key == "駿河屋 ひたちなかファッションクルーズ店":
+            assert val.storename == key
+            assert val.shop_id == 400515
+            assert val.url == base_url + "400515"
+        if key == "ブックマーケット利府店 Supported by 駿河屋":
+            assert val.storename == key
+            assert val.shop_id == 201267
+            assert val.url == base_url + "201267"
+        if key == "りあらいず":
+            assert val.storename == key
+            assert val.shop_id == 400389
+            assert val.url == base_url + "400389"
 
 
 def test_surugaya_shiharai_parse():
-    with open(shiharai_fpath, encoding="utf-8") as fp:
-        sp = surugaya_html_parse.SurugayaShiharaiParse(fp)
-        for psp in sp.get_ParseStorePostage():
-            assert psp.storename == "駿河屋"
-            if "東京" in psp.target_prefectures:
-                assert len(psp.target_prefectures) == 34 + 7 + 4
-                assert len(psp.terms) == 2
-                assert psp.terms[0].boundary == "5000>"
-                assert psp.terms[0].postage == 240
-                assert psp.terms[1].boundary == "5000<="
-                assert psp.terms[1].postage == 0
-                continue
-            if "北海道" in psp.target_prefectures:
-                assert len(psp.target_prefectures) == 2
-                assert len(psp.terms) == 3
-                assert psp.terms[0].boundary == "5000>"
-                assert psp.terms[0].postage == 570
-                assert psp.terms[1].boundary == "5000<=:10000>"
-                assert psp.terms[1].postage == 285
-                assert psp.terms[2].boundary == "10000<="
-                assert psp.terms[2].postage == 0
-                continue
+    fp = read_tgz(shiharai_fpath)
+    sp = surugaya_html_parse.SurugayaShiharaiParse(fp)
+    for psp in sp.get_ParseStorePostage():
+        assert psp.storename == "駿河屋"
+        if "東京" in psp.target_prefectures:
+            assert len(psp.target_prefectures) == 34 + 7 + 4
+            assert len(psp.terms) == 2
+            assert psp.terms[0].boundary == "5000>"
+            assert psp.terms[0].postage == 240
+            assert psp.terms[1].boundary == "5000<="
+            assert psp.terms[1].postage == 0
+            continue
+        if "北海道" in psp.target_prefectures:
+            assert len(psp.target_prefectures) == 2
+            assert len(psp.terms) == 3
+            assert psp.terms[0].boundary == "5000>"
+            assert psp.terms[0].postage == 570
+            assert psp.terms[1].boundary == "5000<=:10000>"
+            assert psp.terms[1].postage == 285
+            assert psp.terms[2].boundary == "10000<="
+            assert psp.terms[2].postage == 0
+            continue
 
 
 def test_surugaya_detail_redirect():
@@ -151,35 +146,33 @@ def test_surugaya_detail_redirect():
         "excluded_condition_keywords": [],
     }
     ipopts = read_config.ItemParseOptions(**ipopts_dict)
-    with open(redirect_detail_fpath, encoding="utf-8") as fp:
-        sp = surugaya_html_parse.SurugayaParse(
-            fp=fp,
-            id=correct["url_id"],
-            date=correct["created_at"],
-            url=correct["url"],
-            itemparseoptions=ipopts,
-        )
-        for item in sp.getItems():
-            for key, val in item.getOrderedDict().items():
-                assert val == correct[key]
+    fp = read_tgz(redirect_detail_fpath)
+    sp = surugaya_html_parse.SurugayaParse(
+        fp=fp,
+        id=correct["url_id"],
+        date=correct["created_at"],
+        url=correct["url"],
+        itemparseoptions=ipopts,
+    )
+    for item in sp.getItems():
+        for key, val in item.getOrderedDict().items():
+            assert val == correct[key]
 
-        assert sp.hasPostage()
-        assert len(sp.getPostageList()) == 1
-        for pos in sp.getPostageList():
-            assert pos.storename == correct["storename"]
-            assert pos.campaign_msg == ""
-            assert len(pos.target_prefectures) == 0
-            assert len(pos.terms) == 0
+    assert sp.hasPostage()
+    assert len(sp.getPostageList()) == 1
+    for pos in sp.getPostageList():
+        assert pos.storename == correct["storename"]
+        assert pos.campaign_msg == ""
+        assert len(pos.target_prefectures) == 0
+        assert len(pos.terms) == 0
 
-        assert sp.hasShopIDInfo()
-        assert (
-            sp.getShopIDInfo()[correct["storename"]].storename == correct["storename"]
-        )
-        assert sp.getShopIDInfo()[correct["storename"]].shop_id == 400438
-        assert (
-            sp.getShopIDInfo()[correct["storename"]].url
-            == "https://www.suruga-ya.jp/shop/400438"
-        )
+    assert sp.hasShopIDInfo()
+    assert sp.getShopIDInfo()[correct["storename"]].storename == correct["storename"]
+    assert sp.getShopIDInfo()[correct["storename"]].shop_id == 400438
+    assert (
+        sp.getShopIDInfo()[correct["storename"]].url
+        == "https://www.suruga-ya.jp/shop/400438"
+    )
 
 
 def test_surugaya_detail_timesale():
@@ -203,19 +196,19 @@ def test_surugaya_detail_timesale():
         "excluded_condition_keywords": [],
     }
     ipopts = read_config.ItemParseOptions(**ipopts_dict)
-    with open(detail_timesale_fpath, encoding="utf-8") as fp:
-        sp = surugaya_html_parse.SurugayaParse(
-            fp=fp,
-            id=correct["url_id"],
-            date=correct["created_at"],
-            url=correct["url"],
-            itemparseoptions=ipopts,
-        )
-        for item in sp.getItems():
-            for key, val in item.getOrderedDict().items():
-                assert val == correct[key]
+    fp = read_tgz(detail_timesale_fpath)
+    sp = surugaya_html_parse.SurugayaParse(
+        fp=fp,
+        id=correct["url_id"],
+        date=correct["created_at"],
+        url=correct["url"],
+        itemparseoptions=ipopts,
+    )
+    for item in sp.getItems():
+        for key, val in item.getOrderedDict().items():
+            assert val == correct[key]
 
-        assert not sp.hasPostage()
+    assert not sp.hasPostage()
 
 
 def test_surugaya_other_timesale():
@@ -262,37 +255,37 @@ def test_surugaya_other_timesale():
         "excluded_condition_keywords": [],
     }
     ipopts = read_config.ItemParseOptions(**ipopts_dict)
-    with open(other_timesale_fpath, encoding="utf-8") as fp:
-        sp = surugaya_html_parse.SurugayaParse(
-            fp=fp,
-            id=corrects[0]["url_id"],
-            date=corrects[0]["created_at"],
-            url=corrects[0]["url"],
-            itemparseoptions=ipopts,
-        )
-        for item, correct in zip(sp.getItems(), corrects):
-            for key, val in item.getOrderedDict().items():
-                assert val == correct[key]
+    fp = read_tgz(other_timesale_fpath)
+    sp = surugaya_html_parse.SurugayaParse(
+        fp=fp,
+        id=corrects[0]["url_id"],
+        date=corrects[0]["created_at"],
+        url=corrects[0]["url"],
+        itemparseoptions=ipopts,
+    )
+    for item, correct in zip(sp.getItems(), corrects):
+        for key, val in item.getOrderedDict().items():
+            assert val == correct[key]
 
-        assert sp.hasPostage()
+    assert sp.hasPostage()
 
-        assert len(sp.getPostageList()) == 2
-        for pos, correct in zip(sp.getPostageList(), corrects):
-            assert pos.storename == correct["storename"]
-            assert pos.campaign_msg == correct["campaign_msg"]
-            assert len(pos.target_prefectures) == correct["target_prefectures_length"]
-            assert len(pos.terms) == correct["terms_length"]
+    assert len(sp.getPostageList()) == 2
+    for pos, correct in zip(sp.getPostageList(), corrects):
+        assert pos.storename == correct["storename"]
+        assert pos.campaign_msg == correct["campaign_msg"]
+        assert len(pos.target_prefectures) == correct["target_prefectures_length"]
+        assert len(pos.terms) == correct["terms_length"]
 
-        assert sp.hasShopIDInfo()
-        assert (
-            sp.getShopIDInfo()[corrects[1]["storename"]].storename
-            == corrects[1]["storename"]
-        )
-        assert sp.getShopIDInfo()[corrects[1]["storename"]].shop_id == 400506
-        assert (
-            sp.getShopIDInfo()[corrects[1]["storename"]].url
-            == "https://www.suruga-ya.jp/shop/400506"
-        )
+    assert sp.hasShopIDInfo()
+    assert (
+        sp.getShopIDInfo()[corrects[1]["storename"]].storename
+        == corrects[1]["storename"]
+    )
+    assert sp.getShopIDInfo()[corrects[1]["storename"]].shop_id == 400506
+    assert (
+        sp.getShopIDInfo()[corrects[1]["storename"]].url
+        == "https://www.suruga-ya.jp/shop/400506"
+    )
 
 
 def test_surugaya_detail_other_items():
@@ -363,15 +356,15 @@ def test_surugaya_detail_other_items():
         "excluded_condition_keywords": [],
     }
     ipopts = read_config.ItemParseOptions(**ipopts_dict)
-    with open(detail_other_b_rank_fpath, encoding="utf-8") as fp:
-        sp = surugaya_html_parse.SurugayaParse(
-            fp=fp,
-            id=corrects[0]["url_id"],
-            date=corrects[0]["created_at"],
-            url=corrects[0]["url"],
-            itemparseoptions=ipopts,
-        )
-        items = sp.getItems()
+    fp = read_tgz(detail_other_b_rank_fpath)
+    sp = surugaya_html_parse.SurugayaParse(
+        fp=fp,
+        id=corrects[0]["url_id"],
+        date=corrects[0]["created_at"],
+        url=corrects[0]["url"],
+        itemparseoptions=ipopts,
+    )
+    items = sp.getItems()
     assert len(items) == len(corrects)
     for i in range(len(items)):
         item = items[i]
@@ -405,15 +398,15 @@ def test_surugaya_detail_other_items_not_other():
         "excluded_condition_keywords": [],
     }
     ipopts = read_config.ItemParseOptions(**ipopts_dict)
-    with open(detail_other_b_rank_fpath, encoding="utf-8") as fp:
-        sp = surugaya_html_parse.SurugayaParse(
-            fp=fp,
-            id=corrects[0]["url_id"],
-            date=corrects[0]["created_at"],
-            url=corrects[0]["url"],
-            itemparseoptions=ipopts,
-        )
-        items = sp.getItems()
+    fp = read_tgz(detail_other_b_rank_fpath)
+    sp = surugaya_html_parse.SurugayaParse(
+        fp=fp,
+        id=corrects[0]["url_id"],
+        date=corrects[0]["created_at"],
+        url=corrects[0]["url"],
+        itemparseoptions=ipopts,
+    )
+    items = sp.getItems()
     assert len(items) == len(corrects)
     for i in range(len(items)):
         item = items[i]
@@ -475,15 +468,15 @@ def test_surugaya_detail_other_items_excluded_one():
         "excluded_condition_keywords": ["難"],
     }
     ipopts = read_config.ItemParseOptions(**ipopts_dict)
-    with open(detail_other_b_rank_fpath, encoding="utf-8") as fp:
-        sp = surugaya_html_parse.SurugayaParse(
-            fp=fp,
-            id=corrects[0]["url_id"],
-            date=corrects[0]["created_at"],
-            url=corrects[0]["url"],
-            itemparseoptions=ipopts,
-        )
-        items = sp.getItems()
+    fp = read_tgz(detail_other_b_rank_fpath)
+    sp = surugaya_html_parse.SurugayaParse(
+        fp=fp,
+        id=corrects[0]["url_id"],
+        date=corrects[0]["created_at"],
+        url=corrects[0]["url"],
+        itemparseoptions=ipopts,
+    )
+    items = sp.getItems()
     assert len(items) == len(corrects)
     for i in range(len(items)):
         item = items[i]
@@ -530,15 +523,15 @@ def test_surugaya_detail_other_items_excluded_two():
         "excluded_condition_keywords": ["欠品"],
     }
     ipopts = read_config.ItemParseOptions(**ipopts_dict)
-    with open(detail_other_b_rank_fpath, encoding="utf-8") as fp:
-        sp = surugaya_html_parse.SurugayaParse(
-            fp=fp,
-            id=corrects[0]["url_id"],
-            date=corrects[0]["created_at"],
-            url=corrects[0]["url"],
-            itemparseoptions=ipopts,
-        )
-        items = sp.getItems()
+    fp = read_tgz(detail_other_b_rank_fpath)
+    sp = surugaya_html_parse.SurugayaParse(
+        fp=fp,
+        id=corrects[0]["url_id"],
+        date=corrects[0]["created_at"],
+        url=corrects[0]["url"],
+        itemparseoptions=ipopts,
+    )
+    items = sp.getItems()
     assert len(items) == len(corrects)
     for i in range(len(items)):
         item = items[i]
@@ -630,15 +623,15 @@ def test_surugaya_other_excluded_condition():
         "excluded_condition_keywords": ["不備"],
     }
     ipopts = read_config.ItemParseOptions(**ipopts_dict)
-    with open(other_fpath, encoding="utf-8") as fp:
-        sp = surugaya_html_parse.SurugayaParse(
-            fp=fp,
-            id=corrects[0]["url_id"],
-            date=corrects[0]["created_at"],
-            url=corrects[0]["url"],
-            itemparseoptions=ipopts,
-        )
-        items = sp.getItems()
+    fp = read_tgz(other_fpath)
+    sp = surugaya_html_parse.SurugayaParse(
+        fp=fp,
+        id=corrects[0]["url_id"],
+        date=corrects[0]["created_at"],
+        url=corrects[0]["url"],
+        itemparseoptions=ipopts,
+    )
+    items = sp.getItems()
     assert len(items) == 10
 
     def assert_target_item(item, correct):

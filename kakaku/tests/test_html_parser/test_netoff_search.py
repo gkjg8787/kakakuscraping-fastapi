@@ -1,8 +1,7 @@
-import os
-
 from html_parser import netoff_search
+from .read_data import read_tgz
 
-search_fpath = os.path.dirname(__file__) + "/data/netoff_search.html"
+search_fpath = "netoff_search.html"
 
 
 def assert_has_keys(required_keys: list, target_dict: dict):
@@ -39,8 +38,7 @@ def test_netoff_search():
             "imageURL": "https://www.netoff.co.jp/ebimage/cmdty/0014021548.jpg",
         },
     ]
-    with open(search_fpath, encoding="utf-8") as fp:
-        sp = fp.read()
+    sp = read_tgz(search_fpath)
     ss = netoff_search.SearchNetoff()
     ss.parseSearch(sp)
     items_required_key_list = [

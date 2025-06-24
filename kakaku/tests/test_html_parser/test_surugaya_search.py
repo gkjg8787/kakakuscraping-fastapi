@@ -1,11 +1,8 @@
-import os
-
 from html_parser import surugaya_search
+from .read_data import read_tgz
 
-search_fpath = os.path.dirname(__file__) + "/data/surugaya_search_marika.html"
-search_detail_direct_fpath = (
-    os.path.dirname(__file__) + "/data/surugaya_search_mononoke_detail_direct.html"
-)
+search_fpath = "surugaya_search_marika.html"
+search_detail_direct_fpath = "surugaya_search_mononoke_detail_direct.html"
 
 
 def assert_has_keys(required_keys: list, target_dict: dict):
@@ -35,8 +32,7 @@ def test_surugaya_search():
             "imageURL": "https://www.suruga-ya.jp/database/photo.php?shinaban=109003254&size=m",
         }
     ]
-    with open(search_fpath, encoding="utf-8") as fp:
-        sp = fp.read()
+    sp = read_tgz(search_fpath)
     ss = surugaya_search.SearchSurugaya(is_converturl=True)
     ss.parseSearch(sp)
     items_required_key_list = [
@@ -79,8 +75,7 @@ def test_surugaya_search_range_usedprice():
             "imageURL": "https://www.suruga-ya.jp/database/photo.php?shinaban=109102234&size=m",
         }
     ]
-    with open(search_fpath, encoding="utf-8") as fp:
-        sp = fp.read()
+    sp = read_tgz(search_fpath)
     ss = surugaya_search.SearchSurugaya(is_converturl=True)
     ss.parseSearch(sp)
 
@@ -113,8 +108,7 @@ def test_surugaya_search_detail_direct():
             "imageURL": "https://www.suruga-ya.jp/database/photo.php?shinaban=128049960&size=m",
         },
     ]
-    with open(search_detail_direct_fpath, encoding="utf-8") as fp:
-        sp = fp.read()
+    sp = read_tgz(search_detail_direct_fpath)
     ss = surugaya_search.SearchSurugaya(is_converturl=True)
     ss.parseSearch(sp)
     items_required_key_list = [
@@ -164,8 +158,7 @@ def test_surugaya_search_detail_direct_not_converturl():
             "imageURL": "https://www.suruga-ya.jp/database/photo.php?shinaban=128049960&size=m",
         },
     ]
-    with open(search_detail_direct_fpath, encoding="utf-8") as fp:
-        sp = fp.read()
+    sp = read_tgz(search_detail_direct_fpath)
     ss = surugaya_search.SearchSurugaya(is_converturl=False)
     ss.parseSearch(sp)
     items_required_key_list = [
