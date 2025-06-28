@@ -11,6 +11,7 @@ redirect_detail_fpath = "surugaya_detail_redirect.html"
 detail_timesale_fpath = "surugaya_detail_timesale.html"
 other_timesale_fpath = "surugaya_other_timesale.html"
 detail_other_b_rank_fpath = "surugaya_detail_other_b_rank.html"
+detail_new_used_fpath = "surugaya_detail_new_used.html"
 
 
 def test_surugaya_makepure_postage_storepostage():
@@ -643,3 +644,58 @@ def test_surugaya_other_excluded_condition():
     assert_target_item(items[2], corrects[2])
     assert_target_item(items[-2], corrects[3])
     assert_target_item(items[-1], corrects[4])
+
+
+def test_surugaya_detail_new_used_items():
+    corrects = [
+        {
+            "url_id": 1,
+            "uniqname": "ニンテンドースイッチ2ソフトマリオカート ワールド",
+            "usedprice": -1,
+            "newprice": 8483,
+            "taxin": True,
+            "onsale": False,
+            "salename": "",
+            "issuccess": True,
+            "oldprice": -1,
+            "trendrate": 0,
+            "url": "https://www.suruga-ya.jp/product/detail/112000010",
+            "storename": "駿河屋",
+            "created_at": datetime(2025, 6, 28, 14, 17, tzinfo=timezone.utc),
+        },
+        {
+            "url_id": 1,
+            "uniqname": "ニンテンドースイッチ2ソフトマリオカート ワールド",
+            "usedprice": 7860,
+            "newprice": -1,
+            "taxin": True,
+            "onsale": True,
+            "salename": "タイムセール",
+            "issuccess": True,
+            "oldprice": -1,
+            "trendrate": 0,
+            "url": "https://www.suruga-ya.jp/product/detail/112000010",
+            "storename": "駿河屋",
+            "created_at": datetime(2025, 6, 28, 14, 17, tzinfo=timezone.utc),
+        },
+    ]
+    ipopts_dict = {
+        "surugaya": {"get_other_items_in_detail_page": False},
+        "excluded_condition_keywords": [],
+    }
+    ipopts = read_config.ItemParseOptions(**ipopts_dict)
+    fp = read_tgz(detail_new_used_fpath)
+    sp = surugaya_html_parse.SurugayaParse(
+        fp=fp,
+        id=corrects[0]["url_id"],
+        date=corrects[0]["created_at"],
+        url=corrects[0]["url"],
+        itemparseoptions=ipopts,
+    )
+    items = sp.getItems()
+    assert len(items) == len(corrects)
+    for i in range(len(items)):
+        item = items[i]
+        correct = corrects[i]
+        for key, val in item.getOrderedDict().items():
+            assert val == correct[key]

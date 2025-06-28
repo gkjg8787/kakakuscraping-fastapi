@@ -180,23 +180,19 @@ class SurugayaProduct(AB_SurugayaParse):
         ipopts: rconf.ItemParseOptions,
     ):
         self.soup = soup
-        base = self.get_base_item(soup=soup, id=id, date=date, url=url)
+        bases = self.get_base_items(soup=soup, id=id, date=date, url=url)
         if not ipopts.surugaya.get_other_items_in_detail_page:
-            items = htmlparse.get_items_without_excluded_condition(
-                [base], ipopts=ipopts
-            )
+            items = htmlparse.get_items_without_excluded_condition(bases, ipopts=ipopts)
             self.iteminfos = tuple(items)
             return
         other_items = self.get_other_items(soup=soup, id=id, date=date, url=url)
         if other_items:
             items = htmlparse.get_items_without_excluded_condition(
-                [base, *other_items], ipopts=ipopts
+                [*bases, *other_items], ipopts=ipopts
             )
             self.iteminfos = tuple(items)
         else:
-            items = htmlparse.get_items_without_excluded_condition(
-                [base], ipopts=ipopts
-            )
+            items = htmlparse.get_items_without_excluded_condition(bases, ipopts=ipopts)
             self.iteminfos = tuple(items)
 
     def getItems(self):
@@ -207,20 +203,22 @@ class SurugayaProduct(AB_SurugayaParse):
         titlebody = "#item_title"
         retstr = soup.select_one(titlebody)
         namestr = cls.trimStr(retstr.text)
-        # print("title:"+namestr)
         return namestr
 
-    def get_base_item(
+    def get_base_items(
         self, soup: BeautifulSoup, id: int, date: datetime, url: str
-    ) -> htmlparse.ParseItemInfo:
+    ) -> list[htmlparse.ParseItemInfo]:
         iteminfo = htmlparse.ParseItemInfo(id=id, timeStamp=date, url=url)
         iteminfo.name = self.parseTitle(soup)
-        self.set_price(soup, iteminfo)
-        self.set_issale(soup, iteminfo)
-        iteminfo.isSuccess = self.checkSuccess(iteminfo)
-        iteminfo.storename = self.getStoreName(soup)
-        iteminfo.stockQuantity = self.get_inventory_count(soup)
-        return iteminfo
+        iteminfos = self.get_prices(soup, iteminfo)
+        storename = self.getStoreName(soup)
+        for ii in iteminfos:
+            if ii.usedPrice > 0:
+                self.set_issale(soup, ii)
+                ii.stockQuantity = self.get_inventory_count(soup)
+            ii.isSuccess = self.checkSuccess(iteminfo)
+            ii.storename = storename
+        return iteminfos
 
     def get_other_items(
         self, soup: BeautifulSoup, id: int, date: datetime, url: str
@@ -284,34 +282,47 @@ class SurugayaProduct(AB_SurugayaParse):
             return True
         return False
 
-    def set_price(self, soup: BeautifulSoup, iteminfo: htmlparse.ParseItemInfo):
+    def get_prices(self, soup: BeautifulSoup, iteminfo: htmlparse.ParseItemInfo):
         basebody = r"label.mgnB0.d-block"
-        val = soup.select_one(basebody)
+        val = soup.select(basebody)
         if not val:
-            return
+            return [iteminfo]
         isNew = False
         pattern = r"span.text-price-detail.price-buy"
+        results: list[htmlparse.ParseItemInfo] = []
 
-        if "新品" in val.text:
-            isNew = True
-        else:
-            isNew = False
-        condition = val.get("data-label")
-        if isinstance(condition, str):
-            iteminfo.condition = self.strip_condition_text(condition)
+        for v in val:
+            if len(results) == 0:
+                ii = iteminfo
+            else:
+                ii = htmlparse.ParseItemInfo(
+                    id=iteminfo.id,
+                    timeStamp=iteminfo.timeStamp,
+                    url=iteminfo.url,
+                    name=iteminfo.name,
+                )
+            if "新品" in v.text:
+                isNew = True
+            else:
+                isNew = False
+            condition = v.get("data-label")
+            if isinstance(condition, str):
+                ii.condition = self.strip_condition_text(condition)
 
-        ret = val.select(pattern)
-        retlen = len(ret)
-        if retlen == 0:
-            return
+            ret = v.select(pattern)
+            retlen = len(ret)
+            if retlen == 0:
+                continue
 
-        iteminfo.taxin = self.is_taxin(val.text)
-        if isNew:
-            # print("newPrice:"+str(val.text))
-            iteminfo.newPrice = int(re.sub(r"\D", "", str(ret[0])))
-        else:
-            # print("usedPrice:"+str(val.text))
-            iteminfo.usedPrice = int(re.sub(r"\D", "", str(ret[0])))
+            ii.taxin = self.is_taxin(v.text)
+            if isNew:
+                ii.newPrice = int(re.sub(r"\D", "", str(ret[0])))
+            else:
+                ii.usedPrice = int(re.sub(r"\D", "", str(ret[0])))
+            results.append(ii)
+        if len(results) == 0:
+            results.append(iteminfo)
+        return results
 
     def set_issale(self, soup: BeautifulSoup, iteminfo: htmlparse.ParseItemInfo):
         timesalebase = soup.select_one(
