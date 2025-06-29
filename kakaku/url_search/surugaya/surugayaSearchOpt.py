@@ -12,13 +12,13 @@ from common.filter_name import FilterQueryName
 
 
 class SurugayaSearchOpt(siteSearchOpt.SiteSearchOpt):
-    COOKIE_FNAME = "surugaya_safeoff_cookie.lwp"
+    COOKIE_FNAME = "surugaya_cookie.lwp"
     fixed_cookies = [
         {
             "name": "safe_search_expired",
             "value": "1",
         },
-        {"name": "safe_search=option", "value": "3"},
+        {"name": "safe_search_option", "value": "3"},
     ]
 
     def __init__(self, confopt: readoption.ReadSearchOpt):

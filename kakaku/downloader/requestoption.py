@@ -85,7 +85,7 @@ class RequestOpt:
             cookiejar = self.load_cookie()
             if cookiejar is None:
                 cookiejar = requests.cookies.RequestsCookieJar()
-            cookiejar = self.add_fixed_cookie(cookiejar)
+            self.cookiejar = self.add_fixed_cookie(cookiejar)
         return self.cookiejar
 
     def getHeader(self):
