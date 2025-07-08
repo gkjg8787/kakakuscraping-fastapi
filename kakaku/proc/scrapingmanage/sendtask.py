@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 from common import cmnlog, const_value
 
@@ -16,7 +17,9 @@ def get_filename():
     return os.path.basename(__file__)
 
 
-def sendTask(cmdstr: str, url: str = "", id: int = const_value.NONE_ID):
+def sendTask(
+    cmdstr: str, url: str = "", id: int = const_value.NONE_ID, data: Any = None
+):
     cmnlog.deleteLogger(cmnlog.LogName.CLIENT)
     logger = cmnlog.createLogger(cmnlog.LogName.CLIENT)
     logger.debug(get_filename() + " sendTask start")
@@ -35,7 +38,7 @@ def sendTask(cmdstr: str, url: str = "", id: int = const_value.NONE_ID):
     task = m.get_task_queue()
     # result = m.get_result_queue()
 
-    cmd = sendcmd.SendCmd(cmdstr=cmdstr, url=url, id=id)
+    cmd = sendcmd.SendCmd(cmdstr=cmdstr, url=url, id=id, data=data)
     logger.info("{} sendTask {}".format(get_filename(), cmdstr))
 
     task.put(cmd)

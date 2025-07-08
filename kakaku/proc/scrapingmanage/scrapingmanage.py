@@ -22,7 +22,7 @@ from proc.system_status_log import (
     SystemStatusLogName,
     update_to_active_for_systemstatuslog,
 )
-from proc.proc_task import DirectOrderTask
+from proc.proc_task import DirectOrderTask, APIUpdateTask
 from accessor.read_sqlalchemy import get_session, Session
 from accessor.server import OrganizeLogQuery
 from accessor.item import UrlQuery
@@ -135,6 +135,10 @@ def scrapingURL(task: sendcmd.SendCmd, db: Session):
                 db=db, sysstslog=SystemStatusLogName.ONLINE_STORE_UPDATE
             )
             parseproc.put_task(DirectOrderTask(cmdstr=task.cmdstr))
+            return
+        case sendcmd.ScrOrder.UPDATE_API_PRICE:
+            SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.API_UPDATE)
+            parseproc.put_task(APIUpdateTask(cmdstr=task.cmdstr, data=task.data))
             return
 
 

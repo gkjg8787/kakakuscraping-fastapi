@@ -54,7 +54,7 @@ def api_add_items_url(
     return response
 
 
-@router.patch("/price/", response_model=items.ParseInfosUpdateResponse)
+@router.patch("/price/", response_model=items.PriceUpdateResponse)
 def api_update_price(
     parseinfos: items.ParseInfosUpdate, db: Session = Depends(get_session)
 ):

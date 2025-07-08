@@ -2,9 +2,11 @@ import os
 
 from domain.models.items import repository, items as m_items
 from .item.item import NewestQuery, UrlQuery, UrlActive, ItemQuery
-from proc import getAndWrite
 from html_parser import htmlparse, api_model
 from common import const_value, cmnlog
+from proc.scrapingmanage import sendTask
+from proc.sendcmd import ScrOrder
+from proc import get_sys_status, system_status
 
 
 class ItemCreateRepository(repository.IItemCreateRepository):
@@ -84,33 +86,32 @@ class ItemsURLCreateRepository(repository.IItemsURLCreateRepository):
 class PriceUpdateRepository(repository.IPriceUpdateRepository):
 
     def save(self, parseinfos: m_items.ParseInfosUpdate):
-        parseitems_dict, update_response = self._convert_parseinfos_to_parseitems(
-            parseinfos=parseinfos
-        )
+        parseitems_dict = self._convert_parseinfos_to_parseitems(parseinfos=parseinfos)
         logger = cmnlog.getLogger(cmnlog.LogName.API)
         logger_header = os.path.basename(__file__)
-        logger.info(f"{logger_header} update via api start")
-        for url_id, parseiteminfos in parseitems_dict.items():
-            url = parseiteminfos.get_url()
-            if not url:
-                logger.warning(f"{logger_header} no url data url_id={url_id}")
-                continue
-            getAndWrite._start_parse(
-                parseitems=parseiteminfos,
-                db=self.db,
-                url=url,
-                url_id=url_id,
-                item_id=const_value.NONE_ID,
-                logger=logger,
-            )
-        logger.info(f"{logger_header} update via api end")
-        # データベース整理
-
-        return update_response
+        syssts = get_sys_status.getSystemStatus(self.db)
+        if (
+            syssts == system_status.SystemStatus.NONE.name
+            or syssts == system_status.SystemStatus.FAULT.name
+            or syssts == system_status.SystemStatus.STOP.name
+        ):
+            errmsg = f"{logger_header} unable to update server status = {syssts}"
+            logger.warning(errmsg)
+            return m_items.PriceUpdateResponse(ok=False, error_msg=errmsg)
+        if not parseitems_dict:
+            errmsg = f"{logger_header} no data, no update"
+            logger.info(errmsg)
+            return m_items.PriceUpdateResponse(ok=False, error_msg=errmsg)
+        logger.info(
+            f"{logger_header} update via api start target_url_id={list(parseitems_dict.keys())}"
+        )
+        sendTask(cmdstr=ScrOrder.UPDATE_API_PRICE, data=parseitems_dict)
+        logger.debug(f"{logger_header} update via api end")
+        return m_items.PriceUpdateResponse(ok=True, error_msg="")
 
     def _convert_parseinfos_to_parseitems(self, parseinfos: m_items.ParseInfosUpdate):
         results: dict[int, api_model.ParseItemsForPriceUpdate] = {}
-        update_response = m_items.ParseInfosUpdateResponse()
+        # update_response = m_items.ParseInfosUpdateResponse()
         for parseinfo in parseinfos.infos:
             url_id = UrlQuery.get_url_id_by_url(db=self.db, url=parseinfo.url)
             new_price = const_value.INIT_PRICE
@@ -139,7 +140,10 @@ class PriceUpdateRepository(repository.IPriceUpdateRepository):
                 results[url_id] = api_model.ParseItemsForPriceUpdate(
                     parseiteminfos=[pii]
                 )
+            """
             update_response.infos.append(
                 m_items.DBParseInfo(**parseinfo.model_dump(), url_id=url_id)
             )
-        return results, update_response
+            """
+        # return results, update_response
+        return results

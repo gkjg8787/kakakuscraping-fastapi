@@ -3,7 +3,7 @@ import time
 from multiprocessing import Process, Queue
 import queue
 
-from common import cmnlog
+from common import cmnlog, const_value
 from proc import (
     getAndWrite,
     manager_util,
@@ -14,11 +14,9 @@ from proc import (
 )
 from proc.proc_status import ProcName
 from proc.sendcmd import ScrOrder
-from proc.proc_task import (
-    DownloadResultTask,
-    DirectOrderTask,
-)
+from proc.proc_task import DownloadResultTask, DirectOrderTask, APIUpdateTask
 from accessor.read_sqlalchemy import get_session, Session
+from html_parser import api_model
 
 
 def get_filename():
@@ -87,7 +85,7 @@ class ParseProc:
                     time.sleep(0.1)
                 continue
 
-            if isinstance(task, DirectOrderTask):
+            if type(task) is DirectOrderTask:
                 with next(get_session()) as db:
                     manager_util.writeProcActive(db, psa=psa)
                     self.instruct_update_data(
@@ -95,6 +93,12 @@ class ParseProc:
                     )
                 continue
 
+            if type(task) is APIUpdateTask:
+                with next(get_session()) as db:
+                    manager_util.writeProcActive(db, psa=psa)
+                    self.api_update(pid=id, db=db, task=task, logger=logger)
+                    is_parse = True
+                    continue
             if not isinstance(task, DownloadResultTask):
                 continue
             with next(get_session()) as db:
@@ -155,6 +159,46 @@ class ParseProc:
                 db=db, orgcmd=db_organizer.DBOrganizerCmd.PRICELOG_CLEANER
             )
         return
+
+    def api_update(
+        self,
+        pid: int,
+        db: Session,
+        task: APIUpdateTask,
+        logger: cmnlog.logging.Logger,
+    ):
+        parseitems_dict: dict[int, api_model.ParseItemsForPriceUpdate] = task.data
+        if parseitems_dict is None:
+            logger.warning(get_filename() + " api update , data is None")
+            return
+        if type(parseitems_dict) is not dict:
+            logger.warning(
+                get_filename()
+                + " api update , data type is not dict type="
+                + type(parseitems_dict)
+            )
+            return
+        for url_id, parseitems in parseitems_dict.items():
+            if type(parseitems) is not api_model.ParseItemsForPriceUpdate:
+                logger.warning(
+                    f"{get_filename()} api update , data type is not {api_model.ParseItemsForPriceUpdate.__class__.__name__} type={type(parseitems)}"
+                )
+                continue
+            logger.info(
+                get_filename()
+                + " pid="
+                + str(pid)
+                + " start api update url="
+                + parseitems.get_url()
+            )
+            getAndWrite._start_parse(
+                parseitems=parseitems,
+                db=db,
+                url=parseitems.get_url(),
+                item_id=const_value.NONE_ID,
+                url_id=url_id,
+                logger=logger,
+            )
 
 
 class ParseInfo:

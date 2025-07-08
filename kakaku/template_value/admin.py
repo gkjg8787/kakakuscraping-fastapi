@@ -299,6 +299,7 @@ class ServerLogDisplay(BaseTemplateValue):
             LogName.SEARCH,
             LogName.DB_ORGANIZE,
             LogName.TIMER,
+            LogName.API,
         ]
 
 

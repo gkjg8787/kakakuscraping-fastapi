@@ -1,5 +1,5 @@
-{%- if url | isSupportDomain %}
-    <a href="{{ url }}" target="_blank" rel="noopener noreferrer">{{ name }}</a>
-{%- else %}    
-    {{ name }}
+{%- if url | length > 0 and url | isSupportDomain %}
+<a href="{{ url }}" target="_blank" rel="noopener noreferrer">{{ name }}</a>
+{%- else %}
+{{ name }}
 {%- endif %}

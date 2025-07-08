@@ -1,3 +1,4 @@
+from typing import Any
 from pydantic import BaseModel
 
 
@@ -5,6 +6,7 @@ class SendCmd(BaseModel):
     cmdstr: str
     url: str
     id: int
+    data: Any = None
 
 
 class ScrOrder:
@@ -18,6 +20,7 @@ class ScrOrder:
     DB_ORGANIZE_LOG_2DAYS_CLEANER = "DB_ORGANIZE_LOG_2DAYS_CLEANER"
     DB_ORGANIZE_LOG_CLEANER = "DB_ORGANIZE_LOG_CLEANER"
     UPDATE_ONLINE_STORE_POSTAGE = "UPDATE_ONLINE_STORE_POSTAGE"
+    UPDATE_API_PRICE = "UPDATE_API_PRICE"
     ORDERLIST = (
         START,
         END,
@@ -29,4 +32,5 @@ class ScrOrder:
         DB_ORGANIZE_LOG_2DAYS_CLEANER,
         DB_ORGANIZE_LOG_CLEANER,
         UPDATE_ONLINE_STORE_POSTAGE,
+        UPDATE_API_PRICE,
     )

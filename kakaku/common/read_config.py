@@ -148,3 +148,7 @@ class ItemParseOptions(BaseModel):
 
 def get_item_parse_options():
     return ItemParseOptions(**settings.ITEM_PARSE_OPTIONS)
+
+
+def get_allow_unsupported_links_in_html():
+    return settings.ALLOW_UNSUPPORTED_LINKS_IN_HTML

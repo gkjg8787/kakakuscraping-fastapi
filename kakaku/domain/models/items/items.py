@@ -34,6 +34,11 @@ class ParseInfosUpdateResponse(BaseModel):
     infos: list[DBParseInfo] = Field(default_factory=list)
 
 
+class PriceUpdateResponse(BaseModel):
+    ok: bool
+    error_msg: str
+
+
 class Item(BaseModel):
     name: str
 

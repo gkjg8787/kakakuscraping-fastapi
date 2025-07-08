@@ -29,6 +29,7 @@ class SystemStatusLogName(Enum):
     ALL_DATA_UPDATE = (7, "一括更新")
     AUTO_ALL_DATA_UPDATE = (8, "自動一括更新")
     ONLINE_STORE_UPDATE = (9, "店舗情報更新")
+    API_UPDATE = (10, "APIからの更新")
 
     def __init__(self, id: int, text: str):
         self.id = id

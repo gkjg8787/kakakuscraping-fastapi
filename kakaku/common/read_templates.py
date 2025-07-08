@@ -3,14 +3,15 @@ from fastapi.templating import Jinja2Templates
 
 from urllib.parse import urlparse
 
-from common.read_config import get_support_url
+from common.read_config import get_support_url, get_allow_unsupported_links_in_html
 from common.util import isLocalToday
 
 templates = Jinja2Templates(directory="templates")
 
 
 def isSupportDomain(urlpath) -> bool:
-    """Custom filter"""
+    if get_allow_unsupported_links_in_html():
+        return True
     suplist = get_support_url().values()
     parsed_url = urlparse(urlpath)
     if parsed_url.netloc in suplist:
