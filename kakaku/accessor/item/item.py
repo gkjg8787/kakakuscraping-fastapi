@@ -320,11 +320,11 @@ class NewestQuery:
                     item_id = ItemQuery.add(db)
                 UrlQuery.add_urlinitem(db, url_id=url_id, item_id=item_id)
                 cls.__add_newest_data(db, item_id=item_id)
-                return
+                return item_id
         elif item_name:
             item_id = ItemQuery.add(db=db, name=item_name)
             cls.__add_newest_data(db, item_id=item_id)
-        return
+        return item_id
 
     @classmethod
     def __add_newest_data(cls, db: Session, item_id: int):

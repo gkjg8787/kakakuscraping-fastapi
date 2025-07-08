@@ -74,20 +74,20 @@ class ParseProc:
                     logger.info(
                         get_filename() + " sendTask " + ScrOrder.DB_ORGANIZE_SYNC
                     )
-                    scm.sendTask(ScrOrder.DB_ORGANIZE_SYNC, "", "")
+                    scm.sendTask(cmdstr=ScrOrder.DB_ORGANIZE_SYNC)
                     logger.info(
                         get_filename()
                         + " sendTask "
                         + ScrOrder.DB_ORGANIZE_LOG_2DAYS_CLEANER
                     )
-                    scm.sendTask(ScrOrder.DB_ORGANIZE_LOG_2DAYS_CLEANER, "", "")
+                    scm.sendTask(cmdstr=ScrOrder.DB_ORGANIZE_LOG_2DAYS_CLEANER)
                 else:
                     with next(get_session()) as db:
                         manager_util.writeProcWaiting(db, psa=psa)
                     time.sleep(0.1)
                 continue
 
-            if type(task) is DirectOrderTask:
+            if isinstance(task, DirectOrderTask):
                 with next(get_session()) as db:
                     manager_util.writeProcActive(db, psa=psa)
                     self.instruct_update_data(
@@ -95,7 +95,7 @@ class ParseProc:
                     )
                 continue
 
-            if type(task) is not DownloadResultTask:
+            if not isinstance(task, DownloadResultTask):
                 continue
             with next(get_session()) as db:
                 manager_util.writeProcActive(db, psa=psa)

@@ -37,7 +37,7 @@ def send_item_list(item_id_list: list[int]):
             for url in item_id_to_url_list[itemid]:
                 if urlCheck(url):
                     print(f"sendtask url={url}, item_id={itemid}")
-                    sendTask(ScrOrder.UPDATE, url, itemid)
+                    sendTask(cmdstr=ScrOrder.UPDATE, url=url, id=itemid)
                 else:
                     print(f"NG url={url}, item_id={itemid}")
                 continue
@@ -47,7 +47,7 @@ def send_url_list(url_list: list[str]):
     for url in url_list:
         if urlCheck(url):
             print(f"sendtask url={url}")
-            sendTask(ScrOrder.UPDATE, url, -1)
+            sendTask(cmdstr=ScrOrder.UPDATE, url=url)
         else:
             print(f"NG url={url}")
 
@@ -89,42 +89,22 @@ def startcmd():
         return
     if param.urlall:
         print("start sendtask urlall")
-        sendTask(ScrOrder.UPDATE_ACT_ALL, "", "")
+        sendTask(cmdstr=ScrOrder.UPDATE_ACT_ALL)
         print("end sendtask urlall")
         return
     if param.db_organize:
         if param.db_organize == "days":
             print("start sendtask organize days")
-            sendTask(ScrOrder.DB_ORGANIZE_DAYS, "", "")
+            sendTask(cmdstr=ScrOrder.DB_ORGANIZE_DAYS)
             print("end sendtask organize days")
             return
         if param.db_organize == "sync":
             print("start sendtask organize sync")
-            sendTask(ScrOrder.DB_ORGANIZE_SYNC, "", "")
+            sendTask(cmdstr=ScrOrder.DB_ORGANIZE_SYNC)
             print("end sendtask organize sync")
             return
         print("no support param")
         return
-
-
-def startcmd_old():
-    argslen = len(sys.argv)
-    if argslen < 2 or argslen > 3:
-        print("ERROR PARAMETER_NUM")
-        sys.exit()
-    if ScrOrder.UPDATE_ACT_ALL == sys.argv[1]:
-        sendTask(ScrOrder.UPDATE_ACT_ALL, "", "")
-        return
-    if urlCheck(sys.argv[1]):
-        url = sys.argv[1]
-    else:
-        print("ERROR PARAMETER_URL")
-        sys.exit()
-    id = -1
-    if argslen == 3:
-        id = int(sys.argv[2])
-
-    sendTask(ScrOrder.UPDATE, url, id)
 
 
 if __name__ == "__main__":

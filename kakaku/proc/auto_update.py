@@ -61,7 +61,7 @@ class DailyLogOrganizer:
             self.logger.debug(f"{get_filename()} localtoday = {self.starttime}")
             return
         self.logger.info(get_filename() + " sendTask " + ScrOrder.DB_ORGANIZE_DAYS)
-        scm.sendTask(ScrOrder.DB_ORGANIZE_DAYS, "", "")
+        scm.sendTask(cmdstr=ScrOrder.DB_ORGANIZE_DAYS)
         if reset:
             self.logger.info(f"{get_filename()} {__class__.__name__} reset starttime")
             self.setDatetime()
@@ -269,7 +269,7 @@ class ItemAutoUpdateTimer:
                         + ", target="
                         + uplt.strftime("%H:%M")
                     )
-                    scm.sendTask(ScrOrder.AUTO_UPDATE_ACT_ALL, "", "")
+                    scm.sendTask(cmdstr=ScrOrder.AUTO_UPDATE_ACT_ALL)
                     AutoUpdateScheduleQuery.update_status(
                         db=db,
                         requirements=[
@@ -383,7 +383,7 @@ class DailyOnlineStoreUpdate:
                         + " sendTask "
                         + ScrOrder.UPDATE_ONLINE_STORE_POSTAGE
                     )
-                    scm.sendTask(ScrOrder.UPDATE_ONLINE_STORE_POSTAGE, "", "")
+                    scm.sendTask(cmdstr=ScrOrder.UPDATE_ONLINE_STORE_POSTAGE)
                 updated_time = uplt
                 break
             next_time = uplt

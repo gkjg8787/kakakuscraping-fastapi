@@ -56,6 +56,7 @@ def initRooterLogger():
     createLogger(LogName.SEARCH)
     createLogger(LogName.ITEMCOMB)
     createLogger(LogName.MACHINELEARN)
+    createLogger(LogName.API)
 
 
 class LogName:
@@ -68,3 +69,4 @@ class LogName:
     ITEMCOMB = "itemcomb"
     TIMER = "timer"
     MACHINELEARN = "ml"
+    API = "api"

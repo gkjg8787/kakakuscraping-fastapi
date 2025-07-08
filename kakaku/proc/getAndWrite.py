@@ -22,10 +22,19 @@ from itemcomb import postage_data as posd
 # from common.stop_watch import stop_watch
 
 
-def deleteTempFile(fname):
+def deleteTempFile(fname: str, logger=None):
     isAutoDel = read_config.is_auto_del_dl_file()
-    if isAutoDel:
+    if not isAutoDel:
+        return
+    if not fname:
+        logprint(text=f"not file name", isError=True, logger=logger)
+        return
+    if os.path.exists(fname):
         os.remove(fname)
+        return
+    else:
+        logprint(text=f"not exists file name {fname}", isError=True, logger=logger)
+        return
 
 
 def logprint(text: str, isError: bool, logger=None):
@@ -513,7 +522,7 @@ def get_parse_data(fname: str, url_id: int, url: str):
 def startParse(db: Session, url: str, item_id: int, fname: str, logger=None) -> None:
     url_id = UrlQuery.add_url(db, urlpath=url)
     try:
-        gp = get_parse_data(fname, url_id, url)
+        parseitems = get_parse_data(fname, url_id, url)
     except FileNotFoundError as e:
         logprint(
             text=f"{type(e)} fname={fname}, url_id={url_id}, url={url}",
@@ -527,10 +536,29 @@ def startParse(db: Session, url: str, item_id: int, fname: str, logger=None) -> 
     except Exception as e:
         logprint(text=f"{e}", isError=True, logger=logger)
         return
-    if gp is None:
+    _start_parse(
+        parseitems=parseitems,
+        db=db,
+        url=url,
+        item_id=item_id,
+        url_id=url_id,
+        logger=logger,
+    )
+    deleteTempFile(fname, logger=logger)
+
+
+def _start_parse(
+    parseitems: htmlparse.ParseItems,
+    db: Session,
+    url: str,
+    item_id: int,
+    url_id: int,
+    logger,
+):
+    if parseitems is None:
         logprint(text="ERROR UNSUPPORTED URL", isError=True, logger=logger)
         return
-    if gp.isDeleted():
+    if parseitems.isDeleted():
         logprint(
             text=f"Item has been removed. inactive the url. url_id={url_id}, url={url}",
             isError=False,
@@ -538,7 +566,6 @@ def startParse(db: Session, url: str, item_id: int, fname: str, logger=None) -> 
         )
         inactive_url(db=db, url_id=url_id)
     else:
-        update_itemsprices(db=db, parseitems=gp, item_id=item_id, url_id=url_id)
-        update_online_storepostage(db=db, parseitems=gp)
-        update_makepure_postage_shop_list(db=db, parseitems=gp)
-    deleteTempFile(fname)
+        update_itemsprices(db=db, parseitems=parseitems, item_id=item_id, url_id=url_id)
+        update_online_storepostage(db=db, parseitems=parseitems)
+        update_makepure_postage_shop_list(db=db, parseitems=parseitems)

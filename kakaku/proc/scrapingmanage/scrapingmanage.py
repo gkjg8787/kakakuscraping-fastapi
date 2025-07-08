@@ -128,13 +128,13 @@ def scrapingURL(task: sendcmd.SendCmd, db: Session):
             return
         case sendcmd.ScrOrder.DB_ORGANIZE_SYNC | sendcmd.ScrOrder.DB_ORGANIZE_DAYS:
             SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.DB_ORGANIZE)
-            parseproc.put_task(DirectOrderTask(task.cmdstr))
+            parseproc.put_task(DirectOrderTask(cmdstr=task.cmdstr))
             return
         case sendcmd.ScrOrder.UPDATE_ONLINE_STORE_POSTAGE:
             SystemStatusLogAccess.add(
                 db=db, sysstslog=SystemStatusLogName.ONLINE_STORE_UPDATE
             )
-            parseproc.put_task(DirectOrderTask(task.cmdstr))
+            parseproc.put_task(DirectOrderTask(cmdstr=task.cmdstr))
             return
 
 
@@ -144,7 +144,7 @@ def check_db_organize(db: Session):
     )
     if not ret or (ret and not util.isLocalToday(util.utcTolocaltime(ret.created_at))):
         SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.DB_ORGANIZE)
-        parseproc.put_task(DirectOrderTask(sendcmd.ScrOrder.DB_ORGANIZE_DAYS))
+        parseproc.put_task(DirectOrderTask(cmdstr=sendcmd.ScrOrder.DB_ORGANIZE_DAYS))
     return
 
 

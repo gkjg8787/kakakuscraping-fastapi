@@ -9,6 +9,7 @@ from routers import (
     search,
     calcitemcomb,
     admin,
+    api,
 )
 from parameter_parser.admin import ProcCtrlForm
 from template_value.admin import BackServerCtrl
@@ -35,6 +36,7 @@ app.include_router(users.router)
 app.include_router(search.router)
 app.include_router(calcitemcomb.router)
 app.include_router(admin.router)
+app.include_router(api.router)
 
 
 def ctrlbackserver(cmd: SystemCtrlBtnName):

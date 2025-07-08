@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 
 from downloader import download_html
 from common import cmnlog
-from common.read_config import get_back_server_queue_timeout
+from common.read_config import get_back_server_queue_timeout, get_support_url
 from accessor.read_sqlalchemy import get_session
 from proc import manager_util
 from proc.proc_status import ProcName
@@ -53,7 +53,7 @@ class DlProc:
         except queue.Empty:
             return None
 
-    def runDlproc(self, id, taskq, retq):
+    def runDlproc(self, id: int, taskq, retq):
         logger = self.createLogger(id)
         stime = 0
         etime = 0
@@ -63,7 +63,7 @@ class DlProc:
         manager_util.writeProcWaiting(db, psa=psa)
         while True:
             try:
-                task = taskq.get(timeout=QUEUE_TIMEOUT)
+                task: DownloadResultTask = taskq.get(timeout=QUEUE_TIMEOUT)
                 etime = time.time()
                 if etime - stime < 1:
                     time.sleep((1 - (etime - stime)))
@@ -87,6 +87,10 @@ class DlProc:
         logger = self.getLogger()
         parsed_url = urlparse(url)
         logger.info(get_filename() + " put host=" + parsed_url.netloc)
+        support_urls = get_support_url()
+        if parsed_url.netloc not in list(support_urls.values()):
+            logger.warning(get_filename() + " not supported url=" + parsed_url.netloc)
+            return
         if len(self.dlproclist) == 0:
             self.createDlProc(0, parsed_url)
             logger.info(get_filename() + " create proc id=0 host=" + parsed_url.netloc)
@@ -105,12 +109,12 @@ class DlProc:
         self.dlproclist[parsed_url.netloc].updatePutTime()
         logger.debug(get_filename() + " put task")
 
-    def createDlProc(self, id, parsed_url):
+    def createDlProc(self, id: int, parsed_url):
         p, taskq = self.startDlSchedule(id, self.taskretq)
         info = DlInfo(id, p, parsed_url.netloc, taskq)
         self.dlproclist[parsed_url.netloc] = info
 
-    def startDlSchedule(self, id, retq):
+    def startDlSchedule(self, id: int, retq):
         taskq = Queue()
         p = Process(target=self.runDlproc, args=(id, taskq, retq))
         p.start()

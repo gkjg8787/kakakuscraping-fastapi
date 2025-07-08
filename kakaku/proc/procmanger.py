@@ -38,7 +38,7 @@ def start_scrapingmanager():
 
 
 def end_scrapingmanager():
-    sendTask(ScrOrder.END, "", -1)
+    sendTask(cmdstr=ScrOrder.END)
 
 
 def proc_action(cmdname: str):

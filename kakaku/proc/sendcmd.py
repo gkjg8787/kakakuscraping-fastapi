@@ -1,32 +1,10 @@
-class SendCmd:
-    def __init__(self, cmdstr: str, url: str, id: int):
-        self.__cmdstr = cmdstr
-        self.__url = url
-        self.__id = id
+from pydantic import BaseModel
 
-    @property
-    def cmdstr(self):
-        return self.__cmdstr
 
-    @cmdstr.setter
-    def cmdstr(self, cmdstr: str):
-        self.__cmdstr = cmdstr
-
-    @property
-    def url(self):
-        return self.__url
-
-    @url.setter
-    def url(self, url: str):
-        self.__url = url
-
-    @property
-    def id(self):
-        return self.__id
-
-    @id.setter
-    def id(self, id: int):
-        self.__id = id
+class SendCmd(BaseModel):
+    cmdstr: str
+    url: str
+    id: int
 
 
 class ScrOrder:

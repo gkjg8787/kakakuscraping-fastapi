@@ -1,13 +1,16 @@
-class DownloadResultTask:
-    dlhtml = ""
-
-    def __init__(self, url: str, itemid: int):
-        self.url = url
-        self.itemid = itemid
+from pydantic import BaseModel
+from typing import Any
 
 
-class DirectOrderTask:
+class DownloadResultTask(BaseModel):
+    url: str
+    itemid: int
+    dlhtml: str = ""
+
+
+class DirectOrderTask(BaseModel):
     cmdstr: str
 
-    def __init__(self, cmdstr: str):
-        self.cmdstr = cmdstr
+
+class APIUpdateTask(DirectOrderTask):
+    data: Any

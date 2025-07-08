@@ -140,7 +140,7 @@ class UpdateAllItemUrlPostContext(BaseTemplateValue):
         self.update_all_data()
 
     def update_all_data(self):
-        sendTask(ScrOrder.UPDATE_ACT_ALL, "", "")
+        sendTask(cmdstr=ScrOrder.UPDATE_ACT_ALL)
         self.updateSuccess = True
 
 
@@ -981,7 +981,7 @@ class UpdateItemUrlPostContext(BaseTemplateValue):
             self.errmsg = upurlform.errmsg
 
     def update_data(self, url_path):
-        sendTask(ScrOrder.UPDATE, url_path, str(const_value.NONE_ID))
+        sendTask(cmdstr=ScrOrder.UPDATE, url=url_path)
         self.updateSuccess = True
 
 
@@ -1009,7 +1009,7 @@ class UpdateItemAllUrlPostContext(BaseTemplateValue):
     def update_data(self, db: Session):
         urlinitems = UrlQuery.get_act_urlinfo_by_item_id(db, item_id=self.item_id)
         for uii in urlinitems:
-            sendTask(ScrOrder.UPDATE, uii.urlpath, str(const_value.NONE_ID))
+            sendTask(cmdstr=ScrOrder.UPDATE, url=uii.urlpath)
         self.updateSuccess = True
 
 
@@ -2170,4 +2170,4 @@ class OnlineStoreUpdateContext(BaseTemplateValue):
         if syssts != system_status.SystemStatus.ACTIVE.name:
             self.errmsg = "更新できない状態です。サーバを確認して下さい。"
             return
-        sendTask(ScrOrder.UPDATE_ONLINE_STORE_POSTAGE, "", "")
+        sendTask(cmdstr=ScrOrder.UPDATE_ONLINE_STORE_POSTAGE)
