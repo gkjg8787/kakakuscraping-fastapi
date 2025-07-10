@@ -83,7 +83,7 @@ class ItemsURLCreateRepository(repository.IItemsURLCreateRepository):
         return response
 
 
-class PriceUpdateRepository(repository.IPriceUpdateRepository):
+class NotifyPriceUpdateRepository(repository.IPriceUpdateRepository):
 
     def save(self, parseinfos: m_items.ParseInfosUpdate):
         parseitems_dict = self._convert_parseinfos_to_parseitems(parseinfos=parseinfos)
@@ -111,7 +111,6 @@ class PriceUpdateRepository(repository.IPriceUpdateRepository):
 
     def _convert_parseinfos_to_parseitems(self, parseinfos: m_items.ParseInfosUpdate):
         results: dict[int, api_model.ParseItemsForPriceUpdate] = {}
-        # update_response = m_items.ParseInfosUpdateResponse()
         for parseinfo in parseinfos.infos:
             url_id = UrlQuery.get_url_id_by_url(db=self.db, url=parseinfo.url)
             new_price = const_value.INIT_PRICE
@@ -140,10 +139,4 @@ class PriceUpdateRepository(repository.IPriceUpdateRepository):
                 results[url_id] = api_model.ParseItemsForPriceUpdate(
                     parseiteminfos=[pii]
                 )
-            """
-            update_response.infos.append(
-                m_items.DBParseInfo(**parseinfo.model_dump(), url_id=url_id)
-            )
-            """
-        # return results, update_response
         return results

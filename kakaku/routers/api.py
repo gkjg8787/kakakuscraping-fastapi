@@ -58,6 +58,6 @@ def api_add_items_url(
 def api_update_price(
     parseinfos: items.ParseInfosUpdate, db: Session = Depends(get_session)
 ):
-    repo = api.PriceUpdateRepository(db=db)
+    repo = api.NotifyPriceUpdateRepository(db=db)
     response = repo.save(parseinfos=parseinfos)
     return response
