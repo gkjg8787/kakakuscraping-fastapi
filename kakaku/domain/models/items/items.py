@@ -88,3 +88,16 @@ class DBItemToURL(BaseModel):
 
 class ItemsURLCreateResponse(DBItemToURL):
     pass
+
+
+class URLtoItemGet(BaseModel):
+    url: str
+
+
+class DBURLtoItem(BaseModel):
+    url_active: DBURLActive
+    items: list[DBItem] = Field(default_factory=list)
+
+
+class URLtoItemGetResponse(DBURLtoItem):
+    pass

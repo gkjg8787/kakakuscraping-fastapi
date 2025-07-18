@@ -2,8 +2,10 @@ import json
 from datetime import datetime, timezone, timedelta
 
 from fastapi.testclient import TestClient
+import pytest
 
 from main import app
+from common.read_config import get_api_options
 from domain.models.items import items
 from tests.test_db import test_db, drop_test_db
 from tests.test_sqlalchemy import (
@@ -12,8 +14,13 @@ from tests.test_sqlalchemy import (
 
 client = TestClient(app)
 prefix = "/api"
+API_ENABLE = get_api_options().enable
 
 
+@pytest.mark.skipif(
+    API_ENABLE == False,
+    reason="This test is not run with api disable",
+)
 def test_api_add_item_one_url(test_db):
     try:
         item = items.ItemCreate(
@@ -30,6 +37,10 @@ def test_api_add_item_one_url(test_db):
         drop_test_db()
 
 
+@pytest.mark.skipif(
+    API_ENABLE == False,
+    reason="This test is not run with api disable",
+)
 def test_api_add_item_two_url(test_db):
     try:
         item = items.ItemCreate(
@@ -49,6 +60,10 @@ def test_api_add_item_two_url(test_db):
         drop_test_db()
 
 
+@pytest.mark.skipif(
+    API_ENABLE == False,
+    reason="This test is not run with api disable",
+)
 def test_api_update_item_url_active(test_db):
     target_urls = [
         "https://ec.geo-online.co.jp/shop/g/g517310102/",
@@ -92,6 +107,10 @@ def test_api_update_item_url_active(test_db):
         drop_test_db()
 
 
+@pytest.mark.skipif(
+    API_ENABLE == False,
+    reason="This test is not run with api disable",
+)
 def test_api_update_item_name(test_db):
     target_urls = ["https://ec.geo-online.co.jp/shop/g/g517310102/"]
     item_id = 1
@@ -123,6 +142,10 @@ def test_api_update_item_name(test_db):
         drop_test_db()
 
 
+@pytest.mark.skipif(
+    API_ENABLE == False,
+    reason="This test is not run with api disable",
+)
 def test_api_add_items_url(test_db):
     target_urls = ["https://ec.geo-online.co.jp/shop/g/g517310102/"]
     add_urls = ["https://ec.geo-online.co.jp/shop/g/g517310101/"]
@@ -160,6 +183,10 @@ def test_api_add_items_url(test_db):
 
 
 """
+@pytest.mark.skipif(
+        API_ENABLE == False,
+        reason="This test is not run with api disable",
+)
 def test_api_update_price(test_db):
     target_urls = [
         "https://ec.geo-online.co.jp/shop/g/g517310102/",
@@ -221,3 +248,152 @@ def test_api_update_price(test_db):
     finally:
         drop_test_db()
 """
+
+
+@pytest.mark.skipif(
+    API_ENABLE == False,
+    reason="This test is not run with api disable",
+)
+def test_api_get_url_to_items_get_one_item(test_db):
+    input_data_list = [
+        {
+            "item_id": 1,
+            "item_name": "マリオカートワールド",
+            "urls": [
+                "https://ec.geo-online.co.jp/shop/g/g517310102/",
+                "https://ec.geo-online.co.jp/shop/g/g517310101/",
+            ],
+        },
+        {
+            "item_id": 2,
+            "item_name": "桃太郎電鉄ワールド",
+            "urls": ["https://ec.geo-online.co.jp/shop/g/g515353802/"],
+        },
+    ]
+    correct = {
+        "url_id": 1,
+        "url": input_data_list[0]["urls"][0],
+        "item_id": input_data_list[0]["item_id"],
+        "item_name": input_data_list[0]["item_name"],
+    }
+    try:
+        for input_data in input_data_list:
+            item = items.ItemCreate(
+                name=input_data["item_name"],
+                urls=input_data["urls"],
+            )
+            result = items.ItemCreateResponse(
+                **item.model_dump(), item_id=input_data["item_id"]
+            )
+            response = client.post(
+                f"{prefix}/items/", json=json.loads(item.model_dump_json())
+            )
+            assert response.status_code == 200
+            assert response.json() == result.model_dump()
+
+        result = items.URLtoItemGetResponse(
+            url_active=items.DBURLActive(
+                url=correct["url"], url_id=correct["url_id"], is_active=True
+            ),
+            items=[items.DBItem(item_id=correct["item_id"], name=correct["item_name"])],
+        )
+        params = {"url": correct["url"]}
+        response = client.get(
+            f"{prefix}/urls/items/",
+            params=params,
+        )
+        assert response.status_code == 200
+        assert response.json() == result.model_dump()
+    finally:
+        drop_test_db()
+
+
+@pytest.mark.skipif(
+    API_ENABLE == False,
+    reason="This test is not run with api disable",
+)
+def test_api_get_url_to_items_get_two_items(test_db):
+    input_data_list = [
+        {
+            "item_id": 1,
+            "item_name": "マリオカートワールド",
+            "urls": [
+                "https://ec.geo-online.co.jp/shop/g/g517310102/",
+                "https://ec.geo-online.co.jp/shop/g/g517310101/",
+            ],
+        },
+        {
+            "item_id": 2,
+            "item_name": "桃太郎電鉄ワールド",
+            "urls": ["https://ec.geo-online.co.jp/shop/g/g515353802/"],
+        },
+        {
+            "item_id": 3,
+            "item_name": "マリオカート全般",
+            "urls": [
+                "https://ec.geo-online.co.jp/shop/g/g517310102/",
+            ],
+        },
+    ]
+    corrects = {
+        "url_id": 1,
+        "url": input_data_list[0]["urls"][0],
+        "items": [
+            {
+                "item_id": input_data_list[0]["item_id"],
+                "item_name": input_data_list[0]["item_name"],
+            },
+            {
+                "item_id": input_data_list[2]["item_id"],
+                "item_name": input_data_list[2]["item_name"],
+            },
+        ],
+    }
+
+    try:
+        for input_data in input_data_list:
+            item = items.ItemCreate(
+                name=input_data["item_name"],
+                urls=input_data["urls"],
+            )
+            result = items.ItemCreateResponse(
+                **item.model_dump(), item_id=input_data["item_id"]
+            )
+            response = client.post(
+                f"{prefix}/items/", json=json.loads(item.model_dump_json())
+            )
+            assert response.status_code == 200
+            assert response.json() == result.model_dump()
+
+        result = items.URLtoItemGetResponse(
+            url_active=items.DBURLActive(
+                url=corrects["url"], url_id=corrects["url_id"], is_active=True
+            ),
+            items=[
+                items.DBItem(item_id=correct["item_id"], name=correct["item_name"])
+                for correct in corrects["items"]
+            ],
+        )
+        params = {"url": corrects["url"]}
+        response = client.get(
+            f"{prefix}/urls/items/",
+            params=params,
+        )
+        assert response.status_code == 200
+        assert response.json() == result.model_dump()
+    finally:
+        drop_test_db()
+
+
+@pytest.mark.skipif(
+    API_ENABLE == False,
+    reason="This test is not run with api disable",
+)
+def test_api_get_url_to_items_unregistered_url(test_db):
+    params = {"url": "https://ec.geo-online.co.jp/shop/g/g517310102/"}
+    response = client.get(
+        f"{prefix}/urls/items/",
+        params=params,
+    )
+    assert response.status_code == 404
+    assert response.json() == {"detail": "URL is not registered"}

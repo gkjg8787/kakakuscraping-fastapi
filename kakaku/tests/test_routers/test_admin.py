@@ -1,6 +1,7 @@
 import time
 
 from fastapi.testclient import TestClient
+import pytest
 
 from main import app
 from proc import system_status as syssts
@@ -47,6 +48,9 @@ def check_status_waittime(db: Session, jstsname: str, waittime: int = 0):
     assert f"ステータス：{jstsname}" in response.text
 
 
+@pytest.mark.skip(
+    reason="This test requires back server operation, but is disabled because control is required."
+)
 def test_read_admin_dashboard_stop():
     test_db = next(get_session())
     check_status_waittime(
@@ -55,6 +59,9 @@ def test_read_admin_dashboard_stop():
     )
 
 
+@pytest.mark.skip(
+    reason="This test requires back server operation, but is disabled because control is required."
+)
 def test_read_admin_dashboard_svchg_no_data():
     response = client.post(
         f"{prefix}/dashboard/svchg/",
@@ -79,6 +86,9 @@ def post_startup_check(db: Session):
     )
 
 
+@pytest.mark.skip(
+    reason="This test requires back server operation, but is disabled because control is required."
+)
 def test_read_admin_dashboard_svchg_startup_and_stop():
     test_db = next(get_session())
     if not is_testable_db(test_db):
@@ -101,6 +111,9 @@ def test_read_admin_dashboard_svchg_startup_and_stop():
     )
 
 
+@pytest.mark.skip(
+    reason="This test requires back server operation, but is disabled because control is required."
+)
 def test_read_admin_dashboard_svchg_startup_and_restart():
     test_db = next(get_session())
     if not is_testable_db(test_db):

@@ -14,7 +14,7 @@ from routers import (
 from parameter_parser.admin import ProcCtrlForm
 from template_value.admin import BackServerCtrl
 from common.filter_name import SystemCtrlBtnName
-from common.read_config import get_auto_startup_backserver
+from common.read_config import get_auto_startup_backserver, get_api_options
 from common.cmnlog import initRooterLogger
 
 
@@ -36,7 +36,8 @@ app.include_router(users.router)
 app.include_router(search.router)
 app.include_router(calcitemcomb.router)
 app.include_router(admin.router)
-app.include_router(api.router)
+if get_api_options().enable:
+    app.include_router(api.router)
 
 
 def ctrlbackserver(cmd: SystemCtrlBtnName):

@@ -152,3 +152,11 @@ def get_item_parse_options():
 
 def get_allow_unsupported_links_in_html():
     return settings.ALLOW_UNSUPPORTED_LINKS_IN_HTML
+
+
+class APIOptions(BaseModel):
+    enable: bool
+
+
+def get_api_options():
+    return APIOptions(**settings.API_OPTIONS)
