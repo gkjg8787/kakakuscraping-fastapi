@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 from urllib.parse import urlparse
 
 from common.read_config import get_support_url, get_allow_unsupported_links_in_html
-from common.util import isLocalToday
+from common.util import isLocalToday, is_valid_url
 
 templates = Jinja2Templates(directory="templates")
 
@@ -31,3 +31,4 @@ def isLowestPrice(price, lowestprice) -> bool:
 templates.env.filters["isSupportDomain"] = isSupportDomain
 templates.env.filters["isLowestPrice"] = isLowestPrice
 templates.env.filters["isLocalToday"] = isLocalToday
+templates.env.filters["is_valid_url"] = is_valid_url

@@ -1,4 +1,4 @@
-{%- if url | length > 0 and url | isSupportDomain %}
+{%- if url | is_valid_url and url | isSupportDomain %}
 <a href="{{ url }}" target="_blank" rel="noopener noreferrer">{{ name }}</a>
 {%- else %}
 {{ name }}
