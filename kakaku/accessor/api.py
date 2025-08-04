@@ -112,7 +112,6 @@ class NotifyPriceUpdateRepository(repository.IPriceUpdateRepository):
         self.db = db
 
     def save(self, parseinfos: m_items.ParseInfosUpdate):
-        parseitems_dict = self._convert_parseinfos_to_parseitems(parseinfos=parseinfos)
         logger = cmnlog.getLogger(cmnlog.LogName.API)
         logger_header = os.path.basename(__file__)
         syssts = get_sys_status.getSystemStatus(self.db)
@@ -124,6 +123,9 @@ class NotifyPriceUpdateRepository(repository.IPriceUpdateRepository):
             errmsg = f"{logger_header} unable to update server status = {syssts}"
             logger.warning(errmsg)
             return m_items.PriceUpdateResponse(ok=False, error_msg=errmsg)
+        parseitems_dict = self._convert_parseinfos_to_parseitems(
+            parseinfos=parseinfos, logger=logger, logheader=logger_header
+        )
         if not parseitems_dict:
             errmsg = f"{logger_header} no data, no update"
             logger.info(errmsg)
@@ -135,10 +137,16 @@ class NotifyPriceUpdateRepository(repository.IPriceUpdateRepository):
         logger.debug(f"{logger_header} update via api end")
         return m_items.PriceUpdateResponse(ok=True, error_msg="")
 
-    def _convert_parseinfos_to_parseitems(self, parseinfos: m_items.ParseInfosUpdate):
+    def _convert_parseinfos_to_parseitems(
+        self, parseinfos: m_items.ParseInfosUpdate, logger, logheader: str
+    ):
         results: dict[int, api_model.ParseItemsForPriceUpdate] = {}
         for parseinfo in parseinfos.infos:
             url_id = UrlQuery.get_url_id_by_url(db=self.db, url=parseinfo.url)
+            if url_id is None:
+                errmsg = f"{logheader} URL is not registered, url:{parseinfo.url}"
+                logger.warning(errmsg)
+                continue
             new_price = const_value.INIT_PRICE
             used_price = const_value.INIT_PRICE
             if "新品" in parseinfo.condition:
