@@ -429,6 +429,10 @@ class OnlineStoreCopyTypeName(Enum):
         2,
         "未登録を埋める",
     )
+    UPDATE = (
+        3,
+        "更新する",
+    )
 
     def __init__(self, id: int, text: str):
         self.id = id

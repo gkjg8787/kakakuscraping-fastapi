@@ -93,6 +93,8 @@ class OnlineStoreCopy:
                 return cls.overwrite_online_store_postage_to_local(db, pref_name)
             case filter_name.OnlineStoreCopyTypeName.FILL_BLANK.id:
                 return cls.fill_blank_online_store_postage_to_local(db, pref_name)
+            case filter_name.OnlineStoreCopyTypeName.UPDATE.id:
+                return cls.update_online_store_postage_to_local(db, pref_name)
             case _:
                 raise ValueError(
                     f"not support OnlineStoreCopyType Value id = {osct_id}"
@@ -261,3 +263,77 @@ class OnlineStoreCopy:
             if not dic["boundary"]:
                 return True
         return False
+
+    @classmethod
+    def update_online_store_postage_to_local(cls, db: Session, pref_name: str):
+        online_dict, local_dict = cls.get_online_and_local_store_postage(db, pref_name)
+        add_store_list: list[str] = []
+        add_to_local_storepos_dict: dict[str, list[m_store.StorePostage]] = {}
+        del_local_storepos_dict: dict[str, list[m_store.StorePostage]] = {}
+
+        for storename, online_list in online_dict.items():
+            if storename not in local_dict:
+                add_store_list.append(storename)
+                store_id = None
+            else:
+                if cls._is_same_postage(online_list, local_dict[storename]):
+                    continue
+                store_id = int(local_dict[storename][0]["store_id"])
+                del_local_storepos_dict[storename] = [
+                    m_store.StorePostage(
+                        store_id=item["store_id"],
+                        terms_id=item["terms_id"],
+                    )
+                    for item in local_dict[storename]
+                ]
+
+            for dic in online_list:
+                if storename in add_to_local_storepos_dict:
+                    add_to_local_storepos_dict[storename].append(
+                        m_store.StorePostage(
+                            store_id=store_id,
+                            terms_id=dic["terms_id"],
+                            boundary=dic["boundary"],
+                            postage=dic["postage"],
+                            created_at=dic["terms_created_at"],
+                        )
+                    )
+                else:
+                    add_to_local_storepos_dict[storename] = [
+                        m_store.StorePostage(
+                            store_id=store_id,
+                            terms_id=dic["terms_id"],
+                            boundary=dic["boundary"],
+                            postage=dic["postage"],
+                            created_at=dic["terms_created_at"],
+                        )
+                    ]
+
+        db_store_list = store.StoreQuery.add_storename_list(db, storename_list=list(add_store_list))
+        for st in db_store_list:
+            if st.storename not in add_to_local_storepos_dict:
+                continue
+            for addpos in add_to_local_storepos_dict[st.storename]:
+                if addpos.store_id:
+                    continue
+                addpos.store_id = st.store_id
+
+        for storename, del_list in del_local_storepos_dict.items():
+            store.StoreQuery.delete_storepostage_by_store_id_and_terms_id(db, del_list)
+        store.StoreQuery.add_postage_by_add_postage_dict(db, add_postage_dict=add_to_local_storepos_dict)
+        return cls.convert_to_dict_for_StoreForListContext(add_to_local_storepos_dict)
+
+    @classmethod
+    def _is_same_postage(cls, online_list: list, local_list: list) -> bool:
+        if len(online_list) != len(local_list):
+            return False
+
+        online_list.sort(key=lambda x: x["terms_id"])
+        local_list.sort(key=lambda x: x["terms_id"])
+
+        for online, local in zip(online_list, local_list):
+            if online["boundary"] != local["boundary"]:
+                return False
+            if online["postage"] != local["postage"]:
+                return False
+        return True

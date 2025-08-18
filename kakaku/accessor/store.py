@@ -118,6 +118,22 @@ class StoreQuery:
         db.commit()
 
     @classmethod
+    def delete_storepostage_by_store_id_and_terms_id(
+        cls, db: Session, delete_list: list[StorePostage]
+    ) -> None:
+        conditions = []
+        for item in delete_list:
+            conditions.append(
+                (StorePostage.store_id == item.store_id)
+                & (StorePostage.terms_id == item.terms_id)
+            )
+        if not conditions:
+            return
+        stmt = delete(StorePostage).where(or_(*conditions))
+        db.execute(stmt)
+        db.commit()
+
+    @classmethod
     def update_storepostage_by_list(
         cls, db: Session, update_list: list[StorePostage]
     ) -> None:
