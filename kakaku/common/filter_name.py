@@ -431,7 +431,7 @@ class OnlineStoreCopyTypeName(Enum):
     )
     UPDATE = (
         3,
-        "更新する",
+        "更新",
     )
 
     def __init__(self, id: int, text: str):
