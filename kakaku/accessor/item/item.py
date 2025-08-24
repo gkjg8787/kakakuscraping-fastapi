@@ -1464,6 +1464,14 @@ class UrlQuery:
 
     @classmethod
     def get_url_and_item_comb_list_in_local_time(cls, db: Session, filter: dict):
+        latest_log_subquery = (
+            select(
+                PriceLog_2days.url_id,
+                func.max(PriceLog_2days.created_at).label("latest_created_at"),
+            )
+            .group_by(PriceLog_2days.url_id)
+            .subquery("latest_log")
+        )
         stmt = (
             select(
                 Url.url_id,
@@ -1481,7 +1489,20 @@ class UrlQuery:
             )
             .select_from(Url)
             .join(UrlInItem, Url.url_id == UrlInItem.url_id, isouter=True)
-            .join(PriceLog_2days, Url.url_id == PriceLog_2days.url_id, isouter=True)
+            .join(
+                latest_log_subquery,
+                Url.url_id == latest_log_subquery.c.url_id,
+                isouter=True,
+            )
+            .join(
+                PriceLog_2days,
+                and_(
+                    PriceLog_2days.url_id == latest_log_subquery.c.url_id,
+                    PriceLog_2days.created_at
+                    == latest_log_subquery.c.latest_created_at,
+                ),
+                isouter=True,
+            )
             .join(Item, UrlInItem.item_id == Item.item_id, isouter=True)
         )
         isactive = get_act_filter(filter)
