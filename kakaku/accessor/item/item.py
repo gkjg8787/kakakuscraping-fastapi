@@ -1,5 +1,5 @@
 from enum import Enum
-from datetime import date, datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta
 
 from sqlalchemy import (
     select,
@@ -11,8 +11,8 @@ from sqlalchemy import (
     between,
     and_,
     or_,
+    case,
 )
-
 from sqlalchemy.sql import expression as exp
 from sqlalchemy.orm import Session
 
@@ -39,21 +39,16 @@ from model.item import (
 from model.store import (
     Store,
 )
-
 from accessor.util import (
     utc_to_jst_datetime_for_query,
     utc_to_jst_date_for_query,
     get_jst_datetime_for_query,
     get_jst_date_for_query,
-    INTERVAL_ONE_YEARS_AGO,
     INTERVAL_YESTERDAY,
     text_to_boolean,
     text_to_decimal,
 )
-
 from html_parser.htmlparse import ParseItemInfo
-
-# from common.stop_watch import stop_watch
 
 
 class UrlActive(Enum):
@@ -93,13 +88,6 @@ class NewestQuery:
         .group_by(UrlInItem.item_id)
         .cte("act_t")
     )
-    inact_t = (
-        select(Item.item_id, exp.literal(0).label("act"))
-        .where(Item.item_id.notin_(select(act_t.c.item_id)))
-        .group_by(Item.item_id)
-        .cte("inact_t")
-    )
-    actcheck = select(act_t).union(inact_t.select()).cte("actcheck")
     base_select = (
         select(
             Item.item_id,
@@ -112,11 +100,13 @@ class NewestQuery:
             NewestItem.trendrate,
             NewestItem.storename,
             NewestItem.lowestprice,
-            actcheck.c.act,
+            case((act_t.c.act.isnot(None), act_t.c.act), else_=exp.literal(0)).label(
+                "act"
+            ),
         )
         .join(NewestItem, Item.item_id == NewestItem.item_id, isouter=True)
         .join(Url, NewestItem.url_id == Url.url_id, isouter=True)
-        .join(actcheck, actcheck.c.item_id == Item.item_id, isouter=True)
+        .join(act_t, act_t.c.item_id == Item.item_id, isouter=True)
     )
 
     @classmethod
@@ -174,9 +164,9 @@ class NewestQuery:
         ):
             return stmt
         if int(filter[fqn.ACT.value]) == ActFilterName.ACT.id:
-            return stmt.where(cls.actcheck.c.act > 0)
+            return stmt.where(cls.act_t.c.act > 0)
         if int(filter[fqn.ACT.value]) == ActFilterName.INACT.id:
-            return stmt.where(cls.actcheck.c.act == 0)
+            return stmt.where(cls.act_t.c.act == 0)
         return stmt
 
     @classmethod
@@ -451,7 +441,9 @@ class NewestQuery:
                 unionprice.c.trendrate,
                 unionprice.c.storename,
                 NewestItem.lowestprice,
-                cls.actcheck.c.act,
+                case(
+                    (cls.act_t.c.act.isnot(None), cls.act_t.c.act), else_=exp.literal(0)
+                ).label("act"),
             )
             .select_from(unionprice)
             .join(
@@ -464,10 +456,7 @@ class NewestQuery:
                 unionprice.c.url_id == Url.url_id,
             )
             .join(NewestItem, NewestItem.item_id == Item.item_id)
-            .join(
-                cls.actcheck,
-                cls.actcheck.c.item_id == Item.item_id,
-            )
+            .join(cls.act_t, cls.act_t.c.item_id == Item.item_id, isouter=True)
         )
         return base
 
