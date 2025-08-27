@@ -166,7 +166,7 @@ class NewestQuery:
         if int(filter[fqn.ACT.value]) == ActFilterName.ACT.id:
             return stmt.where(cls.act_t.c.act > 0)
         if int(filter[fqn.ACT.value]) == ActFilterName.INACT.id:
-            return stmt.where(cls.act_t.c.act == 0)
+            return stmt.where(cls.act_t.c.act.is_(None))
         return stmt
 
     @classmethod
