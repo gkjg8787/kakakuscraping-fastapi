@@ -98,4 +98,7 @@ ITEM_PARSE_OPTIONS = {
     "excluded_condition_keywords": [],  # ["難", "欠", "ランクB", "不備", "ディスクのみ"]
 }
 ALLOW_UNSUPPORTED_LINKS_IN_HTML = False
-API_OPTIONS = {"enable": False}
+API_OPTIONS = {
+    "enable": False,
+    "excluded_condition_keywords": [],
+}

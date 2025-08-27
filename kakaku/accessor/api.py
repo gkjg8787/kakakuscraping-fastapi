@@ -13,7 +13,7 @@ from accessor.read_sqlalchemy import Session
 from domain.models.items import repository, items as m_items
 from .item.item import NewestQuery, UrlQuery, UrlActive, ItemQuery
 from html_parser import htmlparse, api_model
-from common import const_value, cmnlog
+from common import const_value, cmnlog, read_config
 from proc.scrapingmanage import sendTask
 from proc.sendcmd import ScrOrder
 from proc import get_sys_status, system_status
@@ -123,8 +123,12 @@ class NotifyPriceUpdateRepository(repository.IPriceUpdateRepository):
             errmsg = f"{logger_header} unable to update server status = {syssts}"
             logger.warning(errmsg)
             return m_items.PriceUpdateResponse(ok=False, error_msg=errmsg)
+        apiopts = read_config.get_api_options()
         parseitems_dict = self._convert_parseinfos_to_parseitems(
-            parseinfos=parseinfos, logger=logger, logheader=logger_header
+            parseinfos=parseinfos,
+            excluded_condition_keywords=apiopts.excluded_condition_keywords,
+            logger=logger,
+            logheader=logger_header,
         )
         if not parseitems_dict:
             errmsg = f"{logger_header} no data, no update"
@@ -138,7 +142,11 @@ class NotifyPriceUpdateRepository(repository.IPriceUpdateRepository):
         return m_items.PriceUpdateResponse(ok=True, error_msg="")
 
     def _convert_parseinfos_to_parseitems(
-        self, parseinfos: m_items.ParseInfosUpdate, logger, logheader: str
+        self,
+        parseinfos: m_items.ParseInfosUpdate,
+        excluded_condition_keywords: list[str],
+        logger,
+        logheader: str,
     ):
         results: dict[int, api_model.ParseItemsForPriceUpdate] = {}
         for parseinfo in parseinfos.infos:
@@ -149,6 +157,15 @@ class NotifyPriceUpdateRepository(repository.IPriceUpdateRepository):
                 continue
             new_price = const_value.INIT_PRICE
             used_price = const_value.INIT_PRICE
+            is_excluded = self._is_excluded_condition(
+                condition=parseinfo.condition,
+                excluded_condition_keywords=excluded_condition_keywords,
+            )
+            if is_excluded:
+                logger.info(
+                    f"{logheader} excluded condition, url:{parseinfo.url}, condition:{parseinfo.condition}"
+                )
+                continue
             if "新品" in parseinfo.condition:
                 new_price = parseinfo.price
             else:
@@ -174,6 +191,16 @@ class NotifyPriceUpdateRepository(repository.IPriceUpdateRepository):
                     parseiteminfos=[pii]
                 )
         return results
+
+    def _is_excluded_condition(
+        self, condition: str, excluded_condition_keywords: list[str]
+    ) -> bool:
+        if not excluded_condition_keywords:
+            return False
+        for word in excluded_condition_keywords:
+            if word in condition:
+                return True
+        return False
 
 
 class UnRegisteredURLError(Exception):
