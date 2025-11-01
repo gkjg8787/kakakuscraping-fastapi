@@ -1,15 +1,21 @@
-<form method="get" action="">
-    抽出する店舗 : <select name="{{ EXST_NAME }}" onchange="submit(this.form)">
+<form method="get" action="" class="searchable-select-container">
+    抽出する店舗 : <select name="{{ EXST_NAME }}" class="searchable-select" onchange="submit(this.form)">
         <option hidden>店舗を選択してください</option>
         {% for st in storelist %}
         <option value="{{ st.id }}" {{ st.selected }}>
             {{ st.name }}
         </option>
         {% endfor %}
-    </select>
+    </select>&nbsp;
+    <input type="button" class="toggle-search-btn" value="店舗名を検索">
+    <div class="search-ui-container" style="display: none;">
+        <input type="text" class="search-box" placeholder="店舗名で検索...">
+        <div class="search-results"></div>
+    </div>
     {% for k, v in fquery.items() %}
         {% if k != EXST_NAME and v != "" %}
         <input type="hidden" name="{{ k }}" value="{{ v}}">
         {% endif %}
     {% endfor %}
 </form>
+<script type="text/javascript" src="{{ url_for('static', path='/js/select_search.js') }}"></script>
