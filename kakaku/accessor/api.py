@@ -129,6 +129,7 @@ class NotifyPriceUpdateRepository(repository.IPriceUpdateRepository):
             excluded_condition_keywords=apiopts.excluded_condition_keywords,
             logger=logger,
             logheader=logger_header,
+            skip_zero_price=apiopts.skip_zero_price,
         )
         if not parseitems_dict:
             errmsg = f"{logger_header} no data, no update"
@@ -147,6 +148,7 @@ class NotifyPriceUpdateRepository(repository.IPriceUpdateRepository):
         excluded_condition_keywords: list[str],
         logger,
         logheader: str,
+        skip_zero_price: bool = True,
     ):
         results: dict[int, api_model.ParseItemsForPriceUpdate] = {}
         for parseinfo in parseinfos.infos:
@@ -163,7 +165,12 @@ class NotifyPriceUpdateRepository(repository.IPriceUpdateRepository):
             )
             if is_excluded:
                 logger.info(
-                    f"{logheader} excluded condition, url:{parseinfo.url}, condition:{parseinfo.condition}"
+                    f"{logheader} excluded condition, url:{parseinfo.url}, name:{parseinfo.name}, condition:{parseinfo.condition}"
+                )
+                continue
+            if skip_zero_price and parseinfo.price == 0:
+                logger.info(
+                    f"{logheader} skip zero price, url:{parseinfo.url}, name:{parseinfo.name}"
                 )
                 continue
             if "新品" in parseinfo.condition:

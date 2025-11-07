@@ -157,6 +157,7 @@ def get_allow_unsupported_links_in_html():
 class APIOptions(BaseModel):
     enable: bool
     excluded_condition_keywords: list[str] = Field(default_factory=list)
+    skip_zero_price: bool = True
 
 
 def get_api_options():

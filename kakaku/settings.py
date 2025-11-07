@@ -101,4 +101,5 @@ ALLOW_UNSUPPORTED_LINKS_IN_HTML = False
 API_OPTIONS = {
     "enable": False,
     "excluded_condition_keywords": [],
+    "skip_zero_price": True,
 }
