@@ -1,8 +1,8 @@
-FROM python:3.13-slim-bookworm
+FROM python:3.13-slim-trixie
 
-RUN apt-get update
+RUN pip install uv
 
-RUN apt-get install -y tzdata
+RUN apt-get update && apt-get install -y tzdata
 ENV TZ=Asia/Tokyo
 RUN ln -sf /usr/share/zoneinfo/Japan /etc/localtime && \
     echo $TZ > /etc/timezone
@@ -15,7 +15,7 @@ WORKDIR /app
 
 COPY requirements.txt ./
 
-RUN python3 -m venv /app/venv && . /app/venv/bin/activate && pip install -Ur requirements.txt
+RUN uv venv /app/venv && . /app/venv/bin/activate && uv pip install -r requirements.txt
 
 ENV PATH /app/venv/bin:$PATH
 
