@@ -103,3 +103,11 @@ API_OPTIONS = {
     "excluded_condition_keywords": [],
     "skip_zero_price": True,
 }
+OPERATION_MENU_OPTIONS = {
+    "add_links": {
+        "enabled": False,
+        "links": [
+            {"enabled": True, "name": "search_gui", "url": "http://localhost:8110/"},
+        ],
+    }
+}

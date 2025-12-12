@@ -57,6 +57,15 @@
     <p><a href="{{ url_for('read_users_stores') }}" class="like_button_link">店舗一覧</a></p>
     <p><a href="{{ url_for('read_users_items_purchase') }}" class="like_button_link">買取URL一覧</a></p>
     <p><a href="{{ url_for('read_admin_dashboard') }}" class="like_button_link">管理画面</a></p>
+    {%- if operation_menu_options.add_links.enabled %}
+        <div class="add_menue">
+            {%- for link in operation_menu_options.add_links.links %}
+                {%- if link.enabled %}
+                    <p><a href="{{ link.url }}" class="like_button_link" target="_blank" rel="noopener noreferrer">{{ link.name }}</a></p>
+                {%- endif %}
+            {%- endfor %}
+        </div>
+    {%- endif %}
 </div>
 <h2>アイテム一覧</h2>
 <h3>フィルタ <input id="itemfilterbtn" class="displaybtn itemfilterbtn" type="button" value="－"

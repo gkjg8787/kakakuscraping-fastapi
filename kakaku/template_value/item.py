@@ -94,6 +94,7 @@ class NewestItemList(BaseTemplateValue):
     MAX_PRICE_RANGE_NAME: str = filter_name.FilterQueryName.PRMAX.value
     MIN_PRICE_RANGE: int | None = None
     MAX_PRICE_RANGE: int | None = None
+    operation_menu_options: dict
 
     def __init__(self, nfq: ppi.NewestFilterQuery, db: Session):
         fd = nfq.get_filter_dict()
@@ -106,6 +107,7 @@ class NewestItemList(BaseTemplateValue):
             storelist=[],
             fquery=fd,
             ZAIKO_CHECKED=ppi.get_in_stock_filter_checked(fd),
+            operation_menu_options=read_config.get_operation_menu_options().model_dump(),
         )
 
         self.res_length = len(self.res)
@@ -1543,6 +1545,7 @@ class ExtractStoreItemListContext(BaseTemplateValue):
     MAX_PRICE_RANGE_NAME: str = filter_name.FilterQueryName.PRMAX.value
     MIN_PRICE_RANGE: int | None = None
     MAX_PRICE_RANGE: int | None = None
+    operation_menu_options: dict
 
     def __init__(self, esfq: ppi.ExtractStoreFilterQuery, db: Session):
         fd = esfq.get_filter_dict()
@@ -1554,6 +1557,7 @@ class ExtractStoreItemListContext(BaseTemplateValue):
             storelist=[],
             fquery=fd,
             ZAIKO_CHECKED=ppi.get_in_stock_filter_checked(fd),
+            operation_menu_options=read_config.get_operation_menu_options().model_dump(),
         )
 
         self.res_length = len(self.res)

@@ -162,3 +162,22 @@ class APIOptions(BaseModel):
 
 def get_api_options():
     return APIOptions(**settings.API_OPTIONS)
+
+
+class LinkItem(BaseModel):
+    enabled: bool
+    name: str
+    url: str
+
+
+class AddLinksOptions(BaseModel):
+    enabled: bool
+    links: list[LinkItem]
+
+
+class OperationMenuOptions(BaseModel):
+    add_links: AddLinksOptions
+
+
+def get_operation_menu_options():
+    return OperationMenuOptions(**settings.OPERATION_MENU_OPTIONS)
