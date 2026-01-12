@@ -81,7 +81,6 @@ AUTO_UPDATE_ONLINE_STORE_CYCLE_TIME = 600
 DEFAULT_SHIPPING_PREFECTURE = "東京都"
 AUTO_COPY_OF_ONLINE_STORE_INFO_TO_LOCAL = {"auto": False, "type": "overwrite"}
 AUTO_STARTUP_BACKSERVER = {"auto": False}
-ITEMCOMB_PRICE_MARGIN = {"type": "fix", "value": "250", "min-value": "250"}
 SURUGAYA_SEARCH_RESULT_URL_CONVERT = True
 PREDICTION = {
     "view": True,
