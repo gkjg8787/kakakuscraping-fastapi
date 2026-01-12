@@ -65,10 +65,6 @@ def get_itemcomb_select_limit():
     return settings.ITEMCOMB_SELECT_LIMIT
 
 
-def get_exec_itemcomb():
-    return settings.EXE_ITEMCOMB
-
-
 def is_auto_update_item():
     return settings.AUTO_UPDATE_ITEM
 

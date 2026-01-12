@@ -27,6 +27,6 @@ EXPOSE 8000
 
 WORKDIR /app/kakaku
 
-RUN python3 db_util.py create && python3 dl_itemcomb_bin.py
+RUN python3 db_util.py create
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0"]
