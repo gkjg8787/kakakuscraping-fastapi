@@ -12,9 +12,6 @@ from accessor.store import StoreQuery
 from common import cmnlog
 
 
-BLANK_PRICE = 10**8
-
-
 def convert_shipping_rules(conf: dict):
     shipping_rules = {}
 
@@ -99,22 +96,13 @@ def transform_shopping_data(data_list: list[dict]):
 
 def call_get_itemcomb_with_pulp(storeconf: dict, itemlist: list[dict]):
     items, prices = transform_shopping_data(itemlist)
-    prices = fill_blank_prices(prices, items)
     shipping_rules = convert_shipping_rules(storeconf)
     return get_itemcomb_with_pulp(prices, items, shipping_rules)
 
 
-def fill_blank_prices(prices, items):
-    results = {}
-    for k, v in prices.items():
-        store_info = {item: v.get(item, BLANK_PRICE) for item in items}
-        results[k] = store_info
-    return results
-
-
 """
 prices = {
-    '駿河屋': {'A': 1500, 'B':10000000, 'C': 1000, 'D':10000000, 'E': 1100, 'F': 1100, 'G':10000000},
+    '駿河屋': {'A': 1500,  'C': 1000,  'E': 1100, 'F': 1100, },
     # 省略
 }
 items = ['A', 'B', 'C', 'D', 'E', 'F', 'G']
@@ -132,13 +120,18 @@ shipping_rules = {
 
 
 def get_itemcomb_with_pulp(prices: dict, items: list, shipping_rules: dict):
+    # 最小化問題
     prob = pulp.LpProblem("Best_Buy_Optimization", pulp.LpMinimize)
 
     # 1. 変数定義
-    # buy[s][i]: 店舗sで商品iを買うか
-    buy = pulp.LpVariable.dicts("buy", (prices.keys(), items), cat="Binary")
+    # buy[s][i]: 店舗sで商品iを買うか (その店舗に商品がある場合のみ作成)
+    buy = pulp.LpVariable.dicts(
+        "buy",
+        [(s, i) for s in prices.keys() for i in items if i in prices[s]],
+        cat="Binary",
+    )
 
-    # store_used[s]: 店舗sを利用するか (1つでも買えば1)
+    # store_used[s]: 店舗sを利用するか
     store_used = pulp.LpVariable.dicts("store_used", prices.keys(), cat="Binary")
 
     # ship_rank[s, r]: 店舗sで送料ランクrを適用するか
@@ -149,19 +142,27 @@ def get_itemcomb_with_pulp(prices: dict, items: list, shipping_rules: dict):
     )
 
     # 2. 制約条件
-    # 各商品は必ずどこかの店舗で1回だけ買う
+    # 各商品は必ずどこかの店舗（取り扱いがある店舗のみ）で1回だけ買う
     for item in items:
-        prob += pulp.lpSum([buy[s][item] for s in prices.keys()]) == 1
+        valid_stores = [s for s in prices.keys() if item in prices[s]]
+        if not valid_stores:
+            continue  # 取り扱い店舗がない商品はスキップ（またはエラー処理）
+        prob += pulp.lpSum([buy[(s, item)] for s in valid_stores]) == 1
 
     for s in prices.keys():
+        # 取り扱いがある商品のリスト
+        available_items = [i for i in items if i in prices[s]]
+
         # 商品を買うならその店舗を「使用中」にする
-        for item in items:
-            prob += buy[s][item] <= store_used[s]
+        for item in available_items:
+            prob += buy[(s, item)] <= store_used[s]
 
         # 店舗合計金額の計算
-        total_store_price = pulp.lpSum([buy[s][i] * prices[s][i] for i in items])
+        total_store_price = pulp.lpSum(
+            [buy[(s, i)] * prices[s][i] for i in available_items]
+        )
 
-        # 送料ランクの選択：店舗を使うなら1つ選択、使わないなら0
+        # 送料ランクの選択：店舗を使うなら必ず1つ選択、使わないなら0
         prob += (
             pulp.lpSum([ship_rank[(s, r)] for r in range(len(shipping_rules[s]))])
             == store_used[s]
@@ -169,13 +170,18 @@ def get_itemcomb_with_pulp(prices: dict, items: list, shipping_rules: dict):
 
         # 送料ランクのしきい値制約
         for r, (threshold, cost) in enumerate(shipping_rules[s]):
-            # そのランクを選ぶなら、合計金額はしきい値以上でなければならない
-            # ship_rankが0なら制約は 0 >= 0 となり無視される
+            # そのランクを選ぶなら、合計金額はしきい値(threshold)以上でなければならない
+            # Mは十分大きな数（ここでは商品価格の合計などで代用可能だが、簡略化のためthresholdを使用）
             prob += total_store_price >= threshold * ship_rank[(s, r)]
 
     # 3. 目的関数
     total_item_cost = pulp.lpSum(
-        [buy[s][i] * prices[s][i] for s in prices.keys() for i in items]
+        [
+            buy[(s, i)] * prices[s][i]
+            for s in prices.keys()
+            for i in items
+            if i in prices[s]
+        ]
     )
     total_shipping_cost = pulp.lpSum(
         [
@@ -185,6 +191,7 @@ def get_itemcomb_with_pulp(prices: dict, items: list, shipping_rules: dict):
         ]
     )
 
+    # 目的関数：商品代 + 送料
     prob += total_item_cost + total_shipping_cost
 
     # 4. 解決
@@ -192,34 +199,34 @@ def get_itemcomb_with_pulp(prices: dict, items: list, shipping_rules: dict):
 
     # 5. 結果表示
     results = {}
-    # print(f"ステータス: {pulp.LpStatus[prob.status]}")
     grand_total_shipping = 0
+
     for s in prices.keys():
+        # store_usedが1、かつ実際に商品が選択されているか確認
         if pulp.value(store_used[s]) > 0.5:
-            bought_items = [i for i in items if pulp.value(buy[s][i]) > 0.5]
-            subtotal = sum(prices[s][i] for i in bought_items)
+            available_items = [i for i in items if i in prices[s]]
+            bought_items = [i for i in available_items if pulp.value(buy[(s, i)]) > 0.5]
 
-            # 適用された送料の取得
-            applied_shipping = 0
-            for r in range(len(shipping_rules[s])):
-                if pulp.value(ship_rank[(s, r)]) > 0.5:
-                    applied_shipping = shipping_rules[s][r][1]
+            # 【修正点】実際に購入した商品がある場合のみ結果に追加
+            if bought_items:
+                subtotal = sum(prices[s][i] for i in bought_items)
 
-            grand_total_shipping += applied_shipping
-            # print(
-            #    f"【{s}】で購入: {bought_items} (小計: {subtotal}円, 送料: {applied_shipping}円)"
-            # )
-            results[s] = {
-                "items": [
-                    {"itemname": name, "price": prices[s][name]}
-                    for name in bought_items
-                ],
-                "sum_pos_out": subtotal,
-                "postage": applied_shipping,
-            }
+                applied_shipping = 0
+                for r in range(len(shipping_rules[s])):
+                    if pulp.value(ship_rank[(s, r)]) > 0.5:
+                        applied_shipping = shipping_rules[s][r][1]
 
-    # print(f"--- 送料合計: {grand_total_shipping}円 ---")
-    # print(f"--- 合計費用（送料込）: {pulp.value(prob.objective)}円 ---")
+                grand_total_shipping += applied_shipping
+
+                results[s] = {
+                    "items": [
+                        {"itemname": name, "price": prices[s][name]}
+                        for name in bought_items
+                    ],
+                    "sum_pos_out": subtotal,
+                    "postage": applied_shipping,
+                }
+
     results["sum_pos_in"] = pulp.value(prob.objective)
     results["sum_postage"] = grand_total_shipping
     return results
@@ -275,7 +282,6 @@ def startCalcSumitemComb(db: Session, itemidlist: list[int]):
     res = ItemQuery.get_latest_price_by_item_id_list(db, item_id_list=itemidlist)
     itemlist = [dict(row._mapping.items()) for row in res]
     storeconf = createStoreConf(db, itemidlist=itemidlist)
-
     logger = getLogger()
     logger.info(f"{get_filename()} searchcomb start")
     logger.info(f"{get_filename()} storeconf= {storeconf}")
