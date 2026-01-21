@@ -32,3 +32,9 @@ class IURLtoItemsRepository(ABC):
     @abstractmethod
     def get(self, url: str):
         pass
+
+
+class IItemGetRepository(ABC):
+    @abstractmethod
+    def get(self, filter: dict):
+        pass

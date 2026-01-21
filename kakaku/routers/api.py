@@ -1,10 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from typing import List
+
+from typing import List
 
 
 from accessor.read_sqlalchemy import get_session
 from domain.models.items import items
 from accessor import api
+import parameter_parser.item as ppi
 
 router = APIRouter(prefix="/api", tags=["api"])
 
@@ -20,6 +24,20 @@ def api_add_item(
 ):
     repo = api.ItemCreateRepository(db=db)
     response = repo.save(item)
+    return response
+
+
+@router.get(
+    "/items/",
+    response_model=List[items.ActItem],
+    description="アイテム一覧を取得します。",
+)
+def api_get_items(
+    filter_query: ppi.NewestFilterQuery = Depends(),
+    db: Session = Depends(get_session),
+):
+    repo = api.ItemGetRepository(db=db)
+    response = repo.get(filter=filter_query.get_filter_dict())
     return response
 
 

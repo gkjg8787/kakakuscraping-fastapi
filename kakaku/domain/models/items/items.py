@@ -101,3 +101,7 @@ class DBURLtoItem(BaseModel):
 
 class URLtoItemGetResponse(DBURLtoItem):
     pass
+
+
+class ActItem(DBItem):
+    act: int = 0

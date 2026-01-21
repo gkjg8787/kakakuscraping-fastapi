@@ -105,6 +105,20 @@ class ItemsURLCreateRepository(repository.IItemsURLCreateRepository):
         return response
 
 
+class ItemGetRepository(repository.IItemGetRepository):
+    db: Session
+
+    def __init__(self, db: Session):
+        self.db = db
+
+    def get(self, filter: dict) -> list[m_items.DBItem]:
+        results = NewestQuery.get_newest_data(db=self.db, filter=filter)
+        return [
+            m_items.ActItem(item_id=row.item_id, name=row.name, act=row.act)
+            for row in results
+        ]
+
+
 class NotifyPriceUpdateRepository(repository.IPriceUpdateRepository):
     db: Session
 
