@@ -17,7 +17,7 @@ COPY requirements.txt ./
 
 RUN uv venv /app/venv && . /app/venv/bin/activate && uv pip install -r requirements.txt
 
-ENV PATH /app/venv/bin:$PATH
+ENV PATH=/app/venv/bin:$PATH
 
 COPY . .
 
