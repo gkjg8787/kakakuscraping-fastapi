@@ -222,7 +222,7 @@ def start_manager_process():
         startQueue()
     except Exception as e:
         logger = getLogger(cmnlog.LogName.MANAGER)
-        logger.info(get_filename() + " error in start_mangager_process:" + e)
+        logger.error(get_filename() + " error in start_mangager_process:" + str(e))
 
 
 def createScrapingManager():
