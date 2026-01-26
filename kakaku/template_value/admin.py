@@ -3,6 +3,7 @@ from pathlib import Path
 import subprocess
 from multiprocessing import Process, Manager, Queue
 import queue
+import asyncio
 
 from sqlalchemy.orm import Session
 
@@ -161,6 +162,17 @@ class BackServerCtrl:
         if self.cmd_msg == SystemCtrlBtnName.RESTART.value:
             cmd.append("restart")
         subprocess.run(cmd)
+
+    async def async_action(self):
+        base_path = str(read_config.get_srcdir())
+        cmd = ["python3", str(Path(base_path, self.CMD_NAME))]
+        if self.cmd_msg == SystemCtrlBtnName.STARTUP.value:
+            cmd.append("start")
+        if self.cmd_msg == SystemCtrlBtnName.STOP.value:
+            cmd.append("end")
+        if self.cmd_msg == SystemCtrlBtnName.RESTART.value:
+            cmd.append("restart")
+        Process = await asyncio.create_subprocess_exec(*cmd)
 
 
 class LogLevelFilterFactory:

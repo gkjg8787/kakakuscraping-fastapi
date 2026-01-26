@@ -2,6 +2,7 @@ import os
 import time
 import sys
 import queue
+from multiprocessing import Process
 
 
 from common import cmnlog, util
@@ -37,6 +38,16 @@ from .queuemanager import (
 dlproc: DlProc | None = None
 parseproc: ParseProc | None = None
 timerproc: TimerProc | None = None
+task_queue = queue.Queue()
+result_queue = queue.Queue()
+
+
+def get_task_queue():
+    return task_queue
+
+
+def get_result_queue():
+    return result_queue
 
 
 def getProcStatusAccess():
@@ -71,11 +82,8 @@ def startQueue():
         writeProcStart(db=db)
         SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.STARTUP)
 
-    task_queue = queue.Queue()
-    result_queue = queue.Queue()
-
-    QueueManager.register("get_task_queue", callable=lambda: task_queue)
-    QueueManager.register("get_result_queue", callable=lambda: result_queue)
+    QueueManager.register("get_task_queue", callable=get_task_queue)
+    QueueManager.register("get_result_queue", callable=get_result_queue)
 
     manager = QueueManager(address=("", server_port), authkey=server_pswd)
     manager.start()
@@ -112,7 +120,12 @@ def scrapingURL(task: sendcmd.SendCmd, db: Session):
             logger = getLogger(cmnlog.LogName.MANAGER)
             logger.info(get_filename() + " get UPDATE")
             SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.DATA_UPDATE)
-            dlproc.putDlTask(task.url, task.id)
+            task_url = str(task.url)
+            if task.id:
+                item_id = int(task.id)
+            else:
+                item_id = task.id
+            dlproc.putDlTask(task_url, item_id)
             return
         case sendcmd.ScrOrder.AUTO_UPDATE_ACT_ALL:
             SystemStatusLogAccess.add(
@@ -162,27 +175,30 @@ def waitTask(task, result):
         PrefectureDBSetting.init_setting(db=db)
         manager_util.writeProcWaiting(db, psa=psa)
     QUEUE_TIMEOUT = float(get_back_server_queue_timeout())
-    while True:
-        try:
-            t: sendcmd.SendCmd = task.get(timeout=QUEUE_TIMEOUT)
-            logger.debug(get_filename() + " get task")
-            if not psa.getStatus() == ProcStatusAccess.ACTIVE:
+    try:
+        while True:
+            try:
+                t: sendcmd.SendCmd = task.get(timeout=QUEUE_TIMEOUT)
+                logger.debug(get_filename() + " get task")
+                if not psa.getStatus() == ProcStatusAccess.ACTIVE:
+                    with next(get_session()) as db:
+                        manager_util.writeProcActive(db, psa=psa)
+                if t.cmdstr == sendcmd.ScrOrder.END:
+                    logger.info(get_filename() + " get END")
+                    break
+                elif t.cmdstr not in sendcmd.ScrOrder.ORDERLIST:
+                    logger.error(get_filename() + "not in cmdstr =" + t.cmdstr)
+                else:
+                    with next(get_session()) as db:
+                        scrapingURL(t, db=db)
+            except queue.Empty:
                 with next(get_session()) as db:
-                    manager_util.writeProcActive(db, psa=psa)
-            if t.cmdstr == sendcmd.ScrOrder.END:
-                logger.info(get_filename() + " get END")
-                break
-            elif t.cmdstr not in sendcmd.ScrOrder.ORDERLIST:
-                logger.error(get_filename() + "not in cmdstr =" + t.cmdstr)
-            else:
-                with next(get_session()) as db:
-                    scrapingURL(t, db=db)
-        except queue.Empty:
-            with next(get_session()) as db:
-                if not psa.getStatus() == ProcStatusAccess.WAITING:
-                    manager_util.writeProcWaiting(db, psa=psa)
-                update_to_active_for_systemstatuslog(db=db)
-            time.sleep(0.1)
+                    if not psa.getStatus() == ProcStatusAccess.WAITING:
+                        manager_util.writeProcWaiting(db, psa=psa)
+                    update_to_active_for_systemstatuslog(db=db)
+                time.sleep(0.1)
+    except Exception as e:
+        logger.error(get_filename() + " waitTask error:" + str(e))
 
 
 def createSubProc():
@@ -201,12 +217,15 @@ def endSubProc():
     dlproc.shutdownAll()
 
 
-def createScrapingManager():
-    child_pid = os.fork()
-    if child_pid == 0:
-        os.setsid()
-        if os.fork():
-            sys.exit()
+def start_manager_process():
+    """マネージャーを実際に起動する関数"""
+    try:
         startQueue()
-    else:
-        pass
+    except Exception as e:
+        logger = getLogger(cmnlog.LogName.MANAGER)
+        logger.info(get_filename() + " error in start_mangager_process:" + e)
+
+
+def createScrapingManager():
+    p = Process(target=start_manager_process, daemon=False)
+    p.start()

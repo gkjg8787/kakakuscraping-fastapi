@@ -1011,7 +1011,7 @@ class UpdateItemAllUrlPostContext(BaseTemplateValue):
     def update_data(self, db: Session):
         urlinitems = UrlQuery.get_act_urlinfo_by_item_id(db, item_id=self.item_id)
         for uii in urlinitems:
-            sendTask(cmdstr=ScrOrder.UPDATE, url=uii.urlpath)
+            sendTask(cmdstr=ScrOrder.UPDATE, url=str(uii.urlpath))
         self.updateSuccess = True
 
 

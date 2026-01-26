@@ -22,10 +22,10 @@ from common.cmnlog import initRooterLogger
 async def lifespan(app: FastAPI):
     initRooterLogger()
     if is_auto_start_backserver():
-        ctrlbackserver(cmd=SystemCtrlBtnName.STARTUP)
+        await ctrlbackserver(cmd=SystemCtrlBtnName.STARTUP)
     yield
     if is_auto_start_backserver():
-        ctrlbackserver(cmd=SystemCtrlBtnName.STOP)
+        await ctrlbackserver(cmd=SystemCtrlBtnName.STOP)
 
 
 app = FastAPI(lifespan=lifespan)
@@ -40,10 +40,10 @@ if get_api_options().enable:
     app.include_router(api.router)
 
 
-def ctrlbackserver(cmd: SystemCtrlBtnName):
+async def ctrlbackserver(cmd: SystemCtrlBtnName):
     pcf = ProcCtrlForm(system_ctrl_btn=cmd.value)
     bsc = BackServerCtrl(pcf)
-    bsc.action()
+    await bsc.async_action()
 
 
 def is_auto_start_backserver():

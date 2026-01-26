@@ -23,8 +23,6 @@ def sendTask(
     cmnlog.deleteLogger(cmnlog.LogName.CLIENT)
     logger = cmnlog.createLogger(cmnlog.LogName.CLIENT)
     logger.debug(get_filename() + " sendTask start")
-    QueueManager.register("get_task_queue")
-    QueueManager.register("get_result_queue")
 
     logger.debug(get_filename() + " Connect to server {}...".format(server_addr))
     m = QueueManager(address=(server_addr, server_port), authkey=server_pswd)

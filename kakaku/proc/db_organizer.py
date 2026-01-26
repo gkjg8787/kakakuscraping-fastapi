@@ -262,6 +262,8 @@ def param_parser(argv):
 
 
 def start_func(db: Session, orgcmd: DBOrganizerCmd):
+    cmnlog.deleteLogger(cmnlog.LogName.DB_ORGANIZE)
+    cmnlog.createLogger(cmnlog.LogName.DB_ORGANIZE)
     if orgcmd == DBOrganizerCmd.ALL:
         pricelog_cleaner(db)
         sync_2days_to_pricelog_today(db)
