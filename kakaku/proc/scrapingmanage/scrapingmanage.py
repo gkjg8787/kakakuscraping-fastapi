@@ -1,6 +1,5 @@
 import os
 import time
-import sys
 import queue
 from multiprocessing import Process
 
