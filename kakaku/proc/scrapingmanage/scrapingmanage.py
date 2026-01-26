@@ -205,8 +205,18 @@ def createSubProc():
     parseproc = ParseProc()
     dlproc = DlProc(retq=parseproc.parse_task_q)
     timerproc = TimerProc()
-    parseproc.start()
-    timerproc.start()
+    try:
+        parseproc.start()
+    except Exception as e:
+        logger = getLogger(cmnlog.LogName.MANAGER)
+        logger.error(get_filename() + " parseproc start error:" + str(e))
+        raise e
+    try:
+        timerproc.start()
+    except Exception as e:
+        logger = getLogger(cmnlog.LogName.MANAGER)
+        logger.error(get_filename() + " timerproc start error:" + str(e))
+        raise e
 
 
 def endSubProc():

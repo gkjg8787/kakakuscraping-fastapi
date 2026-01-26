@@ -195,6 +195,57 @@ class SearchOpt:
         return self.searchs[name].getParser()
 
 
+def searchResult(taskq, retq, wtime: int):
+    logger = getLogger()
+    spr = SearchProcResult()
+    try:
+        searcho: SiteSearchOpt = taskq.get(timeout=wtime)
+    except queue.Empty:
+        logger.error(f"{__file__} taskqueue timeout")
+        retq.put(spr)
+        return
+    site = searcho.getSite()
+    if not site.isExistCategory():
+        logger.info(f"{__file__} {searcho.getName()} no exist category")
+        retq.put(spr)
+        return
+    retbool, html = downloadHtml(searcho, logger)
+    if not retbool:
+        logger.error(__file__ + " fail download")
+        retq.put(spr)
+        return
+    parseHtml(searcho, logger, spr, html)
+    retq.put(spr)
+
+
+def downloadHtml(searcho: SiteSearchOpt, logger: logging.Logger):
+    site = searcho.getSite()
+    dlopt = searcho.getRequestOpt()
+    url = site.createURL()
+    logger.debug(f"{__file__} start DownLoad url={url}")
+    retbool, html = download_html.getUrlHtml(url, dlopt)
+    logger.debug(__file__ + " end DownLoad")
+    return retbool, html
+
+
+def parseHtml(
+    searcho: SiteSearchOpt,
+    logger: logging.Logger,
+    spr: SearchProcResult,
+    html: str,
+):
+    logger.debug(f"{__file__} start item parse name={searcho.name}")
+    parser = searcho.getParser()
+    parser.parseSearch(html)
+    logger.debug(f"{__file__} end item parse name={searcho.name}")
+    items = parser.getItems()
+    spr.setItems(items)
+    if len(items) > 0:
+        logger.debug(f"{__file__} start page parse name={searcho.name}")
+        spr.setPageInfo(parser.getPage())
+        logger.debug(f"{__file__} end page parse name={searcho.name}")
+
+
 class SearchItem:
     sopt: SearchOpt
     allitems: list[dict]
@@ -225,7 +276,7 @@ class SearchItem:
         for sitename in sopt.targetstore:
             searcho = sopt.getSiteSearch(sitename)
             taskq.put(searcho)
-            proc = Process(target=self.searchResult, args=(taskq, retq, waittime))
+            proc = Process(target=searchResult, args=(taskq, retq, waittime))
             proc.start()
             procs.append(proc)
 
@@ -253,55 +304,6 @@ class SearchItem:
             pageinfo[SearchCmn.CURRENT] = "1"
             return
         pageinfo[SearchCmn.CURRENT] = urlparam[SearchCmn.PAGE]
-
-    def searchResult(self, taskq, retq, wtime: int):
-        logger = getLogger()
-        spr = SearchProcResult()
-        try:
-            searcho: SiteSearchOpt = taskq.get(timeout=wtime)
-        except queue.Empty:
-            logger.error(f"{__file__} taskqueue timeout")
-            retq.put(spr)
-            return
-        site = searcho.getSite()
-        if not site.isExistCategory():
-            logger.info(f"{__file__} {searcho.getName()} no exist category")
-            retq.put(spr)
-            return
-        retbool, html = self.downloadHtml(searcho, logger)
-        if not retbool:
-            logger.error(__file__ + " fail download")
-            retq.put(spr)
-            return
-        self.parseHtml(searcho, logger, spr, html)
-        retq.put(spr)
-
-    def downloadHtml(self, searcho: SiteSearchOpt, logger: logging.Logger):
-        site = searcho.getSite()
-        dlopt = searcho.getRequestOpt()
-        url = site.createURL()
-        logger.debug(f"{__file__} start DownLoad url={url}")
-        retbool, html = download_html.getUrlHtml(url, dlopt)
-        logger.debug(__file__ + " end DownLoad")
-        return retbool, html
-
-    def parseHtml(
-        self,
-        searcho: SiteSearchOpt,
-        logger: logging.Logger,
-        spr: SearchProcResult,
-        html: str,
-    ):
-        logger.debug(f"{__file__} start item parse name={searcho.name}")
-        parser = searcho.getParser()
-        parser.parseSearch(html)
-        logger.debug(f"{__file__} end item parse name={searcho.name}")
-        items = parser.getItems()
-        spr.setItems(items)
-        if len(items) > 0:
-            logger.debug(f"{__file__} start page parse name={searcho.name}")
-            spr.setPageInfo(parser.getPage())
-            logger.debug(f"{__file__} end page parse name={searcho.name}")
 
     def setPage(self, pageinfo, searchret):
         if searchret is None:

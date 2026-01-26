@@ -48,6 +48,15 @@ def get_filename():
     return os.path.basename(__file__)
 
 
+def create_logger():
+    cmnlog.deleteLogger(cmnlog.LogName.TIMER)
+    return cmnlog.createLogger(cmnlog.LogName.TIMER)
+
+
+def get_logger():
+    return cmnlog.getLogger(cmnlog.LogName.TIMER)
+
+
 class DailyLogOrganizer:
     starttime: datetime
     logger: Logger
@@ -171,6 +180,17 @@ class TwoDigitHourFormat:
         return reqs
 
 
+def is_auto_update_time(logger: Logger):
+    isAuto = read_config.is_auto_update_item()
+    if not isAuto or not type(isAuto) is bool:
+        isAuto = False
+    upts = read_config.get_auto_update_time()
+    if not upts or not type(upts) is list:
+        logger.info(f"{get_filename()} is_auto_update_time no updatetime list = {upts}")
+        isAuto = False
+    return isAuto
+
+
 class ItemAutoUpdateTimerFactory:
     @staticmethod
     def create(db: Session, logger: Logger):
@@ -179,9 +199,6 @@ class ItemAutoUpdateTimerFactory:
             isAuto = False
         upts = read_config.get_auto_update_time()
         if not upts or not type(upts) is list:
-            logger.info(
-                f"{get_filename()} {__class__.__name__} no updatetime list = {upts}"
-            )
             isAuto = False
             upts = []
         iaut = ItemAutoUpdateTimer(
@@ -337,6 +354,19 @@ class ItemAutoUpdateTimer:
         return False
 
 
+def is_auto_update_online_store(logger: Logger):
+    if not read_config.is_auto_update_online_store():
+        logger.info(f"{get_filename()} is_auto_update_online_store set no autoupdate")
+        return False
+    upts = read_config.get_auto_update_online_store_time()
+    if not upts or not type(upts) is list:
+        logger.info(
+            f"{get_filename()} is_auto_update_online_store no updatetime list = {upts}"
+        )
+        return False
+    return True
+
+
 class DailyOnlineStoreUpdate:
     isAutoUpdate: bool
     updatelocaltimestrs: list[str]
@@ -433,10 +463,55 @@ class DailyOnlineStoreUpdate:
         return False
 
 
+def actSystemStatus(db: Session) -> bool:
+    syssts = SystemStatusAccess()
+    syssts.update(db=db)
+    if SystemStatus.ACTIVE == syssts.getStatus():
+        return True
+    return False
+
+
+def run_itemupdatetimer(cycle_time: float, MIN_CYCLE_TIME: float = 1):
+    with next(get_session()) as db:
+        iaut = ItemAutoUpdateTimerFactory.create(db=db, logger=create_logger())
+    if cycle_time < MIN_CYCLE_TIME:
+        cycle_time = MIN_CYCLE_TIME
+    while True:
+        with next(get_session()) as db:
+            if not actSystemStatus(db):
+                time.sleep(cycle_time)
+                continue
+            iaut.run(db)
+        time.sleep(cycle_time)
+
+
+def run_onlinestoreupdate(cycle_time: float, MIN_CYCLE_TIME: float = 1):
+    dosu = DailyOnlineStoreUpdate(create_logger())
+    if cycle_time < MIN_CYCLE_TIME:
+        cycle_time = MIN_CYCLE_TIME
+    while True:
+        with next(get_session()) as db:
+            if not actSystemStatus(db):
+                time.sleep(cycle_time)
+                continue
+            dosu.run(db)
+        time.sleep(cycle_time)
+
+
+def run_dailylogorganizer(cycle_time: float, MIN_CYCLE_TIME: float = 1):
+    dlo = DailyLogOrganizer(create_logger())
+    if cycle_time < MIN_CYCLE_TIME:
+        cycle_time = MIN_CYCLE_TIME
+    while True:
+        with next(get_session()) as db:
+            if not actSystemStatus(db):
+                time.sleep(cycle_time)
+                continue
+        dlo.run()
+        time.sleep(cycle_time)
+
+
 class TimerProc:
-    dlo: DailyLogOrganizer
-    iaut: ItemAutoUpdateTimer
-    dosu: DailyOnlineStoreUpdate
     proc_list: list[Process]
     DEFAULT_CYCLT_TIME: float = 3.0
     MIN_CYCLE_TIME: float = 1
@@ -450,29 +525,34 @@ class TimerProc:
         logger = cmnlog.getLogger(cmnlog.LogName.TIMER)
         logger.info(f"{get_filename()} start timer process")
 
-        with next(get_session()) as db:
-            self.iaut = ItemAutoUpdateTimerFactory.create(db=db, logger=logger)
-        if self.iaut.isAutoUpdate:
+        if is_auto_update_time(logger):
             iutproc = Process(
-                target=self.run_itemupdatetimer,
-                args=(read_config.get_auto_update_check_cycle_time(),),
+                target=run_itemupdatetimer,
+                args=(
+                    read_config.get_auto_update_check_cycle_time(),
+                    self.MIN_CYCLE_TIME,
+                ),
             )
             self.proc_list.append(iutproc)
             logger.info(f"{get_filename()} start ItemAutoUpdateTimer")
 
-        self.dlo = DailyLogOrganizer(logger)
         dloproc = Process(
-            target=self.run_dailylogorganizer,
-            args=(read_config.get_auto_db_organizer_check_cycle_time(),),
+            target=run_dailylogorganizer,
+            args=(
+                read_config.get_auto_db_organizer_check_cycle_time(),
+                self.MIN_CYCLE_TIME,
+            ),
         )
         self.proc_list.append(dloproc)
         logger.info(f"{get_filename()} start DailyOrganizer")
 
-        self.dosu = DailyOnlineStoreUpdate(logger)
-        if self.dosu.isAutoUpdate:
+        if is_auto_update_online_store(logger):
             osuproc = Process(
-                target=self.run_onlinestoreupdate,
-                args=(read_config.get_auto_update_online_store_cycle_time(),),
+                target=run_onlinestoreupdate,
+                args=(
+                    read_config.get_auto_update_online_store_cycle_time(),
+                    self.MIN_CYCLE_TIME,
+                ),
             )
             self.proc_list.append(osuproc)
             logger.info(f"{get_filename()} start DailyOnlineStoreUpdate")
@@ -487,44 +567,3 @@ class TimerProc:
         self.proc_list.clear()
         logger = cmnlog.getLogger(cmnlog.LogName.TIMER)
         logger.info(f"{get_filename()} end timer process")
-
-    @classmethod
-    def actSystemStatus(cls, db: Session) -> bool:
-        syssts = SystemStatusAccess()
-        syssts.update(db=db)
-        if SystemStatus.ACTIVE == syssts.getStatus():
-            return True
-        return False
-
-    def run_itemupdatetimer(self, cycle_time: float):
-        if cycle_time < self.MIN_CYCLE_TIME:
-            cycle_time = self.MIN_CYCLE_TIME
-        while True:
-            with next(get_session()) as db:
-                if not self.actSystemStatus(db):
-                    time.sleep(cycle_time)
-                    continue
-                self.iaut.run(db)
-            time.sleep(cycle_time)
-
-    def run_dailylogorganizer(self, cycle_time: float):
-        if cycle_time < self.MIN_CYCLE_TIME:
-            cycle_time = self.MIN_CYCLE_TIME
-        while True:
-            with next(get_session()) as db:
-                if not self.actSystemStatus(db):
-                    time.sleep(cycle_time)
-                    continue
-            self.dlo.run()
-            time.sleep(cycle_time)
-
-    def run_onlinestoreupdate(self, cycle_time: float):
-        if cycle_time < self.MIN_CYCLE_TIME:
-            cycle_time = self.MIN_CYCLE_TIME
-        while True:
-            with next(get_session()) as db:
-                if not self.actSystemStatus(db):
-                    time.sleep(cycle_time)
-                    continue
-                self.dosu.run(db)
-            time.sleep(cycle_time)
