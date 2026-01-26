@@ -14,9 +14,8 @@ from proc import get_sys_status
 from proc.auto_update import AutoUpdateOnOff, TwoDigitHourFormat
 from proc.system_status_log import SystemStatusLogAccess
 from proc.server_log import (
-    IExtractServerLog,
     ExtractServerLogResult,
-    ExtractServerLogByCommand,
+    get_filtered_logs,
 )
 from proc.temp_file import CountTempFile, CountTempFileResult
 from common import read_config, templates_string
@@ -205,10 +204,13 @@ class ServerLogDisplay(BaseTemplateValue):
         one_year_ago = today - timedelta(days=365)
         datefmt = "%Y-%m-%d"
         selected_id_list: list[int] = []
-        if lfq.level_list:
-            selected_id_list = [int(level) for level in lfq.level_list]
         if not lfq.level_list and not lfq.min_date and not lfq.max_date:
             lfq.min_date = (today).astimezone(JST).strftime(datefmt)
+        if not lfq.level_list:
+            selected_id_list = [level.id for level in LogLevelFilterName]
+        if lfq.level_list:
+            selected_id_list = [int(level) for level in lfq.level_list]
+
         super().__init__(
             logfilelist=[],
             fquery={},
@@ -243,76 +245,31 @@ class ServerLogDisplay(BaseTemplateValue):
                 if lname.id in selected_id_list:
                     loglevel_name_list.append(lname.name)
 
-        loglist = self.get_logname_list()
-        esl = ExtractServerLogByCommand()
-        proclist: list[Process] = []
-        m = Manager()
-        retq: Queue = m.Queue()
-        timeout: float = 10.0
-        for logfile in loglist:
-            p = Process(
-                target=self.start_func_for_process,
-                args=(
-                    logfile,
-                    loglevel_name_list,
-                    start_date,
-                    end_date,
-                    esl,
-                    retq,
-                    timeout,
-                ),
-            )
-            p.start()
-            proclist.append(p)
-
-        for p in proclist:
-            p.join()
+        loglist = [
+            f"{getattr(LogName,a)}.log"
+            for a in dir(LogName)
+            if not a.startswith("__") and not callable(getattr(LogName, a))
+        ]
 
         logfilelist: list[ExtractServerLogResult] = []
-        for p in proclist:
-            try:
-                eslresult: ExtractServerLogResult = retq.get(timeout=timeout)
-                logfilelist.append(eslresult)
-            except queue.Empty:
-                pass
-        return sorted(logfilelist, key=lambda logf: logf.filename)
-
-    @staticmethod
-    def start_func_for_process(
-        logname: str,
-        loglevel_name_list: list[str],
-        start: datetime | None,
-        end: datetime | None,
-        esl: IExtractServerLog,
-        retq: Queue,
-        timeout: float = 10,
-    ):
-        eslresult = esl.get_list_by_time_period(
-            logname=logname,
-            loglevel_name_list=loglevel_name_list,
-            start=start,
-            end=end,
+        logfilelist.extend(
+            get_filtered_logs(
+                target_dir=str(read_config.get_log_dir()),
+                start=start_date,
+                end=end_date,
+                loglevel_name_list=loglevel_name_list,
+            )
         )
-        if eslresult.error_msg:
-            eslresult.text = eslresult.error_msg
-        retq.put(eslresult, timeout=timeout)
+        exist_lognames = [logfile.filename for logfile in logfilelist]
+        for logname in loglist:
+            if logname not in exist_lognames:
+                logfilelist.append(
+                    ExtractServerLogResult(
+                        filename=logname, text="No logs", error_msg="No logs"
+                    )
+                )
 
-    @staticmethod
-    def get_logname_list():
-        return [
-            LogName.CLIENT,
-            LogName.MANAGER,
-            LogName.DOWNLOAD,
-            LogName.DOWNLOAD + "{:0=2}".format(0),
-            LogName.DOWNLOAD + "{:0=2}".format(1),
-            LogName.DOWNLOAD + "{:0=2}".format(2),
-            LogName.PARSE,
-            LogName.ITEMCOMB,
-            LogName.SEARCH,
-            LogName.DB_ORGANIZE,
-            LogName.TIMER,
-            LogName.API,
-        ]
+        return sorted(logfilelist, key=lambda logf: logf.filename)
 
 
 class TempDirDisplay(BaseTemplateValue):
