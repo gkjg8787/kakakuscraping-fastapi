@@ -81,6 +81,10 @@ def get_system_status_log_max():
     return settings.SYSTEM_STATUS_LOG_MAX
 
 
+def get_system_status_log_aggregation_window_sec():
+    return settings.SYSTEM_STATUS_LOG_AGGREGATION_WINDOW_SEC
+
+
 def get_auto_update_check_cycle_time():
     return settings.AUTO_UPDATE_CHECK_CYCLE_TIME
 

@@ -152,6 +152,50 @@ class SystemStatusLogQuery:
         cls.add(db=db, status=status)
 
     @classmethod
+    def add_with_consecutive_check(
+        cls, db: Session, status: str, update_range_sec: float
+    ):
+        """
+        連続するログをチェックして追加または更新する
+
+        - 新しいステータスが最新のログと異なる場合、新しいログを追加します。
+        - 新しいステータスが最新のログと同じで、その前のログと異なる場合、新しいログを追加します。
+        - 新しいステータスが最新の2つのログと同じ（3回連続）で、2番目に新しいログからの経過時間が
+          `update_range_sec` 以内である場合、最新のログのタイムスタンプを更新します。
+        - 3回連続で、時間範囲外の場合は、新しいログを追加します。
+        """
+        latest_logs = cls.get_latest_logs(db, limit=2)
+
+        log1 = latest_logs[0] if len(latest_logs) > 0 else None
+        log2 = latest_logs[1] if len(latest_logs) > 1 else None
+
+        # 前のstatusと同じでない場合は追加
+        if not log1 or log1.status != status:
+            cls.add(db, status=status)
+            return
+
+        # 1つ前と同じで2つ前とは違うstatusの場合、追加
+        if not log2 or log2.status != status:
+            cls.add(db, status=status)
+            return
+
+        # 1つ前及び2つ前の同じstatusで連続の3つ目の場合
+        now = datetime.now(timezone.utc).replace(microsecond=0, tzinfo=None)
+        delta = now - log2.created_at
+        if delta.total_seconds() <= update_range_sec:
+            # 引数の秒数以内の更新の場合、最新のログのタイムスタンプを更新
+            stmt = (
+                update(SystemStatusLog)
+                .where(SystemStatusLog.log_id == log1.log_id)
+                .values(created_at=now)
+            )
+            db.execute(stmt)
+            db.commit()
+        else:
+            # 秒数を超えている場合は追加
+            cls.add(db, status=status)
+
+    @classmethod
     def get_newest_log(cls, db: Session):
         stmt = (
             select(SystemStatusLog)
@@ -159,6 +203,15 @@ class SystemStatusLogQuery:
             .limit(1)
         )
         return db.scalar(stmt)
+
+    @classmethod
+    def get_latest_logs(cls, db: Session, limit: int) -> list[SystemStatusLog]:
+        stmt = (
+            select(SystemStatusLog)
+            .order_by(SystemStatusLog.created_at.desc(), SystemStatusLog.log_id.desc())
+            .limit(limit)
+        )
+        return db.scalars(stmt).all()
 
     @classmethod
     def get_all(cls, db: Session) -> SystemStatusLog | None:

@@ -52,6 +52,19 @@ class SystemStatusLogAccess:
         )
 
     @classmethod
+    def add_with_consecutive_check(
+        cls, db: Session, sysstslog: SystemStatusLogName, update_range_sec: float
+    ):
+        if update_range_sec < 0:
+            raise ValueError("update_range_sec must be non-negative")
+        SystemStatusLogQuery.add_with_consecutive_check(
+            db=db, status=sysstslog.jtext, update_range_sec=update_range_sec
+        )
+        SystemStatusLogQuery.delete_amount_over_limit(
+            db=db, limit=get_system_status_log_max()
+        )
+
+    @classmethod
     def get_all(cls, db: Session):
         return SystemStatusLogQuery.get_all(db=db)
 

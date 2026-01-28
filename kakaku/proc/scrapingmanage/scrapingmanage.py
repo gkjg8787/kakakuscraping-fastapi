@@ -7,6 +7,7 @@ from multiprocessing import Process
 from common import cmnlog, util
 from common.read_config import (
     get_back_server_queue_timeout,
+    get_system_status_log_aggregation_window_sec,
 )
 from proc import (
     sendcmd,
@@ -149,7 +150,11 @@ def scrapingURL(task: sendcmd.SendCmd, db: Session):
             parseproc.put_task(DirectOrderTask(cmdstr=task.cmdstr))
             return
         case sendcmd.ScrOrder.UPDATE_API_PRICE:
-            SystemStatusLogAccess.add(db=db, sysstslog=SystemStatusLogName.API_UPDATE)
+            SystemStatusLogAccess.add_with_consecutive_check(
+                db=db,
+                sysstslog=SystemStatusLogName.API_UPDATE,
+                update_range_sec=get_system_status_log_aggregation_window_sec(),
+            )
             parseproc.put_task(APIUpdateTask(cmdstr=task.cmdstr, data=task.data))
             return
 

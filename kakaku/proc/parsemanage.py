@@ -3,7 +3,7 @@ import time
 from multiprocessing import Process, Queue
 import queue
 
-from common import cmnlog, const_value
+from common import cmnlog, const_value, read_config
 from proc import (
     getAndWrite,
     manager_util,
@@ -47,6 +47,7 @@ def run_parse_process(id, taskq):
     is_parse = False
     PARSE_QUEUE_TIMEOUT = 5
     autocopysttolc = online_store_copy.AutoCopyOnlineStoreToLocal(logger=logger)
+    api_update_time = None
 
     try:
         while True:
@@ -54,6 +55,33 @@ def run_parse_process(id, taskq):
             if task is None:
                 if is_parse:
                     is_parse = False
+                    logger.info(
+                        get_filename() + " sendTask " + ScrOrder.DB_ORGANIZE_SYNC
+                    )
+                    scm.sendTask(cmdstr=ScrOrder.DB_ORGANIZE_SYNC)
+                    logger.info(
+                        get_filename()
+                        + " sendTask "
+                        + ScrOrder.DB_ORGANIZE_LOG_2DAYS_CLEANER
+                    )
+                    scm.sendTask(cmdstr=ScrOrder.DB_ORGANIZE_LOG_2DAYS_CLEANER)
+                elif api_update_time is not None:
+                    wait_time = (
+                        read_config.get_system_status_log_aggregation_window_sec()
+                    )
+                    end_time = time.perf_counter()
+                    count_time = end_time - api_update_time
+                    if count_time < 0:
+                        logger.warning(
+                            get_filename()
+                            + f" api_update_time error api_update_time={api_update_time} end_time={end_time}"
+                        )
+                        api_update_time = None
+                        is_parse = True
+                        continue
+                    if count_time < wait_time:
+                        continue
+                    api_update_time = None
                     logger.info(
                         get_filename() + " sendTask " + ScrOrder.DB_ORGANIZE_SYNC
                     )
@@ -82,7 +110,7 @@ def run_parse_process(id, taskq):
                 with next(get_session()) as db:
                     manager_util.writeProcActive(db, psa=psa)
                     _api_update(pid=id, db=db, task=task, logger=logger)
-                    is_parse = True
+                    api_update_time = time.perf_counter()
                     continue
             if not isinstance(task, DownloadResultTask):
                 continue
