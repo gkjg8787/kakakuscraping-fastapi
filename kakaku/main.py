@@ -43,7 +43,10 @@ if get_api_options().enable:
 async def ctrlbackserver(cmd: SystemCtrlBtnName):
     pcf = ProcCtrlForm(system_ctrl_btn=cmd.value)
     bsc = BackServerCtrl(pcf)
-    await bsc.async_action()
+    if SystemCtrlBtnName.STOP == cmd:
+        bsc.action()
+    else:
+        await bsc.async_action()
 
 
 def is_auto_start_backserver():

@@ -30,7 +30,7 @@ def sendTask(
         m.connect()
     except ConnectionRefusedError:
         print("ConnectionRefusedError")
-        logger.error(get_filename() + "ConnectionRefusedError")
+        logger.error(get_filename() + " ConnectionRefusedError")
         return
 
     task = m.get_task_queue()
