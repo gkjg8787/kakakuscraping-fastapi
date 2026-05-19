@@ -1,5 +1,6 @@
 import json
-import queue
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from dataclasses import dataclass, field
 
 from downloader import download_html
 from html_parser.search_parser import SearchCmn, SearchParser
@@ -16,8 +17,6 @@ from url_search.bookoff import bookoffSearchOpt
 from cache import getcache
 
 import logging
-from multiprocessing import Process, Manager
-
 
 QUEUE_TIMEOUT = 10
 
@@ -27,38 +26,52 @@ def getLogger():
     return cmnlog.getLogger(logname)
 
 
-def getCacheKey(sword: str, optjson: dict | None):
-    key = sword
-    if optjson is not None:
-        jsontext = json.dumps(optjson)
-        key += " " + jsontext
-    return key
+class SearchCacheManager:
+    def __init__(self):
+        self.enabled = getcache.isSearchCacheFunc()
+
+    def _generate_key(self, sword: str, optjson: dict | None) -> str:
+        key = sword
+        if optjson is not None:
+            jsontext = json.dumps(optjson)
+            key += " " + jsontext
+        return key
+
+    def get(self, sword: str, optjson: dict | None) -> str:
+        if self.enabled:
+            key = self._generate_key(sword, optjson)
+            return getcache.getSearchCache().read(key)
+        return ""
+
+    def set(self, sword: str, optjson: dict | None, text: str):
+        if self.enabled:
+            key = self._generate_key(sword, optjson)
+            getcache.getSearchCache().write(key, text)
 
 
-def getCache(sword: str, optjson: dict | None):
-    if getcache.isSearchCacheFunc():
-        key = getCacheKey(sword, optjson)
-        text = getcache.getSearchCache().read(key)
-        return text
-    return ""
+class SearchService:
+    def __init__(self):
+        self.cache_manager = SearchCacheManager()
 
+    def perform_search(self, sword: str, optjson: dict | None = None) -> dict:
+        # キャッシュの確認
+        cache_data = self.cache_manager.get(sword, optjson)
+        if cache_data:
+            return json.loads(cache_data)
 
-def setCache(sword: str, optjson: dict | None, text: str):
-    if getcache.isSearchCacheFunc():
-        key = getCacheKey(sword, optjson)
-        getcache.getSearchCache().write(key, text)
-    return
+        # 検索の実行
+        orchestrator = SearchOrchestrator(sword, optjson)
+        orchestrator.execute_searches()
 
+        # 結果の構築
+        res = {
+            SearchParser.ITEMS: orchestrator.getItems(),
+            SearchParser.PAGE: orchestrator.getPageInfo(),
+        }
 
-def getSearch(sword: str, optjson: dict | None = None) -> dict:
-    cache = getCache(sword, optjson)
-    if len(cache) > 0:
-        return json.loads(cache)
-    si = SearchItem(sword, optjson)
-    si.start()
-    res = {SearchParser.ITEMS: si.getItems(), SearchParser.PAGE: si.getPageInfo()}
-    setCache(sword, optjson, json.dumps(res))
-    return res
+        # キャッシュへの保存
+        self.cache_manager.set(sword, optjson, json.dumps(res))
+        return res
 
 
 def get_search_for_inner(sword: str, optdict: dict | None = None) -> dict:
@@ -79,42 +92,19 @@ def get_search_for_inner(sword: str, optdict: dict | None = None) -> dict:
         logger.info(__file__ + " optparam=" + json.dumps(optdict))
 
     logger.debug(__file__ + " start Search")
-    res = getSearch(sword, optdict)
+    service = SearchService()
+    res = service.perform_search(sword, optdict)
     logger.debug(__file__ + " end Search")
     logger.info(__file__ + " end url_search")
     return {RESULT_KEY: res}
 
 
-class SearchProcResult:
-    items: dict
-    htmlpart: str
-    pageinfo: dict
-
-    def __init__(self):
-        self.items = {}
-        self.htmlpart = ""
-        self.pageinfo = {}
-
-    def setItems(self, items):
-        self.items = items
-
-    def getItems(self):
-        return self.items
-
-    def setHtmlPart(self, htmlp):
-        self.htmlpart = htmlp
-
-    def addHtmlPart(self, htmlp):
-        self.htmlpart += htmlp
-
-    def getHtmlPart(self):
-        return self.htmlpart
-
-    def setPageInfo(self, pageinfo):
-        self.pageinfo = pageinfo
-
-    def getPageInfo(self):
-        return self.pageinfo
+@dataclass
+class SiteSearchResult:
+    site_name: str
+    items: list[dict] = field(default_factory=list)
+    page_info: dict = field(default_factory=dict)
+    error: str | None = None
 
 
 class SearchOpt:
@@ -122,28 +112,27 @@ class SearchOpt:
     BOOKOFF = "bookoff"
     NETOFF = "netoff"
 
-    confopts: readoption.ReadSearchOpt
-    searchs: dict[str, SiteSearchOpt]
-    targetstore: list[str]
-    urlparam: dict
-    supportSite: list[str]
+    # サポートするサイト名と、対応するオプションクラスの定義
+    _SITE_MAP = {
+        SURUGAYA: surugayaSearchOpt.SurugayaSearchOpt,
+        NETOFF: netoffSearchOpt.NetoffSearchOpt,
+        BOOKOFF: bookoffSearchOpt.BookoffSearchOpt,
+    }
 
     def __init__(self, word):
         self.confopts = readoption.ReadSearchOpt()
-        self.searchs: dict[str, SiteSearchOpt] = {
-            SearchOpt.SURUGAYA: surugayaSearchOpt.SurugayaSearchOpt(self.confopts),
-            SearchOpt.NETOFF: netoffSearchOpt.NetoffSearchOpt(self.confopts),
-            SearchOpt.BOOKOFF: bookoffSearchOpt.BookoffSearchOpt(self.confopts),
-        }
-        self.targetstore = []
+        self.searchs: dict[str, SiteSearchOpt] = self._init_search_options()
         self.urlparam = {FilterQueryName.WORD.value: word}
-        self.supportSite = [
-            SearchOpt.SURUGAYA,
-            SearchOpt.NETOFF,
-            SearchOpt.BOOKOFF,
-        ]
+        self.targetstore: list[str] = []
+        self.supportSite = list(self._SITE_MAP.keys())
 
         self.setWord(word)
+
+    def _init_search_options(self) -> dict[str, SiteSearchOpt]:
+        """登録されている全てのサイト検索オプションを動的に初期化する"""
+        return {
+            name: opt_class(self.confopts) for name, opt_class in self._SITE_MAP.items()
+        }
 
     def setWord(self, word):
         for search in self.searchs.values():
@@ -195,27 +184,26 @@ class SearchOpt:
         return self.searchs[name].getParser()
 
 
-def searchResult(taskq, retq, wtime: int):
+def searchResult(searcho: SiteSearchOpt) -> SiteSearchResult:
     logger = getLogger()
-    spr = SearchProcResult()
+    result = SiteSearchResult(site_name=searcho.getName())
     try:
-        searcho: SiteSearchOpt = taskq.get(timeout=wtime)
-    except queue.Empty:
-        logger.error(f"{__file__} taskqueue timeout")
-        retq.put(spr)
-        return
-    site = searcho.getSite()
-    if not site.isExistCategory():
-        logger.info(f"{__file__} {searcho.getName()} no exist category")
-        retq.put(spr)
-        return
-    retbool, html = downloadHtml(searcho, logger)
-    if not retbool:
-        logger.error(__file__ + " fail download")
-        retq.put(spr)
-        return
-    parseHtml(searcho, logger, spr, html)
-    retq.put(spr)
+        site = searcho.getSite()
+        if not site.isExistCategory():
+            logger.info(f"{__file__} {searcho.getName()} no exist category")
+            return result
+
+        retbool, html = downloadHtml(searcho, logger)
+        if not retbool:
+            logger.error(f"{__file__} {searcho.getName()} fail download")
+            result.error = "fail download"
+            return result
+
+        parseHtml(searcho, logger, result, html)
+    except Exception as e:
+        logger.exception(f"Error searching {searcho.getName()}: {e}")
+        result.error = str(e)
+    return result
 
 
 def downloadHtml(searcho: SiteSearchOpt, logger: logging.Logger):
@@ -231,73 +219,64 @@ def downloadHtml(searcho: SiteSearchOpt, logger: logging.Logger):
 def parseHtml(
     searcho: SiteSearchOpt,
     logger: logging.Logger,
-    spr: SearchProcResult,
+    result: SiteSearchResult,
     html: str,
 ):
-    logger.debug(f"{__file__} start item parse name={searcho.name}")
+    logger.debug(f"{__file__} start item parse name={searcho.getName()}")
     parser = searcho.getParser()
     parser.parseSearch(html)
-    logger.debug(f"{__file__} end item parse name={searcho.name}")
+    logger.debug(f"{__file__} end item parse name={searcho.getName()}")
     items = parser.getItems()
-    spr.setItems(items)
+    result.items = items
     if len(items) > 0:
-        logger.debug(f"{__file__} start page parse name={searcho.name}")
-        spr.setPageInfo(parser.getPage())
-        logger.debug(f"{__file__} end page parse name={searcho.name}")
+        logger.debug(f"{__file__} start page parse name={searcho.getName()}")
+        result.page_info = parser.getPage()
+        logger.debug(f"{__file__} end page parse name={searcho.getName()}")
 
 
-class SearchItem:
+class SearchOrchestrator:
     sopt: SearchOpt
     allitems: list[dict]
-    pageinfo: dict
+    pageinfo: dict | None
 
     def __init__(self, sword: str, optjson: dict | None = None):
         self.sopt = self.createOption(sword, optjson)
+        self.allitems = []
+        self.pageinfo = None
 
     def createOption(self, sword: str, optjson: dict | None = None):
         sopt = SearchOpt(sword)
         sopt.setParamOpt(optjson)
         return sopt
 
-    def start(self):
-        self.allitems = []
-        self.pageinfo = None
+    def execute_searches(self):
         pageinfo = {SearchCmn.ENABLE: SearchCmn.FALSE}
-        sopt = self.sopt
-        self.setCurrentPage(pageinfo, sopt.getParamOpt())
+        self.setCurrentPage(pageinfo, self.sopt.getParamOpt())
 
         logger = getLogger()
-        logger.debug(__file__ + " start SearchItem")
-        m = Manager()
-        retq = m.Queue()
-        taskq = m.Queue()
-        procs: list[Process] = []
-        waittime = QUEUE_TIMEOUT
-        for sitename in sopt.targetstore:
-            searcho = sopt.getSiteSearch(sitename)
-            taskq.put(searcho)
-            proc = Process(target=searchResult, args=(taskq, retq, waittime))
-            proc.start()
-            procs.append(proc)
+        logger.debug(f"{__file__} start SearchOrchestrator")
 
-        for proc in procs:
-            proc.join()
+        with ProcessPoolExecutor() as executor:
+            future_to_site = {
+                executor.submit(searchResult, self.sopt.getSiteSearch(name)): name
+                for name in self.sopt.targetstore
+            }
 
-        for i in range(len(procs)):
-            try:
-                spr: SearchProcResult = retq.get(timeout=waittime)
-                self.allitems.extend(spr.getItems())
-                self.setPage(pageinfo, spr.getPageInfo())
-                self.pageinfo = pageinfo
-            except queue.Empty:
-                logger.error("{}  [{}] retqueue timeout".format(__file__, str(i)))
-        logger.debug(f"{__file__} allitems={self.allitems}")
-        logger.debug(f"{__file__} pageinfo={self.pageinfo}")
-        if SearchCmn.TRUE != pageinfo[SearchCmn.ENABLE]:
-            logger.debug(__file__ + " end SearchItem")
-            return
+            for future in as_completed(future_to_site, timeout=QUEUE_TIMEOUT):
+                site_name = future_to_site[future]
+                try:
+                    result: SiteSearchResult = future.result()
+                    if result.error:
+                        logger.error(f"Search error in {site_name}: {result.error}")
 
-        logger.debug(__file__ + " end SearchItem")
+                    self.allitems.extend(result.items)
+                    self.setPage(pageinfo, result.page_info)
+                except Exception as exc:
+                    logger.error(f"{site_name} generated an exception: {exc}")
+
+        self.pageinfo = pageinfo
+        logger.debug(f"{__file__} allitems count={len(self.allitems)}")
+        logger.debug(f"{__file__} end SearchOrchestrator")
 
     def setCurrentPage(self, pageinfo, urlparam):
         if SearchCmn.PAGE not in urlparam:

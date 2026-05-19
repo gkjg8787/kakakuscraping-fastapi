@@ -1,4 +1,4 @@
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 from downloader import requestoption
 from html_parser.search_parser import SearchParser
 from .urlcreator import URLCreator
@@ -10,17 +10,12 @@ class SiteSearchOpt(metaclass=ABCMeta):
     parser: SearchParser
     requestOpt: requestoption
 
-    def __init__(self):
-        self.name = ""
-        self.site = None
-        self.parser = None
-        self.requestOpt = None
-
     def getName(self):
         return self.name
 
+    @abstractmethod
     def setSearchWord(self, word):
-        pass
+        """検索ワードを設定する抽象メソッド"""
 
     def getSite(self):
         return self.site
@@ -31,5 +26,6 @@ class SiteSearchOpt(metaclass=ABCMeta):
     def getRequestOpt(self):
         return self.requestOpt
 
+    @abstractmethod
     def setParamOpt(self, paramopt):
-        pass
+        """検索オプションを設定する抽象メソッド"""

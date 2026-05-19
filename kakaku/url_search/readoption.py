@@ -15,14 +15,10 @@ class ReadSearchOpt:
         )
         text = []
         try:
-            jfile = open(fpath, "r", encoding="utf-8")
-            text = json.load(jfile)
-            jfile.close()
-            return text
+            with open(fpath, "r", encoding="utf-8") as jfile:
+                text = json.load(jfile)
         except FileNotFoundError:
             pass
-        finally:
-            jfile.close()
 
         return text
 
