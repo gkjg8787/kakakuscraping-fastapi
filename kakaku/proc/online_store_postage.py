@@ -328,7 +328,7 @@ def update_surugaya_makepure_store_postage(
     pref_list = prefecture.PrefectureName.get_all_prefecturename()
     db_dict = get_db_postage_dict(db=db, storename_list=sn_list)
     prefinfo = PrefInfo(db)
-    skip_storenames = ["駿河屋", "ゲオ", "ブックオフ", "ネットオフ"]
+    skip_storenames = ["駿河屋", "ブックオフ", "ネットオフ"]
     online_update_post_wait_time = 1
     for storename in sn_list:
         if storename in skip_storenames:
@@ -415,6 +415,7 @@ def get_and_update_specific_url(
             f"url={url}, "
             f"error={str(e)}"
         )
+        return
     if not hasattr(p, "get_ParseStorePostage"):
         raise AttributeError("fail calling parser of get_ParseStorePostage")
     sp_list: list[htmlparse.ParseStorePostage] = p.get_ParseStorePostage()
@@ -455,8 +456,8 @@ def update_store_of_specific_url(
             "insert_proc_type": posd.InsertProcType.NETOFF_SHIPPING_SURCHARGE,
         },
         "bookoff": {
-            "url": "https://www.bookoffonline.co.jp/files/user-guide/order.html",
-            "parser": bookoff_html_parse.BookoffOrderParse,
+            "url": "https://support-online.bookoff.co.jp/answer/64363fbd97ebd8c6491e0a07/",
+            "parser": bookoff_html_parse.BookoffAnswerParse,
             "insert_proc_type": posd.InsertProcType.BOOKOFF_SHIPPING_TERMS,
         },
     }
