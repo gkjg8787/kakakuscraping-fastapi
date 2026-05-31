@@ -125,17 +125,17 @@ def get_itemcomb_with_pulp(prices: dict, items: list, shipping_rules: dict):
 
     # 1. 変数定義
     # buy[s][i]: 店舗sで商品iを買うか (その店舗に商品がある場合のみ作成)
-    buy = pulp.LpVariable.dicts(
+    buy = prob.add_variable_dicts(
         "buy",
         [(s, i) for s in prices.keys() for i in items if i in prices[s]],
         cat="Binary",
     )
 
     # store_used[s]: 店舗sを利用するか
-    store_used = pulp.LpVariable.dicts("store_used", prices.keys(), cat="Binary")
+    store_used = prob.add_variable_dicts("store_used", prices.keys(), cat="Binary")
 
     # ship_rank[s, r]: 店舗sで送料ランクrを適用するか
-    ship_rank = pulp.LpVariable.dicts(
+    ship_rank = prob.add_variable_dicts(
         "ship_rank",
         [(s, r) for s in prices.keys() for r in range(len(shipping_rules[s]))],
         cat="Binary",
@@ -195,7 +195,7 @@ def get_itemcomb_with_pulp(prices: dict, items: list, shipping_rules: dict):
     prob += total_item_cost + total_shipping_cost
 
     # 4. 解決
-    prob.solve(pulp.PULP_CBC_CMD(msg=0))
+    prob.solve(pulp.COIN_CMD(msg=0))
 
     # 5. 結果表示
     results = {}
