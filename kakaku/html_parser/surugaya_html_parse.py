@@ -376,9 +376,9 @@ class SurugayaMakepurePostage:
         if not is_makepure(soup):
             if DEFAULT_STORENAME == SurugayaProduct.getStoreName(soup):
                 return
-            self.parse_html_for_detail(soup=soup)
+            self._parse_html_for_detail(soup=soup)
             return
-        self.parse_html_for_other(soup=soup)
+        self._parse_html_for_other(soup=soup)
 
     def get_ParseStorePostage(self):
         return self.parseStorePostageList
@@ -387,7 +387,7 @@ class SurugayaMakepurePostage:
         return self.shopid_dict
 
     @classmethod
-    def parse_storename(cls, elem: Tag):
+    def _parse_storename(cls, elem: Tag):
         storeret = elem.select_one(r".space_text_1")
         if storeret:
             t = str(storeret.text).strip()
@@ -396,19 +396,19 @@ class SurugayaMakepurePostage:
         else:
             return DEFAULT_STORENAME
 
-    def parse_html_for_other(self, soup: BeautifulSoup):
+    def _parse_html_for_other(self, soup: BeautifulSoup):
         storepos_results: dict[str, htmlparse.ParseStorePostage] = {}
         sidinf_results: dict[str, htmlparse.ParseShopIDInfo] = {}
         store_row = soup.select(r"#tabs-all tr.item")
         for row in store_row:
-            storename = self.parse_storename(row)
-            storepos = self.parse_storepostage(
+            storename = self._parse_storename(row)
+            storepos = self._parse_storepostage(
                 row, storename=storename, storepos_results=storepos_results
             )
             if storepos:
                 storepos_results[storepos.storename] = storepos
 
-            sidinf = self.parse_shopidinfo(
+            sidinf = self._parse_shopidinfo(
                 row, storename=storename, sidinf_results=sidinf_results
             )
             if sidinf:
@@ -418,7 +418,7 @@ class SurugayaMakepurePostage:
         self.shopid_dict = sidinf_results
 
     @classmethod
-    def parse_shopidinfo(
+    def _parse_shopidinfo(
         cls,
         elem: Tag,
         storename: str,
@@ -442,7 +442,7 @@ class SurugayaMakepurePostage:
         return sidinf
 
     @classmethod
-    def parse_storepostage(
+    def _parse_storepostage(
         cls,
         elem: Tag,
         storename: str,
@@ -470,7 +470,7 @@ class SurugayaMakepurePostage:
                 continue
             pre_terms: htmlparse.ParsePostageTerms | None = None
             for prr, pll in zip(pr, pl):
-                terms = cls.create_terms(
+                terms = cls._create_terms(
                     boundary_text=prr.text.strip(),
                     postage_text=pll.text.strip(),
                     pre_terms=pre_terms,
@@ -482,16 +482,18 @@ class SurugayaMakepurePostage:
         return StorePostage
 
     @classmethod
-    def create_terms(
+    def _create_terms(
         cls,
         boundary_text: str,
         postage_text: str,
         pre_terms: htmlparse.ParsePostageTerms | None,
     ):
-        boundary = cls.create_boundary(boundary_text=boundary_text, pre_terms=pre_terms)
+        boundary = cls._create_boundary(
+            boundary_text=boundary_text, pre_terms=pre_terms
+        )
         if not boundary:
             return None
-        postage = cls.create_postage(postage_text=postage_text)
+        postage = cls._create_postage(postage_text=postage_text)
         if postage < 0:
             return None
         terms = htmlparse.ParsePostageTerms()
@@ -500,7 +502,7 @@ class SurugayaMakepurePostage:
         return terms
 
     @classmethod
-    def create_postage(
+    def _create_postage(
         cls,
         postage_text: str,
     ) -> int:
@@ -518,7 +520,7 @@ class SurugayaMakepurePostage:
         return int(m[0])
 
     @classmethod
-    def create_boundary(
+    def _create_boundary(
         cls, boundary_text: str, pre_terms: htmlparse.ParsePostageTerms | None
     ):
         b_ptn = r"([1-9][0-9]+)円(以上|未満)"
@@ -533,10 +535,10 @@ class SurugayaMakepurePostage:
             boundary_ope = ">"
         boundary = f"{boundary_val}{boundary_ope}"
         if pre_terms:
-            bval, bope = cls.get_pre_val_and_operator_in_text(pre_terms.boundary)
+            bval, bope = cls._get_pre_val_and_operator_in_text(pre_terms.boundary)
             if not bval or not bope:
                 return boundary
-            if not cls.is_compounding_terms(
+            if not cls._is_compounding_terms(
                 cur_boundary_ope=boundary_ope,
                 cur_boundary_val=int(boundary_val),
                 pre_boundary_ope=bope,
@@ -548,7 +550,7 @@ class SurugayaMakepurePostage:
         return boundary
 
     @staticmethod
-    def is_compounding_terms(
+    def _is_compounding_terms(
         cur_boundary_ope: str,
         cur_boundary_val: int,
         pre_boundary_ope: str,
@@ -561,7 +563,7 @@ class SurugayaMakepurePostage:
         )
 
     @staticmethod
-    def get_pre_val_and_operator_in_text(boundary_text: str):
+    def _get_pre_val_and_operator_in_text(boundary_text: str):
         rets = (
             postage_data.ShippingTermsBoundary.get_list_of_boundary_value_and_operation(
                 boundary_text=boundary_text
@@ -584,9 +586,9 @@ class SurugayaMakepurePostage:
         ret = ret.replace(",", "")
         return ret
 
-    def parse_html_for_detail(self, soup: BeautifulSoup):
+    def _parse_html_for_detail(self, soup: BeautifulSoup):
         sidinf_results: dict[str, htmlparse.ParseShopIDInfo] = {}
-        sidinf_results = self.parse_shopidinfo_for_detail(soup=soup)
+        sidinf_results = self._parse_shopidinfo_for_detail(soup=soup)
         self.shopid_dict = sidinf_results
 
         pss = htmlparse.ParseStorePostage()
@@ -596,7 +598,7 @@ class SurugayaMakepurePostage:
         self.parseStorePostageList = [pss]
 
     @classmethod
-    def parse_shopidinfo_for_detail(
+    def _parse_shopidinfo_for_detail(
         cls, soup: BeautifulSoup
     ) -> dict[str, htmlparse.ParseItemInfo]:
         sidinf = htmlparse.ParseShopIDInfo()
