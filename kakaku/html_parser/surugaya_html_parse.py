@@ -1,4 +1,7 @@
 import re
+import json
+import time
+import httpx
 from html_parser import htmlparse
 from bs4 import BeautifulSoup, Tag
 from abc import ABCMeta
@@ -397,22 +400,112 @@ class SurugayaMakepurePostage:
             return DEFAULT_STORENAME
 
     def _parse_html_for_other(self, soup: BeautifulSoup):
+        # 1. drupalSettings からメタデータを抽出
+        script_tag = soup.find(
+            "script", {"data-drupal-selector": "drupal-settings-json"}
+        )
+        if not script_tag:
+            return
+
+        try:
+            drupal_settings = json.loads(script_tag.string)
+            api_path = drupal_settings.get("product_detail", {}).get(
+                "campaign_batch_info_url"
+            )
+            permissions_hash = drupal_settings.get("user", {}).get("permissionsHash")
+        except (json.JSONDecodeError, KeyError):
+            return
+
+        if not api_path:
+            return
+
+        base_url = "https://www.suruga-ya.jp"
+        api_url = base_url + api_path
+
+        # 2. HTML内のプレースホルダーからデータを収集
+        active_tab = "all"
+        active_input = soup.find("input", {"id": "active"})
+        if active_input and active_input.get("value"):
+            active_tab = active_input.get("value")
+
+        store_rows = soup.select(r"tr.item")
         storepos_results: dict[str, htmlparse.ParseStorePostage] = {}
         sidinf_results: dict[str, htmlparse.ParseShopIDInfo] = {}
-        store_row = soup.select(r"#tabs-all tr.item")
-        for row in store_row:
-            storename = self._parse_storename(row)
-            storepos = self._parse_storepostage(
-                row, storename=storename, storepos_results=storepos_results
-            )
-            if storepos:
-                storepos_results[storepos.storename] = storepos
+        payload_items = []
+        element_to_store_map = {}
 
-            sidinf = self._parse_shopidinfo(
-                row, storename=storename, sidinf_results=sidinf_results
+        for row in store_rows:
+            placeholder = row.select_one(f".{active_tab}.ajax-campaign-placeholder")
+            if not placeholder:
+                continue
+
+            el_id = placeholder.get("id")
+            tenpo_cd_raw = placeholder.get("data-tenpo_cd")
+            tenpo_cd = (
+                int(tenpo_cd_raw) if tenpo_cd_raw and tenpo_cd_raw.isdigit() else ""
             )
-            if sidinf:
-                sidinf_results[sidinf.storename] = sidinf
+            zaiko_raw = placeholder.get("data-zaiko_data")
+
+            storename = self._parse_storename(row)
+            shop_link = row.select_one(r".space_text_1 a")
+            shop_url = base_url + shop_link["href"] if shop_link else ""
+
+            payload_items.append(
+                {
+                    "zaiko": json.loads(zaiko_raw) if zaiko_raw else {},
+                    "tab": placeholder.get("data-tab"),
+                    "tenpo_cd": tenpo_cd,
+                }
+            )
+            element_to_store_map[el_id] = {
+                "storename": storename,
+                "shop_id": tenpo_cd,
+                "url": shop_url,
+            }
+
+        # 3. キャンペーン情報APIに対してPOSTリクエストを送信
+        api_headers = {
+            "Content-Type": "application/json",
+            "X-Drupal-Permissions-Hash": permissions_hash,
+            "X-Requested-With": "XMLHttpRequest",
+        }
+        time.sleep(1.5)
+
+        try:
+            with httpx.Client(headers=api_headers, timeout=10.0) as client:
+                api_response = client.post(api_url, json={"items": payload_items})
+                if api_response.status_code == 200:
+                    result_json = api_response.json()
+                    for item in result_json.get("items", []):
+                        id_el = item.get("id_element")
+                        html_content = item.get("html", "")
+                        store_info = element_to_store_map.get(id_el)
+                        if not store_info or not html_content:
+                            continue
+
+                        storename = store_info["storename"]
+                        html_soup = BeautifulSoup(html_content, "html.parser")
+
+                        # 送料情報のパース
+                        storepos = self._parse_storepostage(
+                            html_soup, storename, storepos_results
+                        )
+                        if storepos:
+                            storepos_results[storename] = storepos
+
+                        # 店舗情報の構築
+                        if (
+                            storename != DEFAULT_STORENAME
+                            and storename not in sidinf_results
+                        ):
+                            if store_info["shop_id"]:
+                                sid = htmlparse.ParseShopIDInfo()
+                                sid.storename = storename
+                                sid.url = store_info["url"]
+                                sid.shop_id = store_info["shop_id"]
+                                sidinf_results[storename] = sid
+        except Exception:
+            pass
 
         self.parseStorePostageList = [v for v in storepos_results.values()]
         self.shopid_dict = sidinf_results

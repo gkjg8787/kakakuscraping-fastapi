@@ -216,8 +216,8 @@ def test_surugaya_other_timesale():
     corrects = [
         {
             "url_id": 1,
-            "uniqname": "もののけ姫",
-            "usedprice": 2800,
+            "uniqname": "となりのトトロ ＆ 火垂るの墓 2本立てブルーレイ特別セット",
+            "usedprice": 6000,
             "newprice": -1,
             "taxin": True,
             "onsale": True,
@@ -228,14 +228,32 @@ def test_surugaya_other_timesale():
             "url": "https://www.suruga-ya.jp/product/other/128049960",
             "storename": "駿河屋",
             "created_at": datetime(2024, 12, 6, 20, 3, tzinfo=timezone.utc),
-            "campaign_msg": "12/6 ～ 12/7【999円以上】代引き+送料無料 2024/12/06 00:00 ～ 2024/12/07 23:59 999円未満 440円 999円以上 送料無料",
+            "campaign_msg": "5/31 ～ 6/1【999円以上】代引き100円+送料無料 2026/05/31 00:00 ～ 2026/06/01 23:59 999円未満 440円 999円以上 送料無料",
             "target_prefectures_length": 0,
             "terms_length": 2,
         },
         {
             "url_id": 1,
-            "uniqname": "もののけ姫",
-            "usedprice": 2950,
+            "uniqname": "となりのトトロ ＆ 火垂るの墓 2本立てブルーレイ特別セット",
+            "usedprice": 8300,
+            "newprice": -1,
+            "taxin": True,
+            "onsale": True,
+            "salename": "タイムセール",
+            "issuccess": True,
+            "oldprice": -1,
+            "trendrate": 0,
+            "url": "https://www.suruga-ya.jp/product/other/128049960",
+            "storename": "駿河屋",
+            "created_at": datetime(2024, 12, 6, 20, 3, tzinfo=timezone.utc),
+            "campaign_msg": "5/31 ～ 6/1【999円以上】代引き100円+送料無料 2026/05/31 00:00 ～ 2026/06/01 23:59 999円未満 440円 999円以上 送料無料",
+            "target_prefectures_length": 0,
+            "terms_length": 2,
+        },
+        {
+            "url_id": 1,
+            "uniqname": "となりのトトロ ＆ 火垂るの墓 2本立てブルーレイ特別セット",
+            "usedprice": 9220,
             "newprice": -1,
             "taxin": True,
             "onsale": False,
@@ -245,6 +263,24 @@ def test_surugaya_other_timesale():
             "trendrate": 0,
             "url": "https://www.suruga-ya.jp/product/other/128049960",
             "storename": "駿河屋 佐大通り店",
+            "created_at": datetime(2024, 12, 6, 20, 3, tzinfo=timezone.utc),
+            "campaign_msg": "",
+            "target_prefectures_length": 0,
+            "terms_length": 0,
+        },
+        {
+            "url_id": 1,
+            "uniqname": "となりのトトロ ＆ 火垂るの墓 2本立てブルーレイ特別セット",
+            "usedprice": 9511,
+            "newprice": -1,
+            "taxin": True,
+            "onsale": False,
+            "salename": "",
+            "issuccess": True,
+            "oldprice": -1,
+            "trendrate": 0,
+            "url": "https://www.suruga-ya.jp/product/other/128049960",
+            "storename": "駿河屋日本橋本館",
             "created_at": datetime(2024, 12, 6, 20, 3, tzinfo=timezone.utc),
             "campaign_msg": "",
             "target_prefectures_length": 0,
@@ -270,7 +306,7 @@ def test_surugaya_other_timesale():
 
     assert sp.hasPostage()
 
-    assert len(sp.getPostageList()) == 2
+    assert len(sp.getPostageList()) == 3
     for pos, correct in zip(sp.getPostageList(), corrects):
         assert pos.storename == correct["storename"]
         assert pos.campaign_msg == correct["campaign_msg"]
@@ -545,8 +581,8 @@ def test_surugaya_other_excluded_condition():
     corrects = [
         {
             "url_id": 1,
-            "uniqname": "となりのトトロ",
-            "usedprice": 2440,
+            "uniqname": "風の谷のナウシカ [コレクターズBOX] ",
+            "usedprice": 11460,
             "newprice": -1,
             "taxin": True,
             "onsale": False,
@@ -555,13 +591,13 @@ def test_surugaya_other_excluded_condition():
             "oldprice": -1,
             "trendrate": 0,
             "url": "https://www.suruga-ya.jp/product/other/128002938",
-            "storename": "駿河屋 ひたちなかファッションクルーズ店",
+            "storename": "駿河屋 鴻巣吹上店",
             "created_at": datetime(2025, 6, 21, 14, 17, tzinfo=timezone.utc),
         },
         {
             "url_id": 1,
-            "uniqname": "となりのトトロ",
-            "usedprice": 3180,
+            "uniqname": "風の谷のナウシカ [コレクターズBOX] ",
+            "usedprice": 14800,
             "newprice": -1,
             "taxin": True,
             "onsale": False,
@@ -570,13 +606,13 @@ def test_surugaya_other_excluded_condition():
             "oldprice": -1,
             "trendrate": 0,
             "url": "https://www.suruga-ya.jp/product/other/128002938",
-            "storename": "駿河屋神戸兵庫駅前店",
+            "storename": "駿河屋 盛岡MOSSビル店",
             "created_at": datetime(2025, 6, 21, 14, 17, tzinfo=timezone.utc),
         },
         {
             "url_id": 1,
-            "uniqname": "となりのトトロ",
-            "usedprice": 3200,
+            "uniqname": "風の谷のナウシカ [コレクターズBOX] ",
+            "usedprice": 15000,
             "newprice": -1,
             "taxin": True,
             "onsale": False,
@@ -585,13 +621,13 @@ def test_surugaya_other_excluded_condition():
             "oldprice": -1,
             "trendrate": 0,
             "url": "https://www.suruga-ya.jp/product/other/128002938",
-            "storename": "駿河屋日本橋本館",
+            "storename": "駿河屋 梅田茶屋町店",
             "created_at": datetime(2025, 6, 21, 14, 17, tzinfo=timezone.utc),
         },
         {
             "url_id": 1,
-            "uniqname": "となりのトトロ",
-            "usedprice": 3580,
+            "uniqname": "風の谷のナウシカ [コレクターズBOX] ",
+            "usedprice": 24200,
             "newprice": -1,
             "taxin": True,
             "onsale": False,
@@ -600,28 +636,13 @@ def test_surugaya_other_excluded_condition():
             "oldprice": -1,
             "trendrate": 0,
             "url": "https://www.suruga-ya.jp/product/other/128002938",
-            "storename": "駿河屋",
-            "created_at": datetime(2025, 6, 21, 14, 17, tzinfo=timezone.utc),
-        },
-        {
-            "url_id": 1,
-            "uniqname": "となりのトトロ",
-            "usedprice": 4500,
-            "newprice": -1,
-            "taxin": True,
-            "onsale": False,
-            "salename": "",
-            "issuccess": True,
-            "oldprice": -1,
-            "trendrate": 0,
-            "url": "https://www.suruga-ya.jp/product/other/128002938",
-            "storename": "駿河屋藤枝店",
+            "storename": "駿河屋 市原五井店",
             "created_at": datetime(2025, 6, 21, 14, 17, tzinfo=timezone.utc),
         },
     ]
     ipopts_dict = {
         "surugaya": {"get_other_items_in_detail_page": False},
-        "excluded_condition_keywords": ["不備"],
+        "excluded_condition_keywords": ["不備", "欠品"],
     }
     ipopts = read_config.ItemParseOptions(**ipopts_dict)
     fp = read_tgz(other_fpath)
@@ -633,7 +654,7 @@ def test_surugaya_other_excluded_condition():
         itemparseoptions=ipopts,
     )
     items = sp.getItems()
-    assert len(items) == 10
+    assert len(items) == 4
 
     def assert_target_item(item, correct):
         for key, val in item.getOrderedDict().items():
@@ -642,8 +663,7 @@ def test_surugaya_other_excluded_condition():
     assert_target_item(items[0], corrects[0])
     assert_target_item(items[1], corrects[1])
     assert_target_item(items[2], corrects[2])
-    assert_target_item(items[-2], corrects[3])
-    assert_target_item(items[-1], corrects[4])
+    assert_target_item(items[3], corrects[3])
 
 
 def test_surugaya_detail_new_used_items():
