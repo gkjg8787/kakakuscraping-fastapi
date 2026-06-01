@@ -14,3 +14,4 @@ numpy
 scikit-learn >=1.6.1,<2.0
 statsmodels >=0.14.4,<1.0
 pulp[cbc] >=3.3.2,<4.0
+httpx
