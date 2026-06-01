@@ -1,3 +1,6 @@
+import re
+from bs4 import BeautifulSoup
+from pytest_httpx import HTTPXMock
 from datetime import datetime, timezone
 from html_parser import surugaya_html_parse
 from common import read_config
@@ -14,91 +17,134 @@ detail_other_b_rank_fpath = "surugaya_detail_other_b_rank.html"
 detail_new_used_fpath = "surugaya_detail_new_used.html"
 
 
-def test_surugaya_makepure_postage_storepostage():
+def setup_surugaya_httpx_mock(httpx_mock: HTTPXMock, fp: str):
+    # 外部通信のレスポンスとなる送料キャンペーンHTMLを生成
+    shipping_html = """
+    <li class="padT5 lineH20">
+        <div>3,000円以上お買い上げで送料無料キャンペーン</div>
+        <div class="campaign_price">
+            <span class="padR5">3,000円未満</span>
+            <span class="padL5">500円</span>
+        </div>
+        <div class="campaign_price">
+            <span class="padR5">3,000円以上</span>
+            <span class="padL5">送料無料</span>
+        </div>
+    </li>
+    """
+    soup = BeautifulSoup(fp, "html.parser")
+    # HTML内のプレースホルダーを探して、APIレスポンスの項目を作成
+    placeholders = soup.select(".ajax-campaign-placeholder")
+    items = [{"id_element": p.get("id"), "html": shipping_html} for p in placeholders]
+
+    httpx_mock.add_response(
+        method="POST",
+        url=re.compile(r"https://www.suruga-ya.jp/.*"),
+        json={"status": "success", "items": items},
+    )
+
+
+def test_surugaya_makepure_postage_storepostage(httpx_mock: HTTPXMock):
     ipopts_dict = {
         "surugaya": {"get_other_items_in_detail_page": False},
         "excluded_condition_keywords": [],
     }
     ipopts = read_config.ItemParseOptions(**ipopts_dict)
     fp = read_tgz(other_fpath)
+    setup_surugaya_httpx_mock(httpx_mock, fp)
     sp = surugaya_html_parse.SurugayaParse(
         fp, 1, "2025-06-21 00:00:01", other_url, ipopts
     )
     assert sp.hasPostage()
     sppl = sp.getPostageList()
+
+    # 新しい店舗リストに対して送料パース結果を確認
+    target_stores = [
+        "駿河屋天文館店",
+        "駿河屋 鴻巣吹上店",
+        "駿河屋 盛岡MOSSビル店",
+        "駿河屋 梅田茶屋町店",
+        "駿河屋 市原五井店",
+    ]
     for spp in sppl:
-        if spp.storename == "駿河屋日本橋本館":
-            assert len(spp.target_prefectures) == 0
-            assert (
-                spp.campaign_msg
-                == "2,000円以上のお買い上げにて送料無料キャンペーン 2025/06/20 00:00 ～ 2025/06/22 23:59 2,000円未満 300～1,500円 2,000円以上 送料無料"
-            )
-            assert len(spp.terms) == 1
-            assert spp.terms[0].boundary == "2000<="
-            assert spp.terms[0].postage == 0
-
-        if spp.storename == "駿河屋松本店":
-            assert len(spp.target_prefectures) == 0
-            assert len(spp.campaign_msg) == 0
-            assert len(spp.terms) == 0
-
-        if spp.storename == "りあらいず":
-            assert len(spp.target_prefectures) == 0
-            assert (
-                spp.campaign_msg
-                == "送料キャンペーン 2025/06/01 00:00 ～ 2025/06/30 23:59 100円未満 700円 10,000円未満 400円 10,000円以上 送料無料"
-            )
-            assert len(spp.terms) == 3
-            assert spp.terms[0].boundary == "100>"
-            assert spp.terms[0].postage == 700
-            assert spp.terms[1].boundary == "100<=:10000>"
-            assert spp.terms[1].postage == 400
-            assert spp.terms[2].boundary == "10000<="
-            assert spp.terms[2].postage == 0
-
-        if spp.storename == "駿河屋":
-            assert len(spp.target_prefectures) == 0
-            assert (
-                spp.campaign_msg
-                == "6/21 ～ 6/22【999円以上】代引き100円+送料無料 2025/06/21 00:00 ～ 2025/06/22 23:59 999円未満 440円 999円以上 送料無料"
-            )
+        if spp.storename in target_stores:
+            assert "3,000円以上お買い上げで送料無料キャンペーン" in spp.campaign_msg
             assert len(spp.terms) == 2
-            assert spp.terms[0].boundary == "999>"
-            assert spp.terms[0].postage == 440
-            assert spp.terms[1].boundary == "999<="
+            assert spp.terms[0].boundary == "3000>"
+            assert spp.terms[0].postage == 500
+            assert spp.terms[1].boundary == "3000<="
             assert spp.terms[1].postage == 0
 
 
-def test_surugaya_makepure_postage_shopidinfo():
+def test_surugaya_makepure_postage_shopidinfo(httpx_mock: HTTPXMock):
     ipopts_dict = {
         "surugaya": {"get_other_items_in_detail_page": False},
         "excluded_condition_keywords": [],
     }
     ipopts = read_config.ItemParseOptions(**ipopts_dict)
     fp = read_tgz(other_fpath)
+    setup_surugaya_httpx_mock(httpx_mock, fp)
     sp = surugaya_html_parse.SurugayaParse(
         fp, 1, "2025-06-21 00:00:01", other_url, ipopts
     )
     assert sp.hasShopIDInfo()
     sidinf = sp.getShopIDInfo()
     base_url = "https://www.suruga-ya.jp/shop/"
+
+    shop_info = {
+        # 古い情報
+        "駿河屋日本橋本館": {
+            "storename": "駿河屋日本橋本館",
+            "shop_id": 200823,
+            "url": base_url + "200823",
+        },
+        "駿河屋 ひたちなかファッションクルーズ店": {
+            "storename": "駿河屋 ひたちなかファッションクルーズ店",
+            "shop_id": 400515,
+            "url": base_url + "400515",
+        },
+        "ブックマーケット利府店 Supported by 駿河屋": {
+            "storename": "ブックマーケット利府店 Supported by 駿河屋",
+            "shop_id": 201267,
+            "url": base_url + "201267",
+        },
+        "りあらいず": {
+            "storename": "りあらいず",
+            "shop_id": 400389,
+            "url": base_url + "400389",
+        },
+        # 必要な情報
+        "駿河屋天文館店": {
+            "storename": "駿河屋天文館店",
+            "shop_id": 400496,
+            "url": base_url + "400496",
+        },
+        "駿河屋 鴻巣吹上店": {
+            "storename": "駿河屋 鴻巣吹上店",
+            "shop_id": 400446,
+            "url": base_url + "400446",
+        },
+        "駿河屋 盛岡MOSSビル店": {
+            "storename": "駿河屋 盛岡MOSSビル店",
+            "shop_id": 400546,
+            "url": base_url + "400546",
+        },
+        "駿河屋 梅田茶屋町店": {
+            "storename": "駿河屋 梅田茶屋町店",
+            "shop_id": 400493,
+            "url": base_url + "400493",
+        },
+        "駿河屋 市原五井店": {
+            "storename": "駿河屋 市原五井店",
+            "shop_id": 400507,
+            "url": base_url + "400507",
+        },
+    }
     for key, val in sidinf.items():
-        if key == "駿河屋日本橋本館":
-            assert val.storename == key
-            assert val.shop_id == 200823
-            assert val.url == base_url + "200823"
-        if key == "駿河屋 ひたちなかファッションクルーズ店":
-            assert val.storename == key
-            assert val.shop_id == 400515
-            assert val.url == base_url + "400515"
-        if key == "ブックマーケット利府店 Supported by 駿河屋":
-            assert val.storename == key
-            assert val.shop_id == 201267
-            assert val.url == base_url + "201267"
-        if key == "りあらいず":
-            assert val.storename == key
-            assert val.shop_id == 400389
-            assert val.url == base_url + "400389"
+        assert key in shop_info.keys()
+        assert val.storename == shop_info[key]["storename"]
+        assert val.shop_id == shop_info[key]["shop_id"]
+        assert val.url == shop_info[key]["url"]
 
 
 def test_surugaya_shiharai_parse():
@@ -212,7 +258,7 @@ def test_surugaya_detail_timesale():
     assert not sp.hasPostage()
 
 
-def test_surugaya_other_timesale():
+def test_surugaya_other_timesale(httpx_mock: HTTPXMock):
     corrects = [
         {
             "url_id": 1,
@@ -228,7 +274,7 @@ def test_surugaya_other_timesale():
             "url": "https://www.suruga-ya.jp/product/other/128049960",
             "storename": "駿河屋",
             "created_at": datetime(2024, 12, 6, 20, 3, tzinfo=timezone.utc),
-            "campaign_msg": "5/31 ～ 6/1【999円以上】代引き100円+送料無料 2026/05/31 00:00 ～ 2026/06/01 23:59 999円未満 440円 999円以上 送料無料",
+            "campaign_msg": "3,000円以上お買い上げで送料無料キャンペーン 3,000円未満 500円 3,000円以上 送料無料",
             "target_prefectures_length": 0,
             "terms_length": 2,
         },
@@ -246,7 +292,7 @@ def test_surugaya_other_timesale():
             "url": "https://www.suruga-ya.jp/product/other/128049960",
             "storename": "駿河屋",
             "created_at": datetime(2024, 12, 6, 20, 3, tzinfo=timezone.utc),
-            "campaign_msg": "5/31 ～ 6/1【999円以上】代引き100円+送料無料 2026/05/31 00:00 ～ 2026/06/01 23:59 999円未満 440円 999円以上 送料無料",
+            "campaign_msg": "3,000円以上お買い上げで送料無料キャンペーン 3,000円未満 500円 3,000円以上 送料無料",
             "target_prefectures_length": 0,
             "terms_length": 2,
         },
@@ -264,9 +310,9 @@ def test_surugaya_other_timesale():
             "url": "https://www.suruga-ya.jp/product/other/128049960",
             "storename": "駿河屋 佐大通り店",
             "created_at": datetime(2024, 12, 6, 20, 3, tzinfo=timezone.utc),
-            "campaign_msg": "",
+            "campaign_msg": "3,000円以上お買い上げで送料無料キャンペーン 3,000円未満 500円 3,000円以上 送料無料",
             "target_prefectures_length": 0,
-            "terms_length": 0,
+            "terms_length": 2,
         },
         {
             "url_id": 1,
@@ -282,9 +328,9 @@ def test_surugaya_other_timesale():
             "url": "https://www.suruga-ya.jp/product/other/128049960",
             "storename": "駿河屋日本橋本館",
             "created_at": datetime(2024, 12, 6, 20, 3, tzinfo=timezone.utc),
-            "campaign_msg": "",
+            "campaign_msg": "3,000円以上お買い上げで送料無料キャンペーン 3,000円未満 500円 3,000円以上 送料無料",
             "target_prefectures_length": 0,
-            "terms_length": 0,
+            "terms_length": 2,
         },
     ]
     ipopts_dict = {
@@ -293,6 +339,7 @@ def test_surugaya_other_timesale():
     }
     ipopts = read_config.ItemParseOptions(**ipopts_dict)
     fp = read_tgz(other_timesale_fpath)
+    setup_surugaya_httpx_mock(httpx_mock, fp)
     sp = surugaya_html_parse.SurugayaParse(
         fp=fp,
         id=corrects[0]["url_id"],
@@ -307,7 +354,9 @@ def test_surugaya_other_timesale():
     assert sp.hasPostage()
 
     assert len(sp.getPostageList()) == 3
-    for pos, correct in zip(sp.getPostageList(), corrects):
+    for pos, correct in zip(
+        sp.getPostageList(), [corrects[0], corrects[2], corrects[3]]
+    ):
         assert pos.storename == correct["storename"]
         assert pos.campaign_msg == correct["campaign_msg"]
         assert len(pos.target_prefectures) == correct["target_prefectures_length"]
@@ -315,12 +364,12 @@ def test_surugaya_other_timesale():
 
     assert sp.hasShopIDInfo()
     assert (
-        sp.getShopIDInfo()[corrects[1]["storename"]].storename
-        == corrects[1]["storename"]
+        sp.getShopIDInfo()[corrects[2]["storename"]].storename
+        == corrects[2]["storename"]
     )
-    assert sp.getShopIDInfo()[corrects[1]["storename"]].shop_id == 400506
+    assert sp.getShopIDInfo()[corrects[2]["storename"]].shop_id == 400506
     assert (
-        sp.getShopIDInfo()[corrects[1]["storename"]].url
+        sp.getShopIDInfo()[corrects[2]["storename"]].url
         == "https://www.suruga-ya.jp/shop/400506"
     )
 
@@ -577,7 +626,7 @@ def test_surugaya_detail_other_items_excluded_two():
             assert val == correct[key]
 
 
-def test_surugaya_other_excluded_condition():
+def test_surugaya_other_excluded_condition(httpx_mock: HTTPXMock):
     corrects = [
         {
             "url_id": 1,
@@ -646,6 +695,7 @@ def test_surugaya_other_excluded_condition():
     }
     ipopts = read_config.ItemParseOptions(**ipopts_dict)
     fp = read_tgz(other_fpath)
+    setup_surugaya_httpx_mock(httpx_mock, fp)
     sp = surugaya_html_parse.SurugayaParse(
         fp=fp,
         id=corrects[0]["url_id"],
