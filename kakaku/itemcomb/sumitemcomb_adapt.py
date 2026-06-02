@@ -195,7 +195,8 @@ def get_itemcomb_with_pulp(prices: dict, items: list, shipping_rules: dict):
     prob += total_item_cost + total_shipping_cost
 
     # 4. 解決
-    prob.solve(pulp.COIN_CMD(msg=0))
+    prob.solve(pulp.PULP_CBC_CMD(msg=False))
+    # prob.solve(pulp.COIN_CMD(msg=0))
 
     # 5. 結果表示
     results = {}
